@@ -1,0 +1,15 @@
+{
+  "computedAt": "2026-08-03T13:58:17.381Z",
+  "leagueId": "017832595",
+  "week": 1,
+  "samples": 0,
+  "maeLegacy": null,
+  "maeV1": null,
+  "weeks": [],
+  "note": "Sin puntos reales todavía (pretemporada): las métricas se calcularán en cuanto haya jornadas liquidadas.",
+  "trackRecord": {
+    "settled": 0,
+    "maeXp": null,
+    "maeLegacy": null
+  }
+}

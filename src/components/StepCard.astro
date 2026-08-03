@@ -1,0 +1,23 @@
+---
+import type { LucideIcon } from 'lucide-react';
+
+interface Props {
+	step: string;
+	icon: LucideIcon;
+	title: string;
+	description: string;
+}
+
+const { step, icon: Icon, title, description } = Astro.props;
+---
+
+<div class="rounded-2xl border border-white/[0.06] bg-surface-2 p-6">
+	<div class="flex items-center justify-between">
+		<div class="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.08] bg-surface-3">
+			<Icon className="h-5 w-5 text-foreground" />
+		</div>
+		<span class="font-display text-sm font-semibold tracking-widest text-brand-subtle">{step}</span>
+	</div>
+	<h3 class="mt-4 font-display text-base font-semibold tracking-tight text-foreground">{title}</h3>
+	<p class="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
+</div>

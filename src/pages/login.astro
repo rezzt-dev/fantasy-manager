@@ -1,0 +1,34 @@
+---
+import '../styles/global.css';
+import LoginForm from '../components/auth/LoginForm';
+import { Trophy } from 'lucide-react';
+---
+
+<html lang="es">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>Iniciar sesión | Fantasy Manager</title>
+	</head>
+	<body>
+		<div class="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-6">
+			<div class="relative z-10 mb-8 text-center">
+				<a href="/" class="inline-flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight text-foreground">
+					<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 border border-white/[0.08]">
+						<Trophy className="h-5 w-5 text-foreground" />
+					</div>
+					<span class="font-display tracking-tight">Fantasy<span class="text-brand-muted">Manager</span></span>
+				</a>
+				<p class="mt-2 text-sm text-muted-foreground">Inicia sesión para gestionar tus equipos.</p>
+			</div>
+
+			<LoginForm client:only="react">
+				<div slot="fallback" class="w-full max-w-md rounded-2xl border border-white/[0.08] bg-card p-8 text-center text-sm text-muted-foreground">
+					Cargando formulario...
+				</div>
+			</LoginForm>
+		</div>
+	</body>
+</html>
