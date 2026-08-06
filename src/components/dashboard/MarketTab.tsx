@@ -3,37 +3,34 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import fantasyAPI from '../../lib/fantasy/api';
-import type { FantasyLeague, MarketPlayer, ExternalSignal, PlayerMaster } from '../../types/fantasy';
+import type { FantasyLeague, MarketPlayer, ExternalSignal } from '../../types/fantasy';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../ui/table';
+import { Skeleton } from '../ui/skeleton';
+import { Slider } from '../ui/slider';
+import { Toggle } from '../ui/toggle';
+import DataTable, { DataTableSkeleton } from '../shared/DataTable';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import Currency from '../shared/Currency';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
+import PlayerCard from '../shared/PlayerCard';
 import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
 import SignalChips from '../shared/SignalChips';
-import FilterBar from '../shared/FilterBar';
 import EmptyState from '../shared/EmptyState';
-import { ShoppingCart, ArrowUpDown, TrendingDown, TrendingUp, Percent, Gavel } from 'lucide-react';
+import FilterBar from '../shared/FilterBar';
+import { StaggerContainer, StaggerItem } from '../ui/motion';
+import { ShoppingCart, TrendingDown, TrendingUp, Percent, Gavel, Table2, LayoutGrid, Users } from 'lucide-react';
 import { positionShortName, positionBgClass, getPositionName, statusText } from '../../lib/format';
 import { starterScoreFromLastSeason } from '../../lib/analysis/starter-score';
+import { buildMarketOwnerMap, resolveMarketOwner } from '../../lib/fantasy/market-sellers';
+import type { LeagueAnalysis } from '../../types/analysis';
 
 interface MarketTabProps {
   league: FantasyLeague;
 }
-
-type SortKey = 'salePrice' | 'numberOfBids' | 'marketValue' | 'diff';
 
 export default function MarketTab({ league }: MarketTabProps) {
   const leagueId = league.id;
@@ -53,12 +50,18 @@ export default function MarketTab({ league }: MarketTabProps) {
   const externalSignals: Record<string, ExternalSignal[]> = analysisData?.analysis?.externalSignals || {};
   const ownMoney: number = analysisData?.analysis?.money?.teamMoney ?? 0;
 
+  const ownerMap = useMemo(() => {
+    const analysis = analysisData?.analysis as LeagueAnalysis | undefined;
+    if (!analysis?.teamData) return new Map<string, { teamId: number; teamName: string; managerName: string }>();
+    return buildMarketOwnerMap(analysis.teamData, analysis.rivals || [], league.team.id);
+  }, [analysisData, league.team.id]);
+
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priceRange, setPriceRange] = useState<string>('all');
+  const [ownerFilter, setOwnerFilter] = useState<'all' | 'official' | 'team'>('all');
+  const [maxPrice, setMaxPrice] = useState<number>(100_000_000);
   const [search, setSearch] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('salePrice');
-  const [sortDesc, setSortDesc] = useState(true);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [selectedPlayer, setSelectedPlayer] = useState<MarketPlayer | null>(null);
 
   const market = data || [];
@@ -74,54 +77,29 @@ export default function MarketTab({ league }: MarketTabProps) {
       list = list.filter((m) => m.playerMaster.playerStatus === statusFilter);
     }
 
-    if (priceRange !== 'all') {
-      list = list.filter((m) => {
-        if (priceRange === 'under-5m') return m.salePrice < 5_000_000;
-        if (priceRange === '5m-15m') return m.salePrice >= 5_000_000 && m.salePrice <= 15_000_000;
-        if (priceRange === 'over-15m') return m.salePrice > 15_000_000;
-        return true;
-      });
+    if (ownerFilter !== 'all') {
+      list = list.filter((m) => resolveMarketOwner(m, ownerMap).type === ownerFilter);
+    }
+
+    if (maxPrice < 100_000_000) {
+      list = list.filter((m) => m.salePrice <= maxPrice);
     }
 
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(
-        (m) =>
+      list = list.filter((m) => {
+        const owner = resolveMarketOwner(m, ownerMap);
+        return (
           m.playerMaster.nickname.toLowerCase().includes(q) ||
           m.playerMaster.name.toLowerCase().includes(q) ||
-          m.playerMaster.team?.name.toLowerCase().includes(q),
-      );
+          m.playerMaster.team?.name.toLowerCase().includes(q) ||
+          owner.label.toLowerCase().includes(q)
+        );
+      });
     }
 
-    list.sort((a, b) => {
-      let valueA: number;
-      let valueB: number;
-      switch (sortKey) {
-        case 'salePrice':
-          valueA = a.salePrice;
-          valueB = b.salePrice;
-          break;
-        case 'numberOfBids':
-          valueA = a.numberOfBids ?? 0;
-          valueB = b.numberOfBids ?? 0;
-          break;
-        case 'marketValue':
-          valueA = a.playerMaster.marketValue;
-          valueB = b.playerMaster.marketValue;
-          break;
-        case 'diff':
-          valueA = a.playerMaster.marketValue - a.salePrice;
-          valueB = b.playerMaster.marketValue - b.salePrice;
-          break;
-        default:
-          valueA = 0;
-          valueB = 0;
-      }
-      return sortDesc ? valueB - valueA : valueA - valueB;
-    });
-
     return list;
-  }, [market, positionFilter, statusFilter, priceRange, search, sortKey, sortDesc]);
+  }, [market, positionFilter, statusFilter, ownerFilter, maxPrice, search, ownerMap]);
 
   const positions = useMemo(
     () => Array.from(new Set(market.map((m) => getPositionName(m.playerMaster.positionId)))),
@@ -129,6 +107,21 @@ export default function MarketTab({ league }: MarketTabProps) {
   );
   const statuses = useMemo(
     () => Array.from(new Set(market.map((m) => m.playerMaster.playerStatus).filter(Boolean))),
+    [market],
+  );
+
+  const bargainsCount = useMemo(
+    () =>
+      market.filter((m) => {
+        const diff = m.playerMaster.marketValue - m.salePrice;
+        const pct = m.playerMaster.marketValue > 0 ? (diff / m.playerMaster.marketValue) * 100 : 0;
+        return pct > 15;
+      }).length,
+    [market],
+  );
+
+  const avgPrice = useMemo(
+    () => (market.length > 0 ? market.reduce((sum, m) => sum + m.salePrice, 0) / market.length : 0),
     [market],
   );
 
@@ -148,32 +141,232 @@ export default function MarketTab({ league }: MarketTabProps) {
       options: [{ value: 'all', label: 'Todos' }, ...statuses.map((s) => ({ value: s, label: statusText(s) }))],
     },
     {
-      key: 'price',
-      label: 'Precio',
-      value: priceRange,
-      onChange: setPriceRange,
+      key: 'owner',
+      label: 'Origen',
+      value: ownerFilter,
+      onChange: (value: string) => setOwnerFilter(value as 'all' | 'official' | 'team'),
       options: [
-        { value: 'all', label: 'Cualquiera' },
-        { value: 'under-5m', label: '< 5M€' },
-        { value: '5m-15m', label: '5M€ - 15M€' },
-        { value: 'over-15m', label: '> 15M€' },
+        { value: 'all', label: 'Todos' },
+        { value: 'official', label: 'Mercado oficial' },
+        { value: 'team', label: 'En venta por equipo' },
       ],
     },
   ];
+
+  const columns = useMemo<ColumnDef<MarketPlayer>[]>(
+    () => [
+      {
+        id: 'avatar',
+        header: '',
+        cell: ({ row }) => <PlayerAvatar player={row.original.playerMaster} size="md" showPosition />,
+        enableSorting: false,
+        size: 70,
+      },
+      {
+        accessorKey: 'playerMaster.nickname',
+        header: 'Jugador',
+        cell: ({ row }) => {
+          const p = row.original.playerMaster;
+          const signals = externalSignals[p.id];
+          const owner = resolveMarketOwner(row.original, ownerMap);
+          return (
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-foreground">{p.nickname}</div>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                {p.team?.name && <span className="truncate">{p.team.name}</span>}
+                <span className={owner.type === 'team' ? 'text-amber-400' : 'text-emerald-400'}>{owner.label}</span>
+              </div>
+              {signals && signals.length > 0 && <SignalChips signals={signals} max={2} />}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'playerMaster.positionId',
+        header: 'Posición',
+        meta: { headerClassName: 'hidden sm:table-cell', cellClassName: 'hidden sm:table-cell' },
+        cell: ({ row }) => {
+          const p = row.original.playerMaster;
+          const posColor = positionBgClass(p.position || '', p.positionId);
+          return (
+            <Badge variant="secondary" className={`border-0 text-[10px] text-white ${posColor}`}>
+              {positionShortName(p.position, p.positionId)}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'playerMaster.playerStatus',
+        header: 'Estado',
+        meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+        cell: ({ row }) => {
+          const starterScore = starterScoreFromLastSeason(row.original.playerMaster.lastSeasonPoints);
+          return (
+            <div className="flex flex-col gap-1">
+              <PlayerStatusBadge status={row.original.playerMaster.playerStatus} />
+              <Badge
+                variant={
+                  starterScore >= 0.8
+                    ? 'success'
+                    : starterScore >= 0.55
+                    ? 'secondary'
+                    : starterScore >= 0.35
+                    ? 'warning'
+                    : 'danger'
+                }
+                className="w-fit text-[10px]"
+              >
+                {starterLabel(starterScore)}
+              </Badge>
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'salePrice',
+        header: 'Precio',
+        cell: ({ row }) => <Currency value={row.original.salePrice} className="font-semibold" />,
+      },
+      {
+        accessorKey: 'playerMaster.marketValue',
+        header: 'Valor mercado',
+        meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+        cell: ({ row }) => <Currency value={row.original.playerMaster.marketValue} className="text-muted-foreground" />,
+      },
+      {
+        accessorKey: 'numberOfBids',
+        header: 'Pujas',
+        meta: { headerClassName: 'hidden lg:table-cell', cellClassName: 'hidden lg:table-cell' },
+        cell: ({ row }) => (
+          <Badge variant={row.original.numberOfBids > 0 ? 'muted' : 'secondary'} className="font-normal">
+            {row.original.numberOfBids} {row.original.numberOfBids === 1 ? 'puja' : 'pujas'}
+          </Badge>
+        ),
+      },
+      {
+        id: 'diff',
+        header: 'Diferencial',
+        accessorFn: (row) => row.playerMaster.marketValue - row.salePrice,
+        meta: { headerClassName: 'hidden lg:table-cell', cellClassName: 'hidden lg:table-cell' },
+        cell: ({ row }) => {
+          const diff = row.original.playerMaster.marketValue - row.original.salePrice;
+          const diffPercent = row.original.playerMaster.marketValue > 0
+            ? (diff / row.original.playerMaster.marketValue) * 100
+            : 0;
+          const isBargain = diffPercent > 15;
+          const isOverpriced = diffPercent < -15;
+          const canAfford = row.original.salePrice <= ownMoney;
+
+          return (
+            <div className="flex items-center gap-2">
+              {isBargain ? (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                  <TrendingDown className="h-3.5 w-3.5" />
+                  <Percent className="h-3 w-3" />
+                  {Math.abs(diffPercent).toFixed(0)}%
+                </div>
+              ) : isOverpriced ? (
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
+                  <TrendingUp className="h-3.5 w-3.5" />
+                  <Percent className="h-3 w-3" />
+                  {Math.abs(diffPercent).toFixed(0)}%
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">Ajustado</span>
+              )}
+              {canAfford && (
+                <Badge variant="success" className="text-[10px]">
+                  <Gavel className="mr-1 h-3 w-3" /> A tu alcance
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      },
+    ],
+    [externalSignals, ownMoney, ownerMap],
+  );
 
   if (isLoading) return <MarketSkeleton />;
   if (error) return <ErrorState title="Error cargando mercado" description={error.message} onRetry={refetch} />;
 
   return (
-    <div className="space-y-4 pb-20 lg:pb-0">
+    <div className="space-y-6 pb-20 lg:pb-0">
       <SectionHeader
         title="Mercado"
         description={`${market.length} jugadores en venta en ${league.name}`}
+        action={
+          <Toggle
+            pressed={viewMode === 'table'}
+            onPressedChange={(pressed) => setViewMode(pressed ? 'table' : 'cards')}
+            aria-label="Cambiar vista"
+            className="gap-2"
+          >
+            {viewMode === 'table' ? <Table2 className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+            {viewMode === 'table' ? 'Tabla' : 'Tarjetas'}
+          </Toggle>
+        }
       />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Users className="h-4 w-4" />
+            En venta
+          </div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">{market.length}</div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <ShoppingCart className="h-4 w-4" />
+            Precio medio
+          </div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+            <Currency value={Math.round(avgPrice)} />
+          </div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <TrendingDown className="h-4 w-4" />
+            Oportunidades
+          </div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">{bargainsCount}</div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Gavel className="h-4 w-4" />
+            A tu alcance
+          </div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+            {market.filter((m) => m.salePrice <= ownMoney).length}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="flex items-center gap-2 text-xs text-emerald-400">
+            <Users className="h-4 w-4" />
+            Mercado oficial
+          </div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+            {market.filter((m) => resolveMarketOwner(m, ownerMap).type === 'official').length}
+          </div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="flex items-center gap-2 text-xs text-amber-400">
+            <ShoppingCart className="h-4 w-4" />
+            En venta por equipo
+          </div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+            {market.filter((m) => resolveMarketOwner(m, ownerMap).type === 'team').length}
+          </div>
+        </div>
+      </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
@@ -181,6 +374,24 @@ export default function MarketTab({ league }: MarketTabProps) {
               </CardTitle>
               <CardDescription>{filtered.length} coinciden con los filtros</CardDescription>
             </div>
+            <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[280px]">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs text-muted-foreground">Precio máximo</span>
+                <span className="text-xs font-semibold text-foreground">
+                  {maxPrice >= 100_000_000 ? 'Sin límite' : <Currency value={maxPrice} />}
+                </span>
+              </div>
+              <Slider
+                value={[maxPrice]}
+                onValueChange={(v) => setMaxPrice(v[0])}
+                min={1_000_000}
+                max={100_000_000}
+                step={1_000_000}
+                className="w-full"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
             <FilterBar
               search={search}
               onSearchChange={setSearch}
@@ -189,42 +400,34 @@ export default function MarketTab({ league }: MarketTabProps) {
             />
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[70px]" />
-                  <TableHead>Jugador</TableHead>
-                  <TableHead>Posición</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <SortableHead label="Precio" sortKey="salePrice" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                  <SortableHead label="Valor mercado" sortKey="marketValue" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                  <SortableHead label="Pujas" sortKey="numberOfBids" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                  <SortableHead label="Diferencial" sortKey="diff" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((marketPlayer) => (
-                  <MarketRow
-                    key={marketPlayer.id}
-                    marketPlayer={marketPlayer}
-                    signals={externalSignals[marketPlayer.playerMaster.id]}
-                    ownMoney={ownMoney}
+        <CardContent>
+          {viewMode === 'table' ? (
+            <DataTable
+              columns={columns}
+              data={filtered}
+              onRowClick={setSelectedPlayer}
+              emptyMessage="No hay jugadores en el mercado que coincidan con tus filtros."
+              pageSize={10}
+            />
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              compact
+              title="No hay jugadores en el mercado"
+              description="Actualmente no hay jugadores en venta que coincidan con tus filtros."
+            />
+          ) : (
+            <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.03}>
+              {filtered.map((marketPlayer) => (
+                <StaggerItem key={marketPlayer.id}>
+                  <PlayerCard
+                    player={marketPlayer.playerMaster}
                     onClick={() => setSelectedPlayer(marketPlayer)}
+                    highlight={marketPlayer.salePrice <= ownMoney}
+                    owner={resolveMarketOwner(marketPlayer, ownerMap)}
                   />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          {filtered.length === 0 && (
-            <div className="p-8">
-              <EmptyState
-                compact
-                title="No hay jugadores en el mercado"
-                description="Actualmente no hay jugadores en venta que coincidan con tus filtros."
-              />
-            </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
           )}
         </CardContent>
       </Card>
@@ -237,106 +440,6 @@ export default function MarketTab({ league }: MarketTabProps) {
       />
     </div>
   );
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDesc(!sortDesc);
-    } else {
-      setSortKey(key);
-      setSortDesc(true);
-    }
-  }
-}
-
-function MarketRow({
-  marketPlayer,
-  signals,
-  ownMoney,
-  onClick,
-}: {
-  marketPlayer: MarketPlayer;
-  signals?: ExternalSignal[];
-  ownMoney: number;
-  onClick: () => void;
-}) {
-  const p = marketPlayer.playerMaster;
-  const diff = p.marketValue - marketPlayer.salePrice;
-  const diffPercent = p.marketValue > 0 ? (diff / p.marketValue) * 100 : 0;
-  const isBargain = diffPercent > 15;
-  const isOverpriced = diffPercent < -15;
-  const posColor = positionBgClass(p.position || '', p.positionId);
-  const starterScore = starterScoreFromLastSeason(p.lastSeasonPoints);
-  const canAfford = marketPlayer.salePrice <= ownMoney;
-
-  return (
-    <TableRow onClick={onClick} className="cursor-pointer">
-      <TableCell className="py-2 px-2 sm:px-4">
-        <PlayerAvatar player={p} size="md" showPosition />
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <div className="font-semibold text-foreground">{p.nickname}</div>
-        <div className="text-xs text-muted-foreground">{p.team?.name || 'Sin equipo'}</div>
-        {signals && signals.length > 0 && <SignalChips signals={signals} max={2} />}
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <Badge variant="secondary" className={`font-display font-bold tracking-wide text-white ${posColor} border-0`}>
-          {positionShortName(p.position, p.positionId)}
-        </Badge>
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <div className="flex flex-col gap-1">
-          <PlayerStatusBadge status={p.playerStatus} />
-          <Badge
-            variant={
-              starterScore >= 0.8
-                ? 'success'
-                : starterScore >= 0.55
-                ? 'secondary'
-                : starterScore >= 0.35
-                ? 'warning'
-                : 'danger'
-            }
-            className="w-fit text-[10px]"
-          >
-            {starterLabel(starterScore)}
-          </Badge>
-        </div>
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <Currency value={marketPlayer.salePrice} className="font-semibold" />
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <Currency value={p.marketValue} className="text-muted-foreground" />
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <Badge variant={marketPlayer.numberOfBids > 0 ? 'muted' : 'secondary'} className="font-normal">
-          {marketPlayer.numberOfBids} {marketPlayer.numberOfBids === 1 ? 'puja' : 'pujas'}
-        </Badge>
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        {isBargain ? (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-            <TrendingDown className="h-3.5 w-3.5" />
-            <Percent className="h-3 w-3" />
-            {Math.abs(diffPercent).toFixed(0)}%
-          </div>
-        ) : isOverpriced ? (
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
-            <TrendingUp className="h-3.5 w-3.5" />
-            <Percent className="h-3 w-3" />
-            {Math.abs(diffPercent).toFixed(0)}%
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">Ajustado</span>
-        )}
-        {canAfford && (
-          <Badge variant="success" className="ml-2 text-[10px]">
-            <Gavel className="mr-1 h-3 w-3" /> A tu alcance
-          </Badge>
-        )}
-      </TableCell>
-    </TableRow>
-  );
 }
 
 function starterLabel(score: number): string {
@@ -346,41 +449,15 @@ function starterLabel(score: number): string {
   return 'Suplente';
 }
 
-function SortableHead({
-  label,
-  sortKey,
-  activeKey,
-  activeDesc,
-  onSort,
-}: {
-  label: string;
-  sortKey: SortKey;
-  activeKey: SortKey;
-  activeDesc: boolean;
-  onSort: (key: SortKey) => void;
-}) {
-  const active = activeKey === sortKey;
-  return (
-    <TableHead>
-      <Button variant="ghost" size="sm" className="h-8 px-2 -ml-2 gap-1 font-medium" onClick={() => onSort(sortKey)}>
-        {label}
-        <ArrowUpDown
-          className={`h-3.5 w-3.5 ${active ? 'text-foreground' : 'text-muted-foreground'}`}
-          style={active ? { transform: activeDesc ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s' } : undefined}
-        />
-      </Button>
-    </TableHead>
-  );
-}
-
 function MarketSkeleton() {
   return (
     <div className="space-y-4">
-      <Skeleton className="h-8 w-40" />
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-10 w-24" />
+      </div>
       <Skeleton className="h-10 w-full" />
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-20 w-full" />
-      ))}
+      <DataTableSkeleton rows={8} />
     </div>
   );
 }

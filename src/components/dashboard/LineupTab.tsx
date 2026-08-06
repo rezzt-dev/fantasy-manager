@@ -8,6 +8,7 @@ import type { OptimalLineup, TacticalScheme } from '../../types/analysis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import Currency from '../shared/Currency';
@@ -223,95 +224,115 @@ export default function LineupTab({ league }: LineupTabProps) {
         </div>
       )}
 
-      <Card className="overflow-hidden">
-        <div className="relative flex min-h-[420px] flex-col overflow-hidden rounded-t-xl bg-gradient-to-b from-[#14532d] to-[#166534] p-3 sm:min-h-[540px] sm:p-5 lg:min-h-[680px]">
-          <div
-            className="pointer-events-none absolute inset-0 opacity-20"
-            style={{ backgroundImage: 'radial-gradient(#16a34a 1px, transparent 1px)', backgroundSize: '24px 24px' }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
+      <Tabs defaultValue="field" className="space-y-6">
+        <TabsList className="flex w-full items-start gap-1 overflow-x-auto rounded-xl p-1 scrollbar-thin lg:grid lg:grid-cols-3">
+          <TabsTrigger value="field" className="shrink-0 gap-1.5">
+            <Swords className="h-3.5 w-3.5" /> Campo
+          </TabsTrigger>
+          <TabsTrigger value="lineup" className="shrink-0 gap-1.5">
+            <Users className="h-3.5 w-3.5" /> Once titular
+          </TabsTrigger>
+          <TabsTrigger value="bench" className="shrink-0 gap-1.5">
+            <Shield className="h-3.5 w-3.5" /> Banquillo
+          </TabsTrigger>
+        </TabsList>
 
-          <svg
-            className="pointer-events-none absolute inset-0 h-full w-full text-white/30"
-            preserveAspectRatio="none"
-            viewBox="0 0 100 100"
-          >
-            <rect x="2" y="2" width="96" height="96" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <line x1="50" y1="2" x2="50" y2="98" stroke="currentColor" strokeWidth="0.4" />
-            <circle cx="50" cy="50" r="9" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <circle cx="50" cy="50" r="0.8" fill="currentColor" />
-            <rect x="32" y="2" width="36" height="14" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <rect x="40" y="2" width="20" height="6" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <rect x="32" y="84" width="36" height="14" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <rect x="40" y="92" width="20" height="6" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <path d="M 2 6 A 4 4 0 0 0 6 2" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <path d="M 94 2 A 4 4 0 0 0 98 6" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <path d="M 2 94 A 4 4 0 0 1 6 98" fill="none" stroke="currentColor" strokeWidth="0.4" />
-            <path d="M 94 98 A 4 4 0 0 1 98 94" fill="none" stroke="currentColor" strokeWidth="0.4" />
-          </svg>
+        <TabsContent value="field">
+          <Card className="overflow-hidden">
+            <div className="relative flex min-h-[420px] flex-col overflow-hidden rounded-t-xl bg-gradient-to-b from-[#14532d] to-[#166534] p-3 sm:min-h-[540px] sm:p-5 lg:min-h-[680px]">
+              <div
+                className="pointer-events-none absolute inset-0 opacity-20"
+                style={{ backgroundImage: 'radial-gradient(#16a34a 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
 
-          <div className="relative z-10 flex min-h-[420px] flex-1 flex-col justify-between gap-3 overflow-y-auto py-3 sm:min-h-[540px] sm:py-4 lg:min-h-[680px]">
-            {filledRows.map((row) => (
-              <PositionRow key={row.positionId} entries={row.entries} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
-            ))}
-            {formation.coach && formation.coach.length > 0 && (
-              <PositionRow entries={formation.coach} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
-            )}
-          </div>
-        </div>
-      </Card>
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full text-white/30"
+                preserveAspectRatio="none"
+                viewBox="0 0 100 100"
+              >
+                <rect x="2" y="2" width="96" height="96" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <line x1="50" y1="2" x2="50" y2="98" stroke="currentColor" strokeWidth="0.4" />
+                <circle cx="50" cy="50" r="9" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <circle cx="50" cy="50" r="0.8" fill="currentColor" />
+                <rect x="32" y="2" width="36" height="14" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <rect x="40" y="2" width="20" height="6" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <rect x="32" y="84" width="36" height="14" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <rect x="40" y="92" width="20" height="6" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <path d="M 2 6 A 4 4 0 0 0 6 2" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <path d="M 94 2 A 4 4 0 0 0 98 6" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <path d="M 2 94 A 4 4 0 0 1 6 98" fill="none" stroke="currentColor" strokeWidth="0.4" />
+                <path d="M 94 98 A 4 4 0 0 1 98 94" fill="none" stroke="currentColor" strokeWidth="0.4" />
+              </svg>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            Once titular ({totalLineup} oficial{totalLineup === 1 ? '' : 'es'}{isIncomplete ? ` + ${filledEntries.length - totalLineup} sugerido${filledEntries.length - totalLineup === 1 ? '' : 's'}` : ''})
-          </CardTitle>
-          <CardDescription>Listado completo de los jugadores que puntúan esta jornada</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" stagger={0.04}>
-            {filledEntries.map((entry) => (
-              <StaggerItem key={entry.playerTeamId}>
-                <PlayerCard
-                  player={entry.playerMaster}
-                  buyoutClause={entry.buyoutClause}
-                  suggested={entry.suggested}
-                  onClick={() => setSelectedPlayer(teamPlayerById.get(entry.playerMaster.id) || null)}
-                />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </CardContent>
-      </Card>
+              <div className="relative z-10 flex min-h-[420px] flex-1 flex-col justify-between gap-3 overflow-y-auto py-3 sm:min-h-[540px] sm:py-4 lg:min-h-[680px]">
+                {filledRows.map((row) => (
+                  <PositionRow key={row.positionId} entries={row.entries} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
+                ))}
+                {formation.coach && formation.coach.length > 0 && (
+                  <PositionRow entries={formation.coach} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
+                )}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            Banquillo
-          </CardTitle>
-          <CardDescription>Jugadores disponibles para sustituir titulares</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {bench.length === 0 ? (
-            <EmptyState compact title="Banquillo vacío" description="Todos tus jugadores están en el once titular." />
-          ) : (
-            <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" stagger={0.04}>
-              {bench.map((p) => (
-                <StaggerItem key={p.playerTeamId}>
-                  <PlayerCard
-                    player={p.playerMaster}
-                    buyoutClause={p.buyoutClause}
-                    isShielded={p.isShielded}
-                    onClick={() => setSelectedPlayer(p)}
-                  />
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          )}
-        </CardContent>
-      </Card>
+        <TabsContent value="lineup">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                Once titular ({totalLineup} oficial{totalLineup === 1 ? '' : 'es'}{isIncomplete ? ` + ${filledEntries.length - totalLineup} sugerido${filledEntries.length - totalLineup === 1 ? '' : 's'}` : ''})
+              </CardTitle>
+              <CardDescription>Listado completo de los jugadores que puntúan esta jornada</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.04}>
+                {filledEntries.map((entry) => (
+                  <StaggerItem key={entry.playerTeamId}>
+                    <PlayerCard
+                      player={entry.playerMaster}
+                      buyoutClause={entry.buyoutClause}
+                      suggested={entry.suggested}
+                      onClick={() => setSelectedPlayer(teamPlayerById.get(entry.playerMaster.id) || null)}
+                    />
+                  </StaggerItem>
+                ))}
+              </StaggerContainer>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="bench">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                Banquillo
+              </CardTitle>
+              <CardDescription>Jugadores disponibles para sustituir titulares</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {bench.length === 0 ? (
+                <EmptyState compact title="Banquillo vacío" description="Todos tus jugadores están en el once titular." />
+              ) : (
+                <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.04}>
+                  {bench.map((p) => (
+                    <StaggerItem key={p.playerTeamId}>
+                      <PlayerCard
+                        player={p.playerMaster}
+                        buyoutClause={p.buyoutClause}
+                        isShielded={p.isShielded}
+                        onClick={() => setSelectedPlayer(p)}
+                      />
+                    </StaggerItem>
+                  ))}
+                </StaggerContainer>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <PlayerDetailDialog
         player={selectedPlayer?.playerMaster || null}
@@ -375,12 +396,6 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
           </span>
         )}
       </div>
-      {entry.buyoutClause > 0 && (
-        <div className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-muted-foreground">
-          <Shield className="h-3 w-3" />
-          <Currency value={entry.buyoutClause} />
-        </div>
-      )}
     </motion.button>
   );
 }

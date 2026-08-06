@@ -103,6 +103,7 @@ export function buildCandidates(
       expectedPoints: 0,
       rawExpectedPoints: 0,
       confidence: 0,
+      pStarter: null,
       sellerManagerName,
     });
   };
@@ -149,6 +150,7 @@ export function buildCandidates(
     c.rawExpectedPoints = prediction.xp;
     c.confidence = estimateConfidence(c.player, context);
     c.expectedPoints = prediction.riskAdjustedXp;
+    c.pStarter = prediction.pStarter;
   }
 
   // Referencia sin fichajes: mejor once solo con la plantilla. Se calcula
@@ -410,14 +412,22 @@ function combos(candidates: SchemeCandidate[], k: number): Combo[] {
   return out;
 }
 
+/** Media de probabilidad de titularidad de un combo (ignora nulls). */
+function comboPStarter(combo: Combo): number {
+  const values = combo.members.map((m) => m.pStarter).filter((v): v is number => v !== null);
+  return values.length > 0 ? values.reduce((sum, v) => sum + v, 0) / values.length : 0;
+}
+
 /**
  * Frente de Pareto (coste ↑, puntos ↑): descarta combos dominados (más
  * caros y con menos puntos que otro) y los que superan el presupuesto.
+ * Como desempate se prefiere el combo con mayor titularidad media: evita
+ * recomendar suplentes cuando hay opciones de puntos similares.
  */
 function pareto(list: Combo[], budget: number): Combo[] {
   const sorted = list
     .filter((c) => c.cost <= budget)
-    .sort((a, b) => a.cost - b.cost || b.points - a.points);
+    .sort((a, b) => a.cost - b.cost || b.points - a.points || comboPStarter(b) - comboPStarter(a));
 
   const front: Combo[] = [];
   let bestPoints = -Infinity;

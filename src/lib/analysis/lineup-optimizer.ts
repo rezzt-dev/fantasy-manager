@@ -9,7 +9,7 @@ const COACH_POSITION_ID = 5;
 
 interface OptimizerInput {
   squad: TeamPlayer[];
-  currentLineup: TeamLineup;
+  currentLineup?: TeamLineup;
   calendar: Match[];
   /** Formaciones libres de la API: "defensas,centrocampistas,delanteros". */
   formations: string[];
@@ -72,11 +72,14 @@ export function computeOptimalLineup(input: OptimizerInput): OptimalLineup | und
     .slice(0, BENCH_SIZE);
 
   // Comparación con la alineación actual, con el mismo criterio de capitán.
+  const currentLineupOrEmpty = currentLineup ?? {
+    formation: { goalkeeper: [], defender: [], midfielder: [], attacker: [] },
+  };
   const currentEntries = [
-    ...(currentLineup.formation.goalkeeper || []),
-    ...(currentLineup.formation.defender || []),
-    ...(currentLineup.formation.midfielder || []),
-    ...(currentLineup.formation.attacker || []),
+    ...(currentLineupOrEmpty.formation.goalkeeper || []),
+    ...(currentLineupOrEmpty.formation.defender || []),
+    ...(currentLineupOrEmpty.formation.midfielder || []),
+    ...(currentLineupOrEmpty.formation.attacker || []),
   ];
   const currentIds = new Set(currentEntries.map((e) => e.playerMaster.id));
   const currentPoints = currentEntries.map((e) => selectionPoints(e.playerMaster, calendar, context));
@@ -84,20 +87,23 @@ export function computeOptimalLineup(input: OptimizerInput): OptimalLineup | und
   const currentExpected = currentPoints.reduce((sum, v) => sum + v, 0) + captainBonusOf(currentPoints);
 
   // Cambios: titulares actuales que salen vs nuevos titulares (mismo número,
-  // emparejados por posición lo mejor posible).
-  const outgoing = currentEntries
-    .map((e) => e.playerMaster)
-    .filter((p) => !starterIds.has(p.id) && p.positionId !== COACH_POSITION_ID)
-    .sort((a, b) => a.positionId - b.positionId);
-  const incoming = best.starters
-    .map((e) => e.player)
-    .filter((p) => !currentIds.has(p.id))
-    .sort((a, b) => a.positionId - b.positionId);
-
-  const changes: OptimalLineup['changes'] = outgoing.map((out, i) => ({
-    out,
-    in: incoming[i] || out,
-  }));
+  // emparejados por posición lo mejor posible). Si no hay alineación actual
+  // (inferencia de rival) no hay cambios que mostrar.
+  const hasCurrentLineup = currentEntries.length > 0;
+  const changes: OptimalLineup['changes'] = hasCurrentLineup
+    ? currentEntries
+        .map((e) => e.playerMaster)
+        .filter((p) => !starterIds.has(p.id) && p.positionId !== COACH_POSITION_ID)
+        .sort((a, b) => a.positionId - b.positionId)
+        .map((out, i) => ({
+          out,
+          in:
+            best.starters
+              .map((e) => e.player)
+              .filter((p) => !currentIds.has(p.id))
+              .sort((a, b) => a.positionId - b.positionId)[i] || out,
+        }))
+    : [];
 
   // Titulares ordenados por posición para presentarlos.
   const starters = [...best.starters].sort(

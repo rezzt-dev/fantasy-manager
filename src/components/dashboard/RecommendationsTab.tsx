@@ -7,7 +7,7 @@ import type { FantasyLeague, Recommendation } from '../../types/fantasy';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { StaggerContainer, StaggerItem } from '../ui/motion';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
@@ -84,8 +84,11 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
 
   const buyRecs = grouped.buy || [];
   const sellRecs = grouped.sell || [];
-  const clauseRecs = (grouped.increase_clause || []).concat(grouped.protect_clause || []);
+  const clauseRecs = (grouped.increase_clause || []).concat(grouped.protect_clause || [], grouped.decrease_clause || []);
+  const lineupRecs = grouped.change_lineup || [];
   const captainRec = (grouped.captain || [])[0];
+  const buyoutRecs = grouped.buyout || [];
+  const watchRecs = grouped.watch || [];
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
@@ -97,110 +100,156 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
       {captainRec && <CaptainCard recommendation={captainRec} />}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <CountCard icon={<Banknote className="h-4 w-4" />} label="Compras" count={buyRecs.length} color="emerald" />
-        <CountCard icon={<AlertTriangle className="h-4 w-4" />} label="Ventas" count={sellRecs.length} color="rose" />
-        <CountCard icon={<ArrowRightLeft className="h-4 w-4" />} label="Alineación" count={grouped.change_lineup?.length || 0} color="indigo" />
-        <CountCard icon={<ShieldCheck className="h-4 w-4" />} label="Cláusulas" count={clauseRecs.length + (grouped.decrease_clause?.length || 0)} color="amber" />
+        <CountCard icon={<Banknote className="h-4 w-4" />} label="Compras" count={buyRecs.length} color="emerald" onClick={() => setTypeFilter('buy')} active={typeFilter === 'buy'} />
+        <CountCard icon={<AlertTriangle className="h-4 w-4" />} label="Ventas" count={sellRecs.length} color="rose" onClick={() => setTypeFilter('sell')} active={typeFilter === 'sell'} />
+        <CountCard icon={<ArrowRightLeft className="h-4 w-4" />} label="Alineación" count={lineupRecs.length} color="indigo" onClick={() => setTypeFilter('change_lineup')} active={typeFilter === 'change_lineup'} />
+        <CountCard icon={<ShieldCheck className="h-4 w-4" />} label="Cláusulas" count={clauseRecs.length} color="amber" onClick={() => setTypeFilter('increase_clause')} active={['increase_clause', 'protect_clause', 'decrease_clause'].includes(typeFilter)} />
       </div>
 
-      {bestMoves.length > 0 && (
-        <Card className="border-foreground/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-foreground" />
-              Mejores movimientos de la jornada
-            </CardTitle>
-            <CardDescription>
-              Las acciones con más impacto considerando tu plantilla, el mercado y las plantillas de tus rivales.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ol className="space-y-2">
-              {bestMoves.map((move, idx) => (
-                <li
-                  key={move.id}
-                  className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-surface-2/50 p-3"
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] font-display text-xs font-bold text-foreground">
-                    {idx + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <SourceBadge source={move.source} />
-                      <span className="text-xs text-muted-foreground">{typeMeta(move.type).badge}</span>
-                      {typeof move.impactScore === 'number' && (
-                        <span className="ml-auto text-xs font-semibold text-foreground">+{move.impactScore} pts</span>
-                      )}
-                    </div>
-                    <div className="text-sm font-semibold text-foreground">{move.player.nickname}</div>
-                    <p className="text-xs text-muted-foreground">{move.reason}</p>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="flex w-full items-start gap-1 overflow-x-auto rounded-xl p-1 scrollbar-thin lg:grid lg:grid-cols-5">
+          <TabsTrigger value="overview" className="shrink-0 gap-1.5">
+            <Sparkles className="h-3.5 w-3.5" /> Resumen
+          </TabsTrigger>
+          <TabsTrigger value="buy" className="shrink-0 gap-1.5">
+            <Banknote className="h-3.5 w-3.5" /> Comprar
+          </TabsTrigger>
+          <TabsTrigger value="sell" className="shrink-0 gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5" /> Vender
+          </TabsTrigger>
+          <TabsTrigger value="clauses" className="shrink-0 gap-1.5">
+            <ShieldCheck className="h-3.5 w-3.5" /> Cláusulas
+          </TabsTrigger>
+          <TabsTrigger value="plan" className="shrink-0 gap-1.5">
+            <CalendarIcon /> Plan
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {bestMoves.length > 0 && (
+            <Card className="border-foreground/10">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Sparkles className="h-4 w-4 text-foreground" />
+                  Mejores movimientos de la jornada
+                </CardTitle>
+                <CardDescription>
+                  Las acciones con más impacto considerando tu plantilla, el mercado y las plantillas de tus rivales.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ol className="space-y-2">
+                  {bestMoves.map((move, idx) => (
+                    <li
+                      key={move.id}
+                      className="flex items-start gap-3 rounded-lg border border-white/[0.06] bg-surface-2/50 p-3"
+                    >
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] font-display text-xs font-bold text-foreground">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <SourceBadge source={move.source} />
+                          <span className="text-xs text-muted-foreground">{typeMeta(move.type).badge}</span>
+                          {typeof move.impactScore === 'number' && (
+                            <span className="ml-auto text-xs font-semibold text-foreground">+{move.impactScore} pts</span>
+                          )}
+                        </div>
+                        <div className="text-sm font-semibold text-foreground">{move.player.nickname}</div>
+                        <p className="text-xs text-muted-foreground">{move.reason}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Banknote className="h-4 w-4 text-muted-foreground" />
+                      Oportunidades de compra
+                    </CardTitle>
+                    <CardDescription>{buyRecs.length} jugadores recomendados</CardDescription>
                   </div>
-                </li>
-              ))}
-            </ol>
-          </CardContent>
-        </Card>
-      )}
+                  {buyRecs.length > 0 && <Badge variant="muted">{buyRecs.length}</Badge>}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {buyRecs.length === 0 ? (
+                  <EmptyState compact title="Sin recomendaciones de compra" description="No hay oportunidades claras en este momento." />
+                ) : (
+                  <StaggerContainer className="space-y-3" stagger={0.04}>
+                    {buyRecs.slice(0, 5).map((rec) => (
+                      <StaggerItem key={rec.id}>
+                        <CompactRecommendationCard recommendation={rec} />
+                      </StaggerItem>
+                    ))}
+                  </StaggerContainer>
+                )}
+                {buyRecs.length > 5 && (
+                  <p className="mt-3 text-center text-xs text-muted-foreground">
+                    Y {buyRecs.length - 5} más en la pestaña «Comprar».
+                  </p>
+                )}
+              </CardContent>
+            </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Banknote className="h-4 w-4 text-muted-foreground" />
-                  Oportunidades de compra
-                </CardTitle>
-                <CardDescription>{buyRecs.length} jugadores recomendados</CardDescription>
-              </div>
-              {buyRecs.length > 0 && <Badge variant="muted">{buyRecs.length}</Badge>}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {buyRecs.length === 0 ? (
-              <EmptyState compact title="Sin recomendaciones de compra" description="No hay oportunidades claras en este momento." />
-            ) : (
-              <StaggerContainer className="space-y-3" stagger={0.04}>
-                {buyRecs.slice(0, 5).map((rec) => (
-                  <StaggerItem key={rec.id}>
-                    <CompactRecommendationCard recommendation={rec} />
-                  </StaggerItem>
-                ))}
-              </StaggerContainer>
-            )}
-          </CardContent>
-        </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                      Jugadores a vender
+                    </CardTitle>
+                    <CardDescription>{sellRecs.length} jugadores en riesgo</CardDescription>
+                  </div>
+                  {sellRecs.length > 0 && <Badge variant="muted">{sellRecs.length}</Badge>}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {sellRecs.length === 0 ? (
+                  <EmptyState compact title="Sin recomendaciones de venta" description="Tu plantilla no tiene señales de salida urgentes." />
+                ) : (
+                  <StaggerContainer className="space-y-3" stagger={0.04}>
+                    {sellRecs.slice(0, 5).map((rec) => (
+                      <StaggerItem key={rec.id}>
+                        <CompactRecommendationCard recommendation={rec} />
+                      </StaggerItem>
+                    ))}
+                  </StaggerContainer>
+                )}
+                {sellRecs.length > 5 && (
+                  <p className="mt-3 text-center text-xs text-muted-foreground">
+                    Y {sellRecs.length - 5} más en la pestaña «Vender».
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                  Jugadores a vender
-                </CardTitle>
-                <CardDescription>{sellRecs.length} jugadores en riesgo</CardDescription>
-              </div>
-              {sellRecs.length > 0 && <Badge variant="muted">{sellRecs.length}</Badge>}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {sellRecs.length === 0 ? (
-              <EmptyState compact title="Sin recomendaciones de venta" description="Tu plantilla no tiene señales de salida urgentes." />
-            ) : (
-              <StaggerContainer className="space-y-3" stagger={0.04}>
-                {sellRecs.slice(0, 5).map((rec) => (
-                  <StaggerItem key={rec.id}>
-                    <CompactRecommendationCard recommendation={rec} />
-                  </StaggerItem>
-                ))}
-              </StaggerContainer>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+        <TabsContent value="buy" className="space-y-6">
+          <RecommendationList recommendations={buyRecs} emptyTitle="No hay recomendaciones de compra" emptyDescription="No hay oportunidades claras en este momento." />
+        </TabsContent>
 
-      <MultiWeekPlan plan={multiWeekPlan} />
+        <TabsContent value="sell" className="space-y-6">
+          <RecommendationList recommendations={sellRecs} emptyTitle="No hay recomendaciones de venta" emptyDescription="Tu plantilla no tiene señales de salida urgentes." />
+        </TabsContent>
+
+        <TabsContent value="clauses" className="space-y-6">
+          <RecommendationList recommendations={clauseRecs.concat(buyoutRecs)} emptyTitle="No hay recomendaciones de cláusulas" emptyDescription="No hay acciones de cláusula sugeridas." />
+        </TabsContent>
+
+        <TabsContent value="plan" className="space-y-6">
+          <MultiWeekPlan plan={multiWeekPlan} />
+        </TabsContent>
+      </Tabs>
 
       <Card>
         <CardHeader className="flex flex-col gap-4 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -239,7 +288,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
           {recommendations.length === 0 ? (
             <EmptyState title="Todo en orden" description="No hay recomendaciones para esta jornada." icon={<Trophy className="h-6 w-6" />} />
           ) : (
-            <StaggerContainer className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" stagger={0.04}>
+            <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3" stagger={0.04}>
               {filtered.map((rec) => (
                 <StaggerItem key={rec.id}>
                   <RecommendationCard recommendation={rec} />
@@ -255,6 +304,32 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </svg>
+  );
+}
+
+function RecommendationList({ recommendations, emptyTitle, emptyDescription }: { recommendations: Recommendation[]; emptyTitle: string; emptyDescription: string }) {
+  if (recommendations.length === 0) {
+    return <EmptyState compact title={emptyTitle} description={emptyDescription} />;
+  }
+  return (
+    <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-3" stagger={0.04}>
+      {recommendations.map((rec) => (
+        <StaggerItem key={rec.id}>
+          <RecommendationCard recommendation={rec} />
+        </StaggerItem>
+      ))}
+    </StaggerContainer>
   );
 }
 
@@ -409,11 +484,15 @@ function CountCard({
   label,
   count,
   color,
+  onClick,
+  active,
 }: {
   icon: React.ReactNode;
   label: string;
   count: number;
   color: 'emerald' | 'rose' | 'indigo' | 'amber';
+  onClick?: () => void;
+  active?: boolean;
 }) {
   const colorClasses = {
     emerald: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
@@ -423,7 +502,12 @@ function CountCard({
   }[color];
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-4 rounded-xl border p-4 text-left transition-colors ${
+        active ? 'border-foreground/30 bg-surface-3' : 'border-white/[0.08] bg-surface-2 hover:bg-surface-3'
+      }`}
+    >
       <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${colorClasses}`}>
         {icon}
       </div>
@@ -431,7 +515,7 @@ function CountCard({
         <div className="text-2xl font-bold font-display text-foreground">{count}</div>
         <div className="text-xs font-medium text-muted-foreground">{label}</div>
       </div>
-    </div>
+    </button>
   );
 }
 

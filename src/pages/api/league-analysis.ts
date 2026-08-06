@@ -11,6 +11,7 @@ import { computeOptimalLineup } from '../../lib/analysis/lineup-optimizer';
 import { fetchAvailableFormations } from '../../lib/fantasy/formations';
 import { fetchLeagueActivity } from '../../lib/fantasy/activity';
 import { fetchTeamsMaster } from '../../lib/fantasy/teams';
+import { enrichMarketPlayers } from '../../lib/fantasy/market-enrich';
 import { fetchTeamElos } from '../../lib/engine/sources/clubelo';
 import { fetchProbableLineups } from '../../lib/engine/sources/jornadaperfecta';
 import { buildTeamMatcher } from '../../lib/engine/team-names';
@@ -45,7 +46,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       });
     }
 
-    const [leagues, teamData, lineup, money, market, standing, week, allPlayers] = await Promise.all([
+    const [leagues, teamData, lineup, money, rawMarket, standing, week, allPlayers] = await Promise.all([
       fetchOfficialAPI<FantasyLeague[]>(`${CMP}/leagues`, token),
       fetchOfficialAPI<TeamData>(`${CMP}/leagues/${leagueId}/teams/${teamId}`, token),
       fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token),
@@ -55,6 +56,10 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       fetchOfficialAPI<WeekInfo>(`${CMP}/week/current`, token),
       fetchOfficialAPI<PlayerMaster[]>(`${CMP}/players`, token),
     ]);
+
+    // Repara jugadores de mercado que vienen sin equipo; los cruzamos con el
+    // catálogo global para mostrar siempre el club al que pertenecen.
+    const market = enrichMarketPlayers(rawMarket, allPlayers);
 
     const currentWeek = week?.number ?? week?.weekNumber ?? 1;
     const calendar = await fetchOfficialAPI<Match[]>(`${CMP}/calendar`, token, { weekNumber: String(currentWeek) });

@@ -18,6 +18,7 @@ import type {
   LeagueAggregates,
 } from '../../types/analysis';
 import { recommendCaptain } from '../recommendations/captain';
+import { enrichMarketSellers } from '../fantasy/market-sellers';
 
 const POSITION_ORDER: Record<number, string> = {
   1: 'Portero',
@@ -124,12 +125,16 @@ export async function buildLeagueAnalysis(
   const rivalNeeds = computeRivalNeeds(rivals);
   const aggregates = computeAggregates(rivals, market, teamData, money);
 
+  // Enriquecer los jugadores de mercado con el vendedor cuando la API no lo
+  // incluye: se cruza con las plantillas propia y rivales.
+  const enrichedMarket = enrichMarketSellers(market, teamData, rivals, ownTeamId);
+
   return {
     league,
     teamData,
     lineup,
     money,
-    market,
+    market: enrichedMarket,
     standing,
     week,
     calendar,

@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { fetchTextWithCache } from './http-cache';
 import type { ConfirmedLineup } from './types';
+import type { MatchLineup, MatchLineupPlayer, MatchLineupSide } from '../../../types/fantasy';
 
 /**
  * Adaptador Sofascore API no oficial (§3.3, riesgo medio): alineaciones
@@ -38,11 +39,45 @@ interface SofaSeason {
   id: number;
 }
 
-interface SofaEvent {
+export interface SofaTeam {
   id: number;
-  homeTeam: { name: string };
-  awayTeam: { name: string };
+  name: string;
+  slug: string;
+  shortName: string;
+}
+
+export interface SofaScore {
+  current?: number;
+  display?: number;
+  period1?: number;
+  period2?: number;
+  normaltime?: number;
+}
+
+export interface SofaTime {
+  currentMinute?: number;
+  currentPeriodStartTimestamp?: number;
+  injuryTime1?: number;
+  injuryTime2?: number;
+  period?: 'firstHalf' | 'secondHalf' | 'overtime' | string;
+}
+
+export interface SofaStatus {
+  code: number;
+  description?: string;
+  type?: 'notstarted' | 'inprogress' | 'finished' | 'halftime' | 'postponed' | 'canceled' | string;
+}
+
+export interface SofaEvent {
+  id: number;
+  homeTeam: SofaTeam;
+  awayTeam: SofaTeam;
   startTimestamp: number;
+  status?: SofaStatus;
+  homeScore?: SofaScore;
+  awayScore?: SofaScore;
+  time?: SofaTime;
+  roundInfo?: { round?: number };
 }
 
 async function fetchJson(key: string, path: string, ttlMs: number): Promise<unknown | null> {
@@ -57,7 +92,7 @@ async function fetchJson(key: string, path: string, ttlMs: number): Promise<unkn
 }
 
 /** Id de la temporada actual de LaLiga (26/27) en Sofascore. */
-async function currentSeasonId(): Promise<number | null> {
+export async function currentSeasonId(): Promise<number | null> {
   const data = (await fetchJson('sofa-seasons', `/unique-tournament/${LALIGA_TOURNAMENT_ID}/seasons`, SEASONS_TTL_MS)) as
     | { seasons?: SofaSeason[] }
     | null;
@@ -105,4 +140,174 @@ export async function fetchConfirmedLineups(): Promise<ConfirmedLineup[]> {
   }
 
   return result;
+}
+
+const EVENT_DETAILS_TTL_MS = 60_000; // 1 minuto para datos en vivo
+const EVENT_INCIDENTS_TTL_MS = 60_000;
+
+export interface SofaIncidentPlayer {
+  name: string;
+  shortName: string;
+}
+
+export interface SofaIncident {
+  incidentType: 'period' | 'goal' | 'card' | 'substitution' | 'injuryTime' | 'var' | string;
+  incidentClass?: 'yellow' | 'red' | 'yellowRed' | 'regular' | string;
+  time?: number;
+  isHome?: boolean;
+  player?: SofaIncidentPlayer;
+  playerIn?: SofaIncidentPlayer;
+  playerOut?: SofaIncidentPlayer;
+  homeScore?: number;
+  awayScore?: number;
+  reason?: string;
+}
+
+export interface SofaIncidentResponse {
+  incidents: SofaIncident[];
+}
+
+export async function fetchEventDetails(eventId: number): Promise<SofaEvent | null> {
+  const data = (await fetchJson(`sofa-event-${eventId}`, `/event/${eventId}`, EVENT_DETAILS_TTL_MS)) as
+    | { event?: SofaEvent }
+    | null;
+  return data?.event ?? null;
+}
+
+export async function fetchEventIncidents(eventId: number): Promise<SofaIncidentResponse | null> {
+  return (await fetchJson(`sofa-incidents-${eventId}`, `/event/${eventId}/incidents`, EVENT_INCIDENTS_TTL_MS)) as
+    | SofaIncidentResponse
+    | null;
+}
+
+interface SofaLineupTeam {
+  name?: string;
+  slug?: string;
+  shortName?: string;
+  id?: number;
+}
+
+interface SofaLineupManager {
+  name?: string;
+  slug?: string;
+}
+
+interface SofaLineupPlayer {
+  id?: number;
+  name?: string;
+  shortName?: string;
+  slug?: string;
+  position?: string;
+  jerseyNumber?: string;
+}
+
+interface SofaLineupEntry {
+  player?: SofaLineupPlayer;
+  substitute?: boolean;
+}
+
+interface SofaLineupSide {
+  team?: SofaLineupTeam;
+  formation?: string;
+  manager?: SofaLineupManager;
+  players?: SofaLineupEntry[];
+}
+
+interface SofaLineupResponse {
+  confirmed?: boolean;
+  home?: SofaLineupSide;
+  away?: SofaLineupSide;
+}
+
+function mapLineupPlayer(entry: SofaLineupEntry): MatchLineupPlayer | null {
+  const player = entry.player;
+  if (!player?.name) return null;
+  return {
+    id: player.id ? String(player.id) : undefined,
+    name: player.name,
+    shortName: player.shortName,
+    position: player.position,
+    number: player.jerseyNumber,
+    isStarter: entry.substitute !== true,
+  };
+}
+
+function mapLineupSide(side?: SofaLineupSide, fallbackName?: string): MatchLineupSide | null {
+  if (!side) return null;
+  const players = (side.players ?? []).map(mapLineupPlayer).filter((p): p is MatchLineupPlayer => p !== null);
+  const starters = players.filter((p) => p.isStarter);
+  const bench = players.filter((p) => !p.isStarter);
+  if (starters.length === 0) return null;
+  return {
+    teamName: side.team?.name ?? side.team?.shortName ?? fallbackName ?? 'Equipo',
+    formation: side.formation,
+    coach: side.manager?.name,
+    starters,
+    bench,
+  };
+}
+
+/**
+ * Alineaciones confirmadas de un partido específico de SofaScore. Devuelve
+ * titulares, suplentes, formación y entrenador cuando están disponibles.
+ * TTL corto porque solo son fiables cerca del partido; el endpoint puede
+ * devolver 404 una vez finalizado el encuentro.
+ */
+export async function fetchEventLineups(eventId: number): Promise<MatchLineup | null> {
+  const data = (await fetchJson(`sofa-lineups-${eventId}`, `/event/${eventId}/lineups`, EVENT_DETAILS_TTL_MS)) as
+    | SofaLineupResponse
+    | null;
+  if (!data?.confirmed) return null;
+
+  const home = mapLineupSide(data.home, 'Local');
+  const away = mapLineupSide(data.away, 'Visitante');
+  if (!home || !away) return null;
+
+  return { home, away };
+}
+
+export function teamLogoUrl(teamId: number): string {
+  return `${BASE_URL}/team/${teamId}/image`;
+}
+
+interface SofaEventsPage {
+  events?: SofaEvent[];
+  hasNextPage?: boolean;
+}
+
+/**
+ * Descarga eventos de LaLiga en una ventana temporal. Combina `/events/next/0`
+ * y `/events/last/0` porque cubren la jornada actual y evitan tener que
+ * conocer el número de ronda exacto. Filtra por timestamp para devolver solo
+ * los partidos dentro del rango solicitado.
+ */
+export async function fetchLaLigaEventsWindow(
+  fromTimestamp: number,
+  toTimestamp: number,
+): Promise<{ events: SofaEvent[]; seasonId: number; origin: 'network' | 'cache' | 'stale' } | null> {
+  const seasonId = await currentSeasonId();
+  if (seasonId === null) return null;
+
+  const [nextPage, lastPage] = await Promise.all([
+    fetchJson(`sofa-events-next-${seasonId}`, `/unique-tournament/${LALIGA_TOURNAMENT_ID}/season/${seasonId}/events/next/0`, EVENTS_TTL_MS) as Promise<SofaEventsPage | null>,
+    fetchJson(`sofa-events-last-${seasonId}`, `/unique-tournament/${LALIGA_TOURNAMENT_ID}/season/${seasonId}/events/last/0`, EVENTS_TTL_MS) as Promise<SofaEventsPage | null>,
+  ]);
+
+  const all: SofaEvent[] = [];
+  for (const page of [nextPage, lastPage]) {
+    if (page?.events) all.push(...page.events);
+  }
+
+  // Determinamos el origen más "viejo" de las dos peticiones para dataQuality.
+  // fetchJson no expone el origin individual, así que usamos 'network' como
+  // aproximación conservadora (el peor caso sería cache/stale, pero es poco
+  // relevante para este consumidor visual).
+  const origin: 'network' | 'cache' | 'stale' = 'network';
+
+  const events = all.filter((e) => e.startTimestamp >= fromTimestamp && e.startTimestamp <= toTimestamp);
+  // Evitamos duplicados si un partido aparece en ambas páginas.
+  const byId = new Map<number, SofaEvent>();
+  for (const e of events) byId.set(e.id, e);
+
+  return { events: [...byId.values()], seasonId, origin };
 }

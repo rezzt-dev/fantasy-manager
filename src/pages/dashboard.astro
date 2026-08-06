@@ -11,10 +11,18 @@ if (!tokens?.access_token) {
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Dashboard | Fantasy Manager</title>
+		<script is:inline>
+			// Aplica el modo compacto antes de hidratar React para evitar parpadeo (FOUC).
+			try {
+				if (localStorage.getItem('fantasy-density') === 'dense') {
+					document.documentElement.classList.add('density-dense');
+				}
+			} catch (e) { /* localStorage no disponible */ }
+		</script>
 	</head>
 	<body class="min-h-screen bg-background text-foreground antialiased">
 		<noscript>

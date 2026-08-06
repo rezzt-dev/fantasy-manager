@@ -161,6 +161,8 @@ export interface SchemeCandidate {
   rawExpectedPoints: number;
   /** Solidez del dato (0-1) según fuentes disponibles para el jugador. */
   confidence: number;
+  /** Probabilidad de ser titular en la jornada (0-1); null si no se ha computado. */
+  pStarter: number | null;
   sellerManagerName?: string;
 }
 
@@ -198,4 +200,63 @@ export interface TacticalScheme {
   /** Coherencia con la cantidad de datos disponibles al estimar. */
   dataQuality: { level: 'high' | 'medium' | 'low'; notes: string[] };
   candidatesConsidered: number;
+}
+
+// ---------------------------------------------------------------------------
+// Predicción de puntuación por equipo de liga (sección Puntuación)
+// ---------------------------------------------------------------------------
+
+export interface PredictedPlayerScore {
+  player: PlayerMaster;
+  xp: number;
+  expectedPoints: number;
+  riskAdjustedXp: number;
+  expectedMinutes: number | null;
+  pStarter: number | null;
+  source: string;
+  isCaptain: boolean;
+  isCoach: boolean;
+}
+
+export interface PredictedLineup {
+  formation: string;
+  starters: PredictedPlayerScore[];
+  bench: PredictedPlayerScore[];
+  captain?: PredictedPlayerScore;
+  coach?: PredictedPlayerScore;
+  fieldExpected: number;
+  captainBonus: number;
+  coachPoints: number;
+  benchExpected: number;
+  totalExpected: number;
+  dataQuality: { level: 'high' | 'medium' | 'low'; notes: string[] };
+  degraded: boolean;
+  inferred: boolean;
+}
+
+export interface CoachPrediction {
+  teamId: number;
+  expectedPoints: number;
+  source: 'elo-result' | 'last-season' | 'fallback';
+  notes: string[];
+}
+
+export interface TeamScorePrediction {
+  teamId: number;
+  managerId: number;
+  managerName: string;
+  teamValue: number;
+  predictedLineup: PredictedLineup;
+  coachPrediction: CoachPrediction;
+}
+
+export interface ScorePredictionsResponse {
+  week: number;
+  leagueId: string;
+  generatedAt: string;
+  coachEnabled: boolean;
+  captainEnabled: boolean;
+  benchEnabled: boolean;
+  predictions: TeamScorePrediction[];
+  notes: string[];
 }

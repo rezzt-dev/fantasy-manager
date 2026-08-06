@@ -53,19 +53,19 @@ export default function PlayerRow({
         className,
       )}
     >
-      <td className="px-2 py-2 sm:px-4">
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5">
         <PlayerAvatar player={player} size="md" showPosition />
       </td>
-      <td className="px-2 py-2 sm:px-4">
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5">
         <div className="font-semibold text-foreground">{player.nickname}</div>
-        <div className="text-xs text-muted-foreground">{player.team?.name || 'Sin equipo'}</div>
+        {player.team?.name && <div className="text-xs text-muted-foreground">{player.team.name}</div>}
       </td>
-      <td className="px-2 py-2 sm:px-4">
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5">
         <Badge variant="secondary" className={`border-0 text-[10px] text-white ${posColor}`}>
           {positionShortName(player.position, player.positionId)}
         </Badge>
       </td>
-      <td className="px-2 py-2 sm:px-4">
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5">
         <div className="flex flex-col gap-1">
           <PlayerStatusBadge status={player.playerStatus} />
           {starterLabel && starterVariant && (
@@ -75,18 +75,18 @@ export default function PlayerRow({
           )}
         </div>
       </td>
-      <td className="px-2 py-2 sm:px-4 font-display text-sm font-semibold text-foreground">{displayPoints}</td>
-      <td className="px-2 py-2 sm:px-4">
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5 font-display text-sm font-semibold text-foreground">{displayPoints}</td>
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5">
         <Currency value={player.marketValue} className="text-sm text-muted-foreground" />
       </td>
-      <td className="px-2 py-2 sm:px-4">
+      <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5">
         <div className="flex items-center gap-2">
           <Currency value={buyoutClause ?? 0} className="text-sm" />
           {isShielded && <Shield className="h-3.5 w-3.5 text-muted-foreground" />}
         </div>
       </td>
       {onClick && (
-        <td className="px-2 py-2 sm:px-4 text-right">
+        <td className="px-2 py-2 sm:px-4 [.density-dense_&]:py-1.5 text-right">
           <MoreHorizontal className="ml-auto h-4 w-4 text-muted-foreground" />
         </td>
       )}

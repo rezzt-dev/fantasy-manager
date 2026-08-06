@@ -20,6 +20,10 @@ export interface EngineParams {
   riskLambda: number;
   /** Fricción en puntos por movimiento del planificador multi-jornada (§5.3). */
   moveFrictionXp: number;
+  /** Máximo de fichajes/clausulazos recomendados por jornada en el plan multi-jornada. */
+  maxMovesPerWeek: number;
+  /** Bonus en puntos esperados por mantener un jugador de una jornada a otra (holdeo). */
+  holdBonusXp: number;
 }
 
 /** Valores por defecto del diseño (antes de cualquier calibración). */
@@ -28,6 +32,8 @@ export const DEFAULT_ENGINE_PARAMS: EngineParams = {
   eloDiffDivisor: 1000,
   riskLambda: 0.3,
   moveFrictionXp: 1.5,
+  maxMovesPerWeek: 3,
+  holdBonusXp: 0.2,
 };
 
 let cached: { loadedAt: number; params: EngineParams } | null = null;

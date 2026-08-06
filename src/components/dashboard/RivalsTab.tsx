@@ -9,6 +9,7 @@ import { getClauseProtection } from '../../lib/clause-availability';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import {
   Select,
   SelectContent,
@@ -27,9 +28,11 @@ import {
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import Currency from '../shared/Currency';
+import PlayerDetailDialog from '../shared/PlayerDetailDialog';
 import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
-import { Shield, ShieldCheck, Lock, Gavel, Users } from 'lucide-react';
+import EmptyState from '../shared/EmptyState';
+import { Shield, ShieldCheck, Lock, Gavel, Users, Wallet, TrendingUp } from 'lucide-react';
 import { positionShortName, positionBgClass } from '../../lib/format';
 
 interface RivalsTabProps {
@@ -50,6 +53,7 @@ export default function RivalsTab({ league }: RivalsTabProps) {
   const ownMoney: number = data?.analysis?.money?.teamMoney ?? 0;
 
   const [selectedTeamId, setSelectedTeamId] = useState<string>('');
+  const [selectedPlayer, setSelectedPlayer] = useState<TeamPlayer | null>(null);
   const selectedRival = useMemo(
     () => rivals.find((r) => String(r.teamId) === selectedTeamId) || rivals[0],
     [rivals, selectedTeamId],
@@ -60,13 +64,9 @@ export default function RivalsTab({ league }: RivalsTabProps) {
 
   if (rivals.length === 0) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 pb-20 lg:pb-0">
         <SectionHeader title="Rivales" description="Plantillas de los otros miembros de la liga." />
-        <Card>
-          <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No se han podido cargar las plantillas de los rivales.
-          </CardContent>
-        </Card>
+        <EmptyState title="Sin rivales" description="No se han podido cargar las plantillas de los rivales." />
       </div>
     );
   }
@@ -81,17 +81,17 @@ export default function RivalsTab({ league }: RivalsTabProps) {
     : 0;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20 lg:pb-0">
       <SectionHeader
         title="Rivales"
-        description="Plantillas de la liga y disponibilidad para clausulazo (bloqueados y blindados no se pueden clausular)."
+        description="Plantillas de la liga y disponibilidad para clausulazo."
       />
 
       <Card>
         <CardHeader className="pb-3">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="h-4 w-4 text-muted-foreground" />
                 {selectedRival?.managerName || 'Rival'}
               </CardTitle>
@@ -107,7 +107,7 @@ export default function RivalsTab({ league }: RivalsTabProps) {
               </CardDescription>
             </div>
             <Select value={String(selectedRival?.teamId ?? '')} onValueChange={setSelectedTeamId}>
-              <SelectTrigger className="w-full sm:w-56 bg-surface-2 border-white/[0.08] text-foreground">
+              <SelectTrigger className="w-full sm:w-56">
                 <SelectValue placeholder="Elige rival" />
               </SelectTrigger>
               <SelectContent>
@@ -121,36 +121,152 @@ export default function RivalsTab({ league }: RivalsTabProps) {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[70px] normal-case tracking-normal"></TableHead>
-                  <TableHead className="normal-case tracking-normal">Jugador</TableHead>
-                  <TableHead className="normal-case tracking-normal">Posición</TableHead>
-                  <TableHead className="normal-case tracking-normal">Estado</TableHead>
-                  <TableHead className="normal-case tracking-normal">Puntos</TableHead>
-                  <TableHead className="normal-case tracking-normal">Valor mercado</TableHead>
-                  <TableHead className="normal-case tracking-normal">Cláusula</TableHead>
-                  <TableHead className="normal-case tracking-normal">Protección</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...(selectedRival?.players || [])]
-                  .sort((a, b) => a.playerMaster.positionId - b.playerMaster.positionId)
-                  .map((player) => (
-                    <RivalPlayerRow key={player.playerTeamId} player={player} ownMoney={ownMoney} />
-                  ))}
-              </TableBody>
-            </Table>
-          </div>
+          <Tabs defaultValue="squad" className="w-full">
+            <div className="border-b border-white/[0.06] px-4">
+              <TabsList className="h-10 w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0 scrollbar-thin">
+                <TabsTrigger value="squad" className="rounded-none border-b-2 border-transparent px-4 pb-2 pt-1 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                  Plantilla
+                </TabsTrigger>
+                <TabsTrigger value="risks" className="rounded-none border-b-2 border-transparent px-4 pb-2 pt-1 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                  Riesgos de cláusula
+                </TabsTrigger>
+                <TabsTrigger value="summary" className="rounded-none border-b-2 border-transparent px-4 pb-2 pt-1 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
+                  Resumen
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="squad" className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[70px]" />
+                      <TableHead>Jugador</TableHead>
+                      <TableHead>Posición</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Puntos</TableHead>
+                      <TableHead className="text-right">Valor mercado</TableHead>
+                      <TableHead className="text-right">Cláusula</TableHead>
+                      <TableHead>Protección</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...(selectedRival?.players || [])]
+                      .sort((a, b) => a.playerMaster.positionId - b.playerMaster.positionId)
+                      .map((player) => (
+                        <RivalPlayerRow
+                          key={player.playerTeamId}
+                          player={player}
+                          ownMoney={ownMoney}
+                          onClick={() => setSelectedPlayer(player)}
+                        />
+                      ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="risks" className="p-4">
+              <div className="space-y-3">
+                {selectedRival?.players
+                  .filter((p) => getClauseProtection(p).status === 'available')
+                  .sort((a, b) => (b.playerMaster.marketValue - b.buyoutClause) - (a.playerMaster.marketValue - a.buyoutClause))
+                  .slice(0, 8)
+                  .map((player) => {
+                    const diff = player.playerMaster.marketValue - player.buyoutClause;
+                    return (
+                      <div
+                        key={player.playerTeamId}
+                        className="flex items-center gap-4 rounded-xl border border-white/[0.08] bg-surface-2/50 p-3"
+                      >
+                        <PlayerAvatar player={player.playerMaster} size="md" showPosition />
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-foreground">{player.playerMaster.nickname}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {positionShortName(player.playerMaster.position, player.playerMaster.positionId)} ·{' '}
+                            {player.playerMaster.team?.name}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">Cláusula</div>
+                          <Currency value={player.buyoutClause} className="font-semibold" />
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs text-muted-foreground">Diferencial</div>
+                          <span className={`font-semibold ${diff > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {diff > 0 ? '+' : ''}
+                            <Currency value={diff} />
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="summary" className="p-4">
+              {selectedRival && (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <TrendingUp className="h-4 w-4" />
+                      Valor de plantilla
+                    </div>
+                    <div className="mt-2 text-xl font-bold text-foreground">
+                      <Currency value={selectedRival.teamValue} />
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Wallet className="h-4 w-4" />
+                      Dinero disponible
+                    </div>
+                    <div className="mt-2 text-xl font-bold text-foreground">
+                      {selectedRival.teamMoney !== null ? <Currency value={selectedRival.teamMoney} /> : '—'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Shield className="h-4 w-4" />
+                      Clausulables
+                    </div>
+                    <div className="mt-2 text-xl font-bold text-foreground">{availableCount}</div>
+                  </div>
+                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Gavel className="h-4 w-4" />
+                      A tu alcance
+                    </div>
+                    <div className="mt-2 text-xl font-bold text-foreground">{buyoutableCount}</div>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
+
+      <PlayerDetailDialog
+        player={selectedPlayer?.playerMaster || null}
+        open={!!selectedPlayer}
+        onOpenChange={(open) => !open && setSelectedPlayer(null)}
+        buyoutClause={selectedPlayer?.buyoutClause}
+        isShielded={selectedPlayer?.isShielded}
+      />
     </div>
   );
 }
 
-function RivalPlayerRow({ player, ownMoney }: { player: TeamPlayer; ownMoney: number }) {
+function RivalPlayerRow({
+  player,
+  ownMoney,
+  onClick,
+}: {
+  player: TeamPlayer;
+  ownMoney: number;
+  onClick: () => void;
+}) {
   const p = player.playerMaster;
   const points = p.points || p.lastSeasonPoints || 0;
   const posColor = positionBgClass(p.position || '', p.positionId);
@@ -159,7 +275,7 @@ function RivalPlayerRow({ player, ownMoney }: { player: TeamPlayer; ownMoney: nu
     protection.status === 'available' && player.buyoutClause > 0 && player.buyoutClause <= ownMoney;
 
   return (
-    <TableRow>
+    <TableRow onClick={onClick} className="cursor-pointer">
       <TableCell className="py-2 px-2 sm:px-4">
         <PlayerAvatar player={p} size="md" showPosition />
       </TableCell>
@@ -175,20 +291,17 @@ function RivalPlayerRow({ player, ownMoney }: { player: TeamPlayer; ownMoney: nu
       <TableCell className="py-2 px-2 sm:px-4">
         <PlayerStatusBadge status={p.playerStatus} />
       </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4 font-semibold text-foreground">{points}</TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
+      <TableCell className="py-2 px-2 sm:px-4 text-right font-display text-sm font-semibold text-foreground">{points}</TableCell>
+      <TableCell className="py-2 px-2 sm:px-4 text-right">
         <Currency value={p.marketValue} className="text-muted-foreground" />
       </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <div className="flex items-center gap-2">
+      <TableCell className="py-2 px-2 sm:px-4 text-right">
+        <div className="flex items-center justify-end gap-2">
           <Currency value={player.buyoutClause} />
           {canBuyout && (
-            <span
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400"
-              title="Puedes pagar su cláusula ahora mismo"
-            >
+            <Badge variant="success" className="gap-1 text-[10px]">
               <Gavel className="h-3 w-3" /> Clausulable
-            </span>
+            </Badge>
           )}
         </div>
       </TableCell>
@@ -204,42 +317,32 @@ function ProtectionBadge({ player }: { player: TeamPlayer }) {
 
   if (protection.status === 'shielded') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 text-[10px] font-medium text-sky-400">
+      <Badge variant="info" className="gap-1 text-[10px]">
         <ShieldCheck className="h-3 w-3" /> Blindado
-      </span>
+      </Badge>
     );
   }
 
   if (protection.status === 'locked') {
     return (
-      <span
-        className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-[10px] font-medium text-amber-400"
-        title="Cláusula bloqueada (subida reciente o protección de 2 semanas tras un clausulazo)"
-      >
-        <Lock className="h-3 w-3" /> Protegido hasta {formatDate(protection.until)}
-      </span>
+      <Badge variant="warning" className="gap-1 text-[10px]" title="Cláusula bloqueada">
+        <Lock className="h-3 w-3" /> Protegido
+      </Badge>
     );
   }
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+    <Badge variant="success" className="gap-1 text-[10px]">
       <Shield className="h-3 w-3" /> Disponible
-    </span>
+    </Badge>
   );
-}
-
-function formatDate(iso?: string): string {
-  if (!iso) return '';
-  const time = Date.parse(iso);
-  if (Number.isNaN(time)) return iso;
-  return new Date(time).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 }
 
 function RivalsSkeleton() {
   return (
     <div className="space-y-4">
       <Skeleton className="h-8 w-40" />
-      <Skeleton className="h-8 w-full" />
+      <Skeleton className="h-10 w-full" />
       {Array.from({ length: 5 }).map((_, i) => (
         <Skeleton key={i} className="h-20 w-full" />
       ))}

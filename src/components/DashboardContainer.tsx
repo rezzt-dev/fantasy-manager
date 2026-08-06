@@ -1,12 +1,16 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import fantasyAPI from '../lib/fantasy/api';
 import type { FantasyLeague, Recommendation } from '../types/fantasy';
 import AppLayout from './layout/AppLayout';
 import CommandPalette from './layout/CommandPalette';
+import type { DashboardTab } from './layout/Sidebar';
 import { useDashboardTab } from '../hooks/useDashboardTab';
+import { useDensity } from '../hooks/useDensity';
+import { useSidebarCollapsed } from '../hooks/useSidebarCollapsed';
 import OverviewTab from './dashboard/OverviewTab';
 import TeamTab from './dashboard/TeamTab';
 import LineupTab from './dashboard/LineupTab';
@@ -14,8 +18,10 @@ import MarketTab from './dashboard/MarketTab';
 import StandingsTab from './dashboard/StandingsTab';
 import RivalsTab from './dashboard/RivalsTab';
 import StatisticsTab from './dashboard/StatisticsTab';
+import ScorePredictionsTab from './dashboard/ScorePredictionsTab';
 import RecommendationsTab from './dashboard/RecommendationsTab';
 import TrackRecordTab from './dashboard/TrackRecordTab';
+import MatchesTab from './dashboard/MatchesTab';
 import ErrorBoundary from './shared/ErrorBoundary';
 import ErrorState from './shared/ErrorState';
 import EmptyState from './shared/EmptyState';
@@ -24,8 +30,12 @@ import { motion } from 'framer-motion';
 import type { TeamPlayer } from '../types/fantasy';
 
 export default function DashboardContainer() {
+  const queryClient = useQueryClient();
   const [selectedLeague, setSelectedLeague] = useState<FantasyLeague | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const { dense, setDense } = useDensity();
+  const { collapsed: sidebarCollapsed, toggleCollapsed: toggleSidebarCollapsed } = useSidebarCollapsed();
   const { tab, changeTab, isReady } = useDashboardTab('overview');
 
   const {
@@ -102,6 +112,84 @@ export default function DashboardContainer() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries();
+    toast.success('Datos actualizados', { description: 'Se ha recargado la información de tu liga.' });
+    setIsRefreshing(false);
+  };
+
+  const handleToggleDensity = () => {
+    const next = !dense;
+    setDense(next);
+    toast.success(next ? 'Modo compacto activado' : 'Modo compacto desactivado', {
+      description: next ? 'Interfaz con espaciado reducido.' : 'Espaciado normal restaurado.',
+    });
+  };
+
+  const handleToggleSidebar = () => {
+    const next = !sidebarCollapsed;
+    toggleSidebarCollapsed();
+    toast.success(next ? 'Panel lateral oculto' : 'Panel lateral visible');
+  };
+
+  // Atajos de teclado del dashboard
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        handleRefresh();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'r' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        handleRefresh();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'd' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        handleToggleDensity();
+        return;
+      }
+
+      if (e.key.toLowerCase() === 'b' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        handleToggleSidebar();
+        return;
+      }
+
+      if (e.metaKey || e.ctrlKey) {
+        const tabs: DashboardTab[] = [
+          'overview',
+          'team',
+          'lineup',
+          'market',
+          'standings',
+          'rivals',
+          'statistics',
+          'score-predictions',
+          'recommendations',
+          'matches',
+        ];
+        const num = parseInt(e.key, 10);
+        if (num >= 1 && num <= 9) {
+          e.preventDefault();
+          changeTab(tabs[num - 1]);
+        } else if (e.key === '0') {
+          e.preventDefault();
+          changeTab('matches');
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [changeTab, dense, setDense, sidebarCollapsed, toggleSidebarCollapsed]);
+
   if (!isReady || isLoading) {
     return <LoadingScreen />;
   }
@@ -142,6 +230,10 @@ export default function DashboardContainer() {
         activeTab={tab}
         onChangeTab={changeTab}
         onOpenCommand={() => setCommandOpen(true)}
+        onRefresh={handleRefresh}
+        isRefreshing={isRefreshing}
+        dense={dense}
+        onToggleDensity={setDense}
         alertCount={alerts.length}
         alerts={alerts}
       >
@@ -165,6 +257,8 @@ export default function DashboardContainer() {
         onNavigate={(t) => changeTab(t)}
         onPlayerClick={() => changeTab('team')}
         onRivalClick={() => changeTab('rivals')}
+        dense={dense}
+        onToggleDensity={handleToggleDensity}
       />
     </ErrorBoundary>
   );
@@ -200,11 +294,17 @@ function TabContent({ league, tab }: { league: FantasyLeague; tab: string }) {
     case 'statistics':
       content = <StatisticsTab league={league} />;
       break;
+    case 'score-predictions':
+      content = <ScorePredictionsTab league={league} />;
+      break;
     case 'recommendations':
       content = <RecommendationsTab league={league} />;
       break;
     case 'track-record':
       content = <TrackRecordTab league={league} />;
+      break;
+    case 'matches':
+      content = <MatchesTab league={league} />;
       break;
     default:
       content = <OverviewTab league={league} />;

@@ -25,16 +25,16 @@ export default function KpiCard({ icon, label, value, sub, trend, className, suf
 
   return (
     <Card className={cn('overflow-hidden', className)}>
-      <CardContent className="p-5">
+      <CardContent className="p-5 [.density-dense_&]:p-3.5">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-surface-2 text-foreground">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-surface-2 text-foreground [.density-dense_&]:h-7 [.density-dense_&]:w-7">
             {icon}
           </span>
           <span className="text-xs font-medium uppercase tracking-wider">{label}</span>
         </div>
-        <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="mt-3 flex items-end justify-between gap-3 [.density-dense_&]:mt-2">
           <div className="min-w-0">
-            <div className="text-2xl font-bold tracking-tight text-foreground">
+            <div className="text-2xl font-bold tracking-tight text-foreground [.density-dense_&]:text-xl">
               {isValidNumber ? (
                 <NumberFlow
                   value={numericValue}

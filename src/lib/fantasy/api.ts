@@ -9,8 +9,10 @@ import type {
   Match,
   PlayerMaster,
   Recommendation,
+  MatchesResponse,
 } from '../../types/fantasy';
-import type { LeagueAnalysis, TacticalScheme } from '../../types/analysis';
+import type { LeagueAnalysis, TacticalScheme, ScorePredictionsResponse } from '../../types/analysis';
+import type { ScoreHistoryRecord } from '../engine/score-predictions-persistence';
 import type { TrackRecordSummary } from '../engine/track-record';
 import type { MultiWeekPlan } from '../engine/optimize';
 
@@ -117,6 +119,14 @@ export const fantasyAPI = {
     ),
 
   getTrackRecord: (leagueId: string) => fetchJSON<TrackRecordResponse>(`/api/track-record?leagueId=${leagueId}`),
+
+  getScorePredictions: (leagueId: string, teamId: number) =>
+    fetchJSON<ScorePredictionsResponse & { history: ScoreHistoryRecord[] }>(
+      `/api/score-predictions?leagueId=${leagueId}&teamId=${teamId}`,
+    ),
+
+  getMatches: (leagueId: string, teamId: number) =>
+    fetchJSON<MatchesResponse>(`/api/matches?leagueId=${leagueId}&teamId=${teamId}`),
 
   getFreeFormations: () =>
     fetchJSON<string[]>(`/api/proxy/v4/teams/lineup/formations?option=free&x-lang=es`),

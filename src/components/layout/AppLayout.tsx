@@ -5,6 +5,8 @@ import { Toaster } from 'sonner';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
+import { cn } from '../../lib/utils';
+import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
 import type { FantasyLeague } from '../../types/fantasy';
 import type { DashboardTab } from './Sidebar';
 
@@ -16,6 +18,10 @@ interface AppLayoutProps {
   activeTab: DashboardTab;
   onChangeTab: (tab: DashboardTab) => void;
   onOpenCommand?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  dense?: boolean;
+  onToggleDensity?: (dense: boolean) => void;
   alertCount?: number;
   alerts?: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
 }
@@ -28,10 +34,15 @@ export default function AppLayout({
   activeTab,
   onChangeTab,
   onOpenCommand,
+  onRefresh,
+  isRefreshing,
+  dense,
+  onToggleDensity,
   alertCount = 0,
   alerts = [],
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { collapsed } = useSidebarCollapsed();
 
   return (
     <div className="relative min-h-screen bg-background text-foreground">
@@ -40,24 +51,34 @@ export default function AppLayout({
         onChangeTab={onChangeTab}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        alertCount={alertCount}
       />
 
-      <div className="flex min-h-screen flex-col lg:pl-[260px]">
+      <div
+        className={cn(
+          'flex min-h-screen flex-col transition-[padding] duration-300 ease-in-out',
+          collapsed ? 'lg:pl-[76px]' : 'lg:pl-[260px]',
+        )}
+      >
         <Header
           leagues={leagues}
           selectedLeague={selectedLeague}
           onSelectLeague={onSelectLeague}
           onToggleSidebar={() => setSidebarOpen(true)}
           onOpenCommand={onOpenCommand}
+          onRefresh={onRefresh}
+          isRefreshing={isRefreshing}
+          dense={dense}
+          onToggleDensity={onToggleDensity}
           alertCount={alertCount}
           alerts={alerts}
         />
 
-        <main className="flex-1 overflow-x-hidden p-4 sm:p-5 lg:p-6">
+        <main className="flex-1 overflow-x-hidden p-4 sm:p-5 lg:p-6 [.density-dense_&]:p-3 [.density-dense_&]:sm:p-4 [.density-dense_&]:lg:p-5">
           <div className="mx-auto max-w-7xl">{children}</div>
         </main>
 
-        <MobileNav activeTab={activeTab} onChangeTab={onChangeTab} />
+        <MobileNav activeTab={activeTab} onChangeTab={onChangeTab} dense={dense} onToggleDensity={onToggleDensity} />
       </div>
 
       <Toaster

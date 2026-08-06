@@ -11,7 +11,7 @@ interface Props {
 const { step, icon: Icon, title, description } = Astro.props;
 ---
 
-<div class="rounded-2xl border border-white/[0.06] bg-surface-2 p-6">
+<div class="group rounded-2xl border border-white/[0.06] bg-surface-2 p-6 transition-all duration-200 hover:-translate-y-1 hover:border-white/[0.12] hover:bg-surface-3 hover:shadow-card-hover">
 	<div class="flex items-center justify-between">
 		<div class="flex h-10 w-10 items-center justify-center rounded-lg border border-white/[0.08] bg-surface-3">
 			<Icon className="h-5 w-5 text-foreground" />

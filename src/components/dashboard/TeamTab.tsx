@@ -5,34 +5,29 @@ import { useMemo, useState } from 'react';
 import fantasyAPI from '../../lib/fantasy/api';
 import type { FantasyLeague, TeamPlayer } from '../../types/fantasy';
 import type { StarterInfo } from '../../types/analysis';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../ui/table';
+import { Skeleton } from '../ui/skeleton';
+import DataTable, { DataTableSkeleton } from '../shared/DataTable';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import Currency from '../shared/Currency';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
+import PlayerCard from '../shared/PlayerCard';
 import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
 import FilterBar from '../shared/FilterBar';
-import { StaggerContainer, StaggerItem } from '../ui/motion';
-import { ArrowUpDown, Users } from 'lucide-react';
+import { Toggle } from '../ui/toggle';
+import { LayoutGrid, Table2, Users } from 'lucide-react';
 import { positionShortName, positionBgClass, getPositionName } from '../../lib/format';
+import { StaggerContainer, StaggerItem } from '../ui/motion';
+import { useDensity } from '../../hooks/useDensity';
 
 interface TeamTabProps {
   league: FantasyLeague;
 }
-
-type SortKey = 'nickname' | 'position' | 'points' | 'marketValue' | 'buyoutClause';
 
 export default function TeamTab({ league }: TeamTabProps) {
   const teamId = league.team.id;
@@ -55,9 +50,9 @@ export default function TeamTab({ league }: TeamTabProps) {
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('points');
-  const [sortDesc, setSortDesc] = useState(true);
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [selectedPlayer, setSelectedPlayer] = useState<TeamPlayer | null>(null);
+  const { dense } = useDensity();
 
   const players = data?.players || [];
 
@@ -82,45 +77,8 @@ export default function TeamTab({ league }: TeamTabProps) {
       );
     }
 
-    list.sort((a, b) => {
-      let valueA: number | string;
-      let valueB: number | string;
-
-      switch (sortKey) {
-        case 'nickname':
-          valueA = a.playerMaster.nickname;
-          valueB = b.playerMaster.nickname;
-          break;
-        case 'position':
-          valueA = a.playerMaster.positionId;
-          valueB = b.playerMaster.positionId;
-          break;
-        case 'points':
-          valueA = a.playerMaster.points || a.playerMaster.lastSeasonPoints || 0;
-          valueB = b.playerMaster.points || b.playerMaster.lastSeasonPoints || 0;
-          break;
-        case 'marketValue':
-          valueA = a.playerMaster.marketValue;
-          valueB = b.playerMaster.marketValue;
-          break;
-        case 'buyoutClause':
-          valueA = a.buyoutClause;
-          valueB = b.buyoutClause;
-          break;
-        default:
-          valueA = 0;
-          valueB = 0;
-      }
-
-      if (typeof valueA === 'string' && typeof valueB === 'string') {
-        return sortDesc ? valueB.localeCompare(valueA) : valueA.localeCompare(valueB);
-      }
-
-      return sortDesc ? (valueB as number) - (valueA as number) : (valueA as number) - (valueB as number);
-    });
-
     return list;
-  }, [players, positionFilter, statusFilter, search, sortKey, sortDesc]);
+  }, [players, positionFilter, statusFilter, search]);
 
   const positions = useMemo(
     () => Array.from(new Set(players.map((p) => getPositionName(p.playerMaster.positionId)))),
@@ -149,15 +107,144 @@ export default function TeamTab({ league }: TeamTabProps) {
     },
   ];
 
+  const columns = useMemo<ColumnDef<TeamPlayer>[]>(
+    () => [
+      {
+        id: 'avatar',
+        header: '',
+        cell: ({ row }) => <PlayerAvatar player={row.original.playerMaster} size="md" showPosition />,
+        enableSorting: false,
+        size: 70,
+      },
+      {
+        accessorKey: 'playerMaster.nickname',
+        header: 'Jugador',
+        cell: ({ row }) => (
+          <div>
+            <div className="font-semibold text-foreground">{row.original.playerMaster.nickname}</div>
+            <div className="text-xs text-muted-foreground">{row.original.playerMaster.team?.name || 'Sin equipo'}</div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'playerMaster.positionId',
+        header: 'Posición',
+        meta: { headerClassName: 'hidden sm:table-cell', cellClassName: 'hidden sm:table-cell' },
+        cell: ({ row }) => {
+          const p = row.original.playerMaster;
+          const posColor = positionBgClass(p.position || '', p.positionId);
+          return (
+            <Badge variant="secondary" className={`border-0 text-[10px] text-white ${posColor}`}>
+              {positionShortName(p.position, p.positionId)}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: 'playerMaster.playerStatus',
+        header: 'Estado',
+        meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+        cell: ({ row }) => {
+          const starter = starterInfo[row.original.playerMaster.id];
+          return (
+            <div className="flex flex-col gap-1">
+              <PlayerStatusBadge status={row.original.playerMaster.playerStatus} />
+              {starter && (
+                <Badge
+                  variant={
+                    starter.score >= 0.8
+                      ? 'success'
+                      : starter.score >= 0.55
+                      ? 'secondary'
+                      : starter.score >= 0.35
+                      ? 'warning'
+                      : 'danger'
+                  }
+                  className="w-fit text-[10px]"
+                >
+                  {starter.label}
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'playerMaster.points',
+        header: 'Puntos',
+        cell: ({ row }) => (
+          <span className="font-display text-sm font-semibold text-foreground">
+            {row.original.playerMaster.points || row.original.playerMaster.lastSeasonPoints || 0}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'playerMaster.marketValue',
+        header: 'Valor mercado',
+        meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
+        cell: ({ row }) => <Currency value={row.original.playerMaster.marketValue} className="text-sm text-muted-foreground" />,
+      },
+      {
+        accessorKey: 'buyoutClause',
+        header: 'Cláusula',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <Currency value={row.original.buyoutClause} className="text-sm" />
+            {row.original.isShielded && <span className="text-[10px] text-muted-foreground">(B)</span>}
+          </div>
+        ),
+      },
+    ],
+    [starterInfo],
+  );
+
   if (isLoading) return <TeamSkeleton />;
   if (error) return <ErrorState title="Error cargando plantilla" description={error.message} onRetry={refetch} />;
+
+  const totalValue = players.reduce((sum, p) => sum + p.playerMaster.marketValue, 0);
+  const totalPoints = players.reduce((sum, p) => sum + (p.playerMaster.points || p.playerMaster.lastSeasonPoints || 0), 0);
+  const healthyCount = players.filter((p) => p.playerMaster.playerStatus === 'ok').length;
 
   return (
     <div className="space-y-4 pb-20 lg:pb-0">
       <SectionHeader
         title="Mi Equipo"
         description="Plantilla completa con estado, valor y cláusulas."
+        action={
+          <div className="flex items-center gap-2">
+            <Toggle
+              pressed={viewMode === 'table'}
+              onPressedChange={(pressed) => setViewMode(pressed ? 'table' : 'cards')}
+              aria-label="Cambiar vista"
+              className="gap-2"
+            >
+              {viewMode === 'table' ? <Table2 className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+              {viewMode === 'table' ? 'Tabla' : 'Tarjetas'}
+            </Toggle>
+          </div>
+        }
       />
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="text-xs text-muted-foreground">Jugadores</div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">{players.length}</div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="text-xs text-muted-foreground">Disponibles</div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">{healthyCount}</div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="text-xs text-muted-foreground">Valor total</div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+            <Currency value={totalValue} />
+          </div>
+        </div>
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+          <div className="text-xs text-muted-foreground">Puntos totales</div>
+          <div className="mt-2 text-2xl font-bold font-display text-foreground">{totalPoints}</div>
+        </div>
+      </div>
 
       <Card>
         <CardHeader className="pb-3">
@@ -177,36 +264,29 @@ export default function TeamTab({ league }: TeamTabProps) {
             />
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[70px]" />
-                  <TableHead>Jugador</TableHead>
-                  <TableHead>Posición</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <SortableHead label="Puntos" sortKey="points" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                  <SortableHead label="Valor mercado" sortKey="marketValue" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                  <SortableHead label="Cláusula" sortKey="buyoutClause" activeKey={sortKey} activeDesc={sortDesc} onSort={toggleSort} />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredPlayers.map((player) => (
-                  <PlayerRow
-                    key={player.playerTeamId}
-                    player={player}
-                    starter={starterInfo[player.playerMaster.id]}
+        <CardContent>
+          {viewMode === 'table' ? (
+            <DataTable
+              columns={columns}
+              data={filteredPlayers}
+              onRowClick={setSelectedPlayer}
+              emptyMessage="No hay jugadores que coincidan con los filtros."
+              pageSize={10}
+              dense={dense}
+            />
+          ) : (
+            <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.03}>
+              {filteredPlayers.map((player) => (
+                <StaggerItem key={player.playerTeamId}>
+                  <PlayerCard
+                    player={player.playerMaster}
+                    buyoutClause={player.buyoutClause}
+                    isShielded={player.isShielded}
                     onClick={() => setSelectedPlayer(player)}
                   />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          {filteredPlayers.length === 0 && (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              No hay jugadores que coincidan con los filtros.
-            </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
           )}
         </CardContent>
       </Card>
@@ -222,120 +302,17 @@ export default function TeamTab({ league }: TeamTabProps) {
       />
     </div>
   );
-
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDesc(!sortDesc);
-    } else {
-      setSortKey(key);
-      setSortDesc(true);
-    }
-  }
-}
-
-function PlayerRow({
-  player,
-  starter,
-  onClick,
-}: {
-  player: TeamPlayer;
-  starter?: StarterInfo;
-  onClick: () => void;
-}) {
-  const p = player.playerMaster;
-  const points = p.points || p.lastSeasonPoints || 0;
-  const isShielded = player.isShielded;
-  const posColor = positionBgClass(p.position || '', p.positionId);
-
-  return (
-    <TableRow onClick={onClick} className="cursor-pointer">
-      <TableCell className="py-2 px-2 sm:px-4">
-        <PlayerAvatar player={p} size="md" showPosition />
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <div className="font-semibold text-foreground">{p.nickname}</div>
-        <div className="text-xs text-muted-foreground">{p.team?.name || 'Sin equipo'}</div>
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <Badge variant="secondary" className={`font-display font-bold tracking-wide text-white ${posColor} border-0`}>
-          {positionShortName(p.position, p.positionId)}
-        </Badge>
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <div className="flex flex-col gap-1">
-          <PlayerStatusBadge status={p.playerStatus} />
-          {starter && (
-            <Badge
-              variant={
-                starter.score >= 0.8
-                  ? 'success'
-                  : starter.score >= 0.55
-                  ? 'secondary'
-                  : starter.score >= 0.35
-                  ? 'warning'
-                  : 'danger'
-              }
-              className="w-fit text-[10px]"
-            >
-              {starter.label}
-            </Badge>
-          )}
-        </div>
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4 font-display text-sm font-semibold text-foreground">{points}</TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <Currency value={p.marketValue} className="text-sm text-muted-foreground" />
-      </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4">
-        <div className="flex items-center gap-2">
-          <Currency value={player.buyoutClause} className="text-sm" />
-          {isShielded && <span className="text-[10px] text-muted-foreground">(B)</span>}
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-}
-
-function SortableHead({
-  label,
-  sortKey,
-  activeKey,
-  activeDesc,
-  onSort,
-}: {
-  label: string;
-  sortKey: SortKey;
-  activeKey: SortKey;
-  activeDesc: boolean;
-  onSort: (key: SortKey) => void;
-}) {
-  const active = activeKey === sortKey;
-  return (
-    <TableHead>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => onSort(sortKey)}
-        className="h-8 px-2 -ml-2 gap-1 font-medium"
-      >
-        {label}
-        <ArrowUpDown
-          className={`h-3.5 w-3.5 ${active ? 'text-foreground' : 'text-muted-foreground'}`}
-          style={active ? { transform: activeDesc ? 'rotate(0deg)' : 'rotate(180deg)', transition: 'transform 0.2s' } : undefined}
-        />
-      </Button>
-    </TableHead>
-  );
 }
 
 function TeamSkeleton() {
   return (
     <div className="space-y-4">
-      <Skeleton className="h-8 w-40" />
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-10 w-24" />
+      </div>
       <Skeleton className="h-10 w-full" />
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Skeleton key={i} className="h-16 w-full" />
-      ))}
+      <DataTableSkeleton rows={8} />
     </div>
   );
 }

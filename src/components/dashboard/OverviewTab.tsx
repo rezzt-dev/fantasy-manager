@@ -16,6 +16,8 @@ import SignalChips from '../shared/SignalChips';
 import SectionHeader from '../shared/SectionHeader';
 import AlertPanel from '../shared/AlertPanel';
 import EmptyState from '../shared/EmptyState';
+import NextMatchdayCard from './NextMatchdayCard';
+import LeagueActivityFeed from './LeagueActivityFeed';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import {
   Wallet,
@@ -63,6 +65,24 @@ export default function OverviewTab({ league }: OverviewTabProps) {
     enabled: !!teamId,
   });
 
+  const analysisQuery = useQuery({
+    queryKey: ['league-analysis', leagueId, teamId],
+    queryFn: () => fantasyAPI.getLeagueAnalysis(leagueId, teamId),
+    enabled: !!teamId,
+  });
+
+  const currentWeekQuery = useQuery({
+    queryKey: ['current-week'],
+    queryFn: fantasyAPI.getCurrentWeek,
+  });
+
+  const weekNumber = currentWeekQuery.data?.number ?? currentWeekQuery.data?.weekNumber ?? 1;
+  const calendarQuery = useQuery({
+    queryKey: ['calendar', weekNumber],
+    queryFn: () => fantasyAPI.getCalendar(weekNumber),
+    enabled: !!weekNumber,
+  });
+
   const isLoading = teamQuery.isLoading || moneyQuery.isLoading || marketQuery.isLoading || recommendationsQuery.isLoading;
   const hasError = teamQuery.error || moneyQuery.error || marketQuery.error || recommendationsQuery.error;
 
@@ -101,6 +121,16 @@ export default function OverviewTab({ league }: OverviewTabProps) {
     {},
   );
   const chartData = Object.values(positionData);
+
+  const analysis = analysisQuery.data?.analysis;
+  const leagueActivity = analysis?.leagueActivity || [];
+  const standing = analysis?.standing || [];
+  const managersById = standing.reduce<Record<number, string>>((acc, entry) => {
+    if (entry.team?.manager?.id) {
+      acc[Number(entry.team.manager.id)] = entry.team.manager.managerName || 'Manager';
+    }
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
@@ -258,6 +288,15 @@ export default function OverviewTab({ league }: OverviewTabProps) {
           ))}
         </div>
       )}
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <NextMatchdayCard
+          week={currentWeekQuery.data}
+          matches={calendarQuery.data}
+          leagueName={league.name}
+        />
+        <LeagueActivityFeed events={leagueActivity} managersById={managersById} />
+      </div>
     </div>
   );
 }

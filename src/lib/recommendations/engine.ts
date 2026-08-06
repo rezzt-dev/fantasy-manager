@@ -1,7 +1,7 @@
 import type { Recommendation, RecommendationType, PlayerMaster } from '../../types/fantasy';
 import type { LeagueAnalysis, ClauseRiskAnalysis, ExternalSignal } from '../../types/analysis';
 import type { ValueTrend } from '../engine/sources/types';
-import { estimatePoints, type EstimatorContext } from './points-estimator';
+import { estimatePoints, estimatePointsDetailed, type EstimatorContext } from './points-estimator';
 import { combinedSignal } from './external-intelligence';
 import { starterScoreFromLastSeason } from '../analysis/starter-score';
 import { computeAvailableBudget } from '../analysis/tactical-scheme';
@@ -97,10 +97,20 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
   // misma regla para compras, clausulazos y el esquema táctico.
   const budget = computeAvailableBudget(money, league.team?.teamValue ?? 0);
 
-  // Puntos esperados de cada jugador propio, calculados una sola vez.
+  // Predicciones de cada jugador propio, calculadas una sola vez.
+  const predictionOwn = new Map<
+    string,
+    { xp: number; pStarter: number | null; expectedMinutes: number | null }
+  >();
   const expectedOwn = new Map<string, number>();
   for (const teamPlayer of teamData.players) {
-    expectedOwn.set(teamPlayer.playerMaster.id, estimatePoints(teamPlayer.playerMaster, calendar, estimatorContext));
+    const prediction = estimatePointsDetailed(teamPlayer.playerMaster, calendar, estimatorContext);
+    predictionOwn.set(teamPlayer.playerMaster.id, {
+      xp: prediction.xp,
+      pStarter: prediction.pStarter,
+      expectedMinutes: prediction.expectedMinutes,
+    });
+    expectedOwn.set(teamPlayer.playerMaster.id, prediction.xp);
   }
 
   // Nivel de reemplazo por posición: media de puntos esperados de los jugadores
@@ -164,19 +174,27 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
         // La confianza de la noticia descuenta el impacto esperado.
         impactScore: round1(sellImpact * external.confidence),
       });
-    } else if ((starterInfo[player.id]?.score ?? 0.5) < SUBSTITUTE_SCORE && expected < 2.5) {
-      const starter = starterInfo[player.id];
-      recommendations.push({
-        id: `sell-sub-${player.id}`,
-        type: 'sell' as RecommendationType,
-        priority: 'low',
-        player,
-        reason: `Es ${starter ? starter.label.toLowerCase() : 'suplente'} habitual en su equipo y apenas suma puntos.`,
-        details: `Puntos esperados: ${expected.toFixed(1)}. Valor de mercado: ${formatCurrency(player.marketValue)}.`,
-        suggestedAction: 'Véndelo para liberar dinero y una plaza para un titular.',
-        externalSignals: signals,
-        impactScore: sellImpact,
-      });
+    } else {
+      const pStarter = predictionOwn.get(player.id)?.pStarter ?? null;
+      const starterScore = starterInfo[player.id]?.score ?? 0.5;
+      const isBenchHabitual = starterScore < SUBSTITUTE_SCORE;
+      const isBenchThisWeek = pStarter !== null && pStarter < SUBSTITUTE_SCORE;
+      if ((isBenchHabitual || isBenchThisWeek) && expected < 2.5) {
+        const starter = starterInfo[player.id];
+        const starterLabel = starter ? starter.label.toLowerCase() : 'suplente';
+        const thisWeekNote = isBenchThisWeek ? ` Probabilidad de titularidad esta jornada: ${Math.round((pStarter ?? 0) * 100)}%.` : '';
+        recommendations.push({
+          id: `sell-sub-${player.id}`,
+          type: 'sell' as RecommendationType,
+          priority: isBenchThisWeek ? 'medium' : 'low',
+          player,
+          reason: `Es ${starterLabel} en su equipo y apenas suma puntos esta jornada.`,
+          details: `Puntos esperados: ${expected.toFixed(1)}.${thisWeekNote} Valor de mercado: ${formatCurrency(player.marketValue)}.`,
+          suggestedAction: 'Véndelo para liberar dinero y una plaza para un titular.',
+          externalSignals: signals,
+          impactScore: sellImpact,
+        });
+      }
     }
   }
 
@@ -191,18 +209,25 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
       const ext = combinedSignal(externalSignals[m.playerMaster.id] || []);
       return !(ext.signal === 'sell' && ext.confidence >= SELL_NEWS_CONFIDENCE);
     })
-    .map((m) => ({
-      ...m,
-      expectedPoints: estimatePoints(m.playerMaster, calendar, estimatorContext),
-      valueRatio: m.salePrice / Math.max(m.playerMaster.marketValue, 1),
-      needScore: needByPosition.get(m.playerMaster.positionId) || 0,
-      starterScore: starterScoreFromLastSeason(m.playerMaster.lastSeasonPoints),
-    }))
+    .map((m) => {
+      const prediction = estimatePointsDetailed(m.playerMaster, calendar, estimatorContext);
+      return {
+        ...m,
+        expectedPoints: prediction.xp,
+        pStarter: prediction.pStarter,
+        valueRatio: m.salePrice / Math.max(m.playerMaster.marketValue, 1),
+        needScore: needByPosition.get(m.playerMaster.positionId) || 0,
+        starterScore: starterScoreFromLastSeason(m.playerMaster.lastSeasonPoints),
+      };
+    })
     .sort((a, b) => {
       // Jugadores que cubren una necesidad, tienen buena relación puntos/precio
-      // y son titulares habituales en su equipo, primero.
-      const scoreA = a.needScore * 2 + a.expectedPoints / Math.max(a.valueRatio, 0.5) + a.starterScore;
-      const scoreB = b.needScore * 2 + b.expectedPoints / Math.max(b.valueRatio, 0.5) + b.starterScore;
+      // y son titulares habituales en su equipo, primero. Los suplentes de la
+      // jornada se penalizan para no fichar jugadores que no van a jugar.
+      const starterFactorA = Math.min(1, 0.4 + 0.6 * (a.pStarter ?? a.starterScore));
+      const starterFactorB = Math.min(1, 0.4 + 0.6 * (b.pStarter ?? b.starterScore));
+      const scoreA = a.needScore * 2 + (a.expectedPoints * starterFactorA) / Math.max(a.valueRatio, 0.5);
+      const scoreB = b.needScore * 2 + (b.expectedPoints * starterFactorB) / Math.max(b.valueRatio, 0.5);
       return scoreB - scoreA;
     })
     .slice(0, 10);
@@ -215,16 +240,34 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
 
     const isBargain = marketPlayer.valueRatio < 0.9;
     const coversNeed = marketPlayer.needScore > 0.3;
+    const pStarter = marketPlayer.pStarter;
+    const isBenchThisWeek = pStarter !== null && pStarter < SUBSTITUTE_SCORE;
+    const starterNote = isBenchThisWeek
+      ? ` Atención: probabilidad de titularidad ${Math.round(pStarter * 100)}% esta jornada.`
+      : pStarter !== null
+        ? ` Titularidad: ${Math.round(pStarter * 100)}%.`
+        : '';
+
+    // No promocionar a "high" una compra de un suplente de la jornada.
+    const priority: 'high' | 'medium' | 'low' =
+      trend.direction === 'falling' || isBenchThisWeek
+        ? 'low'
+        : isBargain || coversNeed || external.signal === 'buy' || trend.direction === 'rising'
+          ? 'high'
+          : 'medium';
 
     recommendations.push({
       id: `buy-${player.id}`,
       type: 'buy' as RecommendationType,
-      // Timing de mercado: si sube de valor, compra ya; si baja, espera.
-      priority: trend.direction === 'falling' ? 'low' : isBargain || coversNeed || external.signal === 'buy' || trend.direction === 'rising' ? 'high' : 'medium',
+      priority,
       player,
       reason: buildBuyReason(marketPlayer, coversNeed),
-      details: `Puntos esperados: ${marketPlayer.expectedPoints.toFixed(1)}. Valor de mercado: ${formatCurrency(player.marketValue)}. Pujas: ${marketPlayer.numberOfBids}.${trend.note ? ` ${trend.note}` : ''}`,
-      suggestedAction: trend.direction === 'falling' ? 'Espera a que frene la bajada antes de pujar.' : 'Puja por él si encaja en tu esquema táctico.',
+      details: `Puntos esperados: ${marketPlayer.expectedPoints.toFixed(1)}.${starterNote} Valor de mercado: ${formatCurrency(player.marketValue)}. Pujas: ${marketPlayer.numberOfBids}.${trend.note ? ` ${trend.note}` : ''}`,
+      suggestedAction: isBenchThisWeek
+        ? 'Es suplente en el once probable; solo puja si crees que jugará o a largo plazo.'
+        : trend.direction === 'falling'
+          ? 'Espera a que frene la bajada antes de pujar.'
+          : 'Puja por él si encaja en tu esquema táctico.',
       estimatedValue: marketPlayer.salePrice,
       suggestedBidPrice: computeSuggestedBidPrice(marketPlayer.salePrice, player.marketValue, marketPlayer.numberOfBids, budget.available),
       externalSignals: signals,
@@ -325,14 +368,18 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
       })
       .map(({ rival, tp }) => {
         const p = tp.playerMaster;
-        const expected = estimatePoints(p, calendar, estimatorContext);
+        const prediction = estimatePointsDetailed(p, calendar, estimatorContext);
+        const expected = prediction.xp;
+        const pStarter = prediction.pStarter;
         const needScore = needByPosition.get(p.positionId) || 0;
         const clauseRatio = tp.buyoutClause / Math.max(p.marketValue, 1);
         const external = combinedSignal(externalSignals[p.id] || []);
-        let score = needScore * 2 + expected / Math.max(clauseRatio, 0.5);
+        const starterScore = starterScoreFromLastSeason(p.lastSeasonPoints);
+        const starterFactor = Math.min(1, 0.4 + 0.6 * (pStarter ?? starterScore));
+        let score = needScore * 2 + (expected * starterFactor) / Math.max(clauseRatio, 0.5);
         if (external.signal === 'sell' && external.confidence >= SELL_NEWS_CONFIDENCE) score *= 0.3;
         else if (external.signal === 'buy') score *= 1.2;
-        return { rival, tp, expected, needScore, clauseRatio, external, score };
+        return { rival, tp, expected, pStarter, needScore, clauseRatio, external, score };
       })
       .filter((c) => c.score > 1.5)
       .sort((a, b) => b.score - a.score)
@@ -340,14 +387,23 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
 
     for (const candidate of buyoutCandidates) {
       const p = candidate.tp.playerMaster;
+      const pStarter = candidate.pStarter;
+      const isBenchThisWeek = pStarter !== null && pStarter < SUBSTITUTE_SCORE;
+      const starterNote = isBenchThisWeek
+        ? ` Atención: probabilidad de titularidad ${Math.round(pStarter * 100)}% esta jornada.`
+        : pStarter !== null
+          ? ` Titularidad: ${Math.round(pStarter * 100)}%.`
+          : '';
       recommendations.push({
         id: `buyout-${p.id}`,
         type: 'buyout' as RecommendationType,
-        priority: candidate.needScore > 0.3 || candidate.clauseRatio < 0.9 ? 'high' : 'medium',
+        priority: isBenchThisWeek ? 'medium' : candidate.needScore > 0.3 || candidate.clauseRatio < 0.9 ? 'high' : 'medium',
         player: p,
         reason: `Disponible para clausulazo en el equipo de ${candidate.rival.managerName}.`,
-        details: `Cláusula: ${formatCurrency(candidate.tp.buyoutClause)} (valor de mercado ${formatCurrency(p.marketValue)}). Puntos esperados: ${candidate.expected.toFixed(1)}.${candidate.needScore > 0.3 ? ' Cubre una necesidad de tu plantilla.' : ''}`,
-        suggestedAction: `Paga su cláusula de ${formatCurrency(candidate.tp.buyoutClause)} antes de que la suban o lo blinden.`,
+        details: `Cláusula: ${formatCurrency(candidate.tp.buyoutClause)} (valor de mercado ${formatCurrency(p.marketValue)}). Puntos esperados: ${candidate.expected.toFixed(1)}.${starterNote}${candidate.needScore > 0.3 ? ' Cubre una necesidad de tu plantilla.' : ''}`,
+        suggestedAction: isBenchThisWeek
+          ? `Es suplente en el once probable; valora si merece pagar ${formatCurrency(candidate.tp.buyoutClause)}.`
+          : `Paga su cláusula de ${formatCurrency(candidate.tp.buyoutClause)} antes de que la suban o lo blinden.`,
         estimatedValue: candidate.tp.buyoutClause,
         ownerName: candidate.rival.managerName,
         externalSignals: externalSignals[p.id] || [],

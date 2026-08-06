@@ -47,6 +47,7 @@ import { planMultiWeek } from '../../lib/engine/optimize';
 import { loadEngineParams } from '../../lib/engine/params';
 import { calibrateEngine, persistCalibration } from '../../lib/engine/calibrate';
 import { fetchCalendarCached } from '../../lib/fantasy/calendar-cache';
+import { enrichMarketPlayers } from '../../lib/fantasy/market-enrich';
 import type { FantasyLeague, TeamData, TeamLineup, TeamMoney, MarketPlayer, StandingEntry, Match, PlayerMaster, WeekInfo } from '../../types/fantasy';
 
 /** Plantilla + mejores candidatos de mercado y clausulables (acotado para no multiplicar peticiones). */
@@ -80,7 +81,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     // Parámetros calibrados del motor (data/engine-params.json, Fase 3).
     await loadEngineParams();
 
-    const [leagues, teamData, lineup, money, market, standing, week, allPlayers] = await Promise.all([
+    const [leagues, teamData, lineup, money, rawMarket, standing, week, allPlayers] = await Promise.all([
       fetchOfficialAPI<FantasyLeague[]>(`${CMP}/leagues`, token),
       fetchOfficialAPI<TeamData>(`${CMP}/leagues/${leagueId}/teams/${teamId}`, token),
       fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token),
@@ -90,6 +91,10 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       fetchOfficialAPI<WeekInfo>(`${CMP}/week/current`, token),
       fetchOfficialAPI<PlayerMaster[]>(`${CMP}/players`, token),
     ]);
+
+    // La API de mercado suele devolver los jugadores sin equipo; los cruzamos
+    // con el catálogo global para que siempre aparezca el club al que pertenecen.
+    const market = enrichMarketPlayers(rawMarket, allPlayers);
 
     // La API devuelve la jornada como `weekNumber` (algunos entornos usan `number`).
     const currentWeek = week?.number ?? week?.weekNumber ?? 1;

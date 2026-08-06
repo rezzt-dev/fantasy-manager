@@ -9,8 +9,10 @@ const VALID_TABS: DashboardTab[] = [
   'standings',
   'rivals',
   'statistics',
+  'score-predictions',
   'recommendations',
   'track-record',
+  'matches',
 ];
 
 export function useDashboardTab(defaultTab: DashboardTab = 'overview') {

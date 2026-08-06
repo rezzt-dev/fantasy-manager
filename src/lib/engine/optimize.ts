@@ -7,10 +7,13 @@ import { getEngineParams } from './params';
  * Planificador multi-jornada (§5.3 del diseño): planifica fichajes, onces y
  * capitanes varias jornadas por delante maximizando
  *
- *   Σ_w [ puntos del once_w + bonus de capitán_w − fricción × nº movimientos_w ]
+ *   Σ_w [ puntos del once_w + bonus de capitán_w − fricción × nº movimientos_w
+ *         + bonus de holdeo × jugadores mantenidos_w ]
  *
  * sujeto a presupuesto dinámico (el dinero no gastado una jornada pasa a la
- * siguiente, siempre bajo la regla efectivo + 20% del valor de plantilla).
+ * siguiente, siempre bajo la regla efectivo + 20% del valor de plantilla) y a
+ * un tope de movimientos por jornada para evitar recomendar rotar el equipo
+ * completo cada semana.
  *
  * Implementación: DP sobre los frentes de Pareto (coste, puntos) de cada
  * jornada (los del esquema táctico), con el efectivo como estado. Es la
@@ -109,24 +112,39 @@ export function planMultiWeek(
 
   // 2. DP con el efectivo como estado: máximo valor alcanzable por efectivo.
   // La plantilla se arrastra: un jugador comprado en una jornada no vuelve a
-  // pagarse en las siguientes (coste efectivo 0 para los ya adquiridos).
-  let states = new Map<number, DpState>([[budgetAvailable, { value: 0, ownedIds: new Set(), path: [] }]]);
+  // pagarse en las siguientes (coste efectivo 0 para los ya adquiridos). Los
+  // jugadores propios de la primera jornada se registran como "poseídos" para
+  // poder bonificar el holdeo y contar plazas, aunque su coste sea 0.
+  const params = getEngineParams();
+  const initialOwned = new Set(input.squad.map((tp) => tp.playerMaster.id));
+  let states = new Map<number, DpState>([[budgetAvailable, { value: 0, ownedIds: initialOwned, path: [] }]]);
 
   for (const { combos } of weekly) {
     const next = new Map<number, DpState>();
     for (const [cash, state] of states) {
       for (const combo of combos) {
         const newMembers = combo.members.filter((m) => m.source !== 'squad' && !state.ownedIds.has(m.player.id));
+        if (newMembers.length > params.maxMovesPerWeek) continue;
         const effectiveCost = newMembers.reduce((sum, m) => sum + m.cost, 0);
         if (effectiveCost > cash) continue;
 
-        const gain = combo.points + (input.captainEnabled ? captainBonus(combo.members) : 0) - getEngineParams().moveFrictionXp * newMembers.length;
+        // Jugadores que ya teníamos en la plantilla y seguimos usando en el
+        // once: se bonifica el holdeo para no rotar el equipo cada jornada.
+        const heldIds = combo.members
+          .filter((m) => state.ownedIds.has(m.player.id))
+          .map((m) => m.player.id);
+        const holdBonus = params.holdBonusXp * new Set(heldIds).size;
+
+        const gain = combo.points + (input.captainEnabled ? captainBonus(combo.members) : 0) - params.moveFrictionXp * newMembers.length + holdBonus;
         const cashAfter = cash - effectiveCost;
         const value = state.value + gain;
         const existing = next.get(cashAfter);
         if (!existing || value > existing.value) {
           const ownedIds = new Set(state.ownedIds);
           for (const m of newMembers) ownedIds.add(m.player.id);
+          // Los jugadores propios de la primera semana siguen contando como
+          // poseídos aunque no estén en el once; así se premia volver a usarlos.
+          for (const m of combo.members) ownedIds.add(m.player.id);
           next.set(cashAfter, { value, ownedIds, path: [...state.path, { combo, cashAfter, ownedIds }] });
         }
       }
@@ -175,6 +193,9 @@ export function planMultiWeek(
     weeks,
     totalExpected: Math.round(best.value * 10) / 10,
     totalMoves,
-    note: 'Plan con compras/clausulazos arrastrados entre jornadas y presupuesto dinámico; sin ventas ni límite de plantilla modelados, mercado congelado y xMins con onces probables solo en la jornada actual.',
+    note:
+      `Plan multi-jornada con presupuesto dinámico, máximo ${params.maxMovesPerWeek} fichajes/clausulazos por jornada ` +
+      `y bonus de holdeo (${params.holdBonusXp} pts/jugador mantenido) para evitar rotar el equipo cada semana. ` +
+      'Sin ventas ni límite de plazas modelados, mercado congelado y xMins con onces probables solo en la jornada actual.',
   };
 }

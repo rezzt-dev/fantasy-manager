@@ -185,6 +185,107 @@ export interface Match {
   featured: boolean;
 }
 
+export type EnrichedMatchStatus = 'pending' | 'live' | 'halftime' | 'finished' | 'postponed' | 'canceled' | 'unknown';
+
+export interface MatchEvent {
+  type: 'goal' | 'card' | 'substitution' | 'period' | 'injuryTime' | 'other';
+  minute: number | null;
+  isHome: boolean | null;
+  label: string;
+  detail?: string;
+  /** true si el evento involucra a un jugador de la plantilla del usuario. */
+  involvesSquadPlayer?: boolean;
+}
+
+export interface EnrichedMatchTeam {
+  id: number;
+  name: string;
+  shortName?: string;
+  logoUrl: string;
+  score: number | null;
+}
+
+export interface SquadPlayerInMatch {
+  playerId: string;
+  nickname: string;
+  position: string;
+  teamId: number;
+  teamName: string;
+  isHome: boolean;
+}
+
+export type MatchPhase =
+  | 'primera-parte'
+  | 'descanso'
+  | 'segunda-parte'
+  | 'finalizado'
+  | 'pendiente'
+  | 'desconocido';
+
+export interface MatchLineupPlayer {
+  id?: string;
+  name: string;
+  shortName?: string;
+  position?: string;
+  number?: string;
+  isStarter: boolean;
+}
+
+export interface MatchLineupSide {
+  teamName: string;
+  formation?: string;
+  coach?: string;
+  starters: MatchLineupPlayer[];
+  bench: MatchLineupPlayer[];
+}
+
+export interface MatchLineup {
+  home: MatchLineupSide;
+  away: MatchLineupSide;
+}
+
+export interface MatchSummary {
+  text: string;
+  source: 'generated' | 'external';
+  url?: string;
+  generatedAt: string;
+}
+
+export interface EnrichedMatch {
+  id: string;
+  eventId: number | null;
+  status: EnrichedMatchStatus;
+  statusLabel: string;
+  phase: MatchPhase;
+  minute: number | null;
+  startTimestamp: number;
+  kickoffFormatted: string;
+  home: EnrichedMatchTeam;
+  away: EnrichedMatchTeam;
+  /** Jugadores de la plantilla del usuario que participan en este partido. */
+  squadPlayers: SquadPlayerInMatch[];
+  /** Número de jugadores de la plantilla implicados (conveniencia para ordenar). */
+  squadPlayerCount: number;
+  events: MatchEvent[];
+  /** true si el partido es de importancia (≥1 jugador de la plantilla). */
+  important: boolean;
+  /** Notas sobre calidad/fuente de los datos. */
+  notes: string[];
+  /** Alineaciones confirmadas por SofaScore, si están disponibles. */
+  lineups?: MatchLineup;
+  /** Resumen del partido generado a partir de los datos disponibles. */
+  summary?: MatchSummary;
+}
+
+export interface MatchesResponse {
+  week: number;
+  generatedAt: string;
+  matches: EnrichedMatch[];
+  important: EnrichedMatch[];
+  normal: EnrichedMatch[];
+  notes: string[];
+}
+
 export interface AuthTokens {
   access_token: string;
   refresh_token: string;

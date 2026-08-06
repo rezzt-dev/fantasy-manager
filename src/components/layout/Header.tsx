@@ -13,8 +13,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Info,
+  RefreshCcw,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,6 +30,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Separator } from '../ui/separator';
 import { Badge } from '../ui/badge';
+import { Switch } from '../ui/switch';
 import type { FantasyLeague } from '../../types/fantasy';
 
 interface HeaderProps {
@@ -34,6 +39,10 @@ interface HeaderProps {
   onSelectLeague: (league: FantasyLeague) => void;
   onToggleSidebar?: () => void;
   onOpenCommand?: () => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  dense?: boolean;
+  onToggleDensity?: (dense: boolean) => void;
   alertCount?: number;
   alerts?: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
 }
@@ -44,13 +53,20 @@ export default function Header({
   onSelectLeague,
   onToggleSidebar,
   onOpenCommand,
+  onRefresh,
+  isRefreshing,
+  dense,
+  onToggleDensity,
   alertCount = 0,
   alerts = [],
 }: HeaderProps) {
+  const { collapsed, toggleCollapsed } = useSidebarCollapsed();
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-background/80 backdrop-blur-xl">
-      <div className="flex h-16 items-center justify-between px-4 lg:pl-[276px] lg:pr-6">
-        <div className="flex items-center gap-3">
+      <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:px-6 [.density-dense_&]:h-14">
+        {/* Izquierda: navegación */}
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon-sm"
@@ -61,64 +77,101 @@ export default function Header({
             <Menu className="h-5 w-5" />
           </Button>
 
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="hidden text-muted-foreground hover:text-foreground lg:inline-flex"
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? 'Desplegar panel lateral' : 'Ocultar panel lateral'}
+            title={collapsed ? 'Desplegar panel lateral' : 'Ocultar panel lateral'}
+          >
+            {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
+          </Button>
+
           <a
             href="/dashboard"
-            className="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-foreground lg:hidden"
+            className="flex items-center gap-2.5 pl-1 text-lg font-semibold tracking-tight text-foreground sm:pl-2 lg:hidden"
           >
             <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.10] bg-surface-2">
               <Trophy className="h-[18px] w-[18px] text-foreground" />
             </div>
-            <span className="font-display tracking-tight">
+            <span className="hidden font-display tracking-tight sm:inline">
               Fantasy<span className="text-brand-muted">Manager</span>
             </span>
           </a>
         </div>
 
-        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3 lg:justify-between">
+        {/* Centro: búsqueda */}
+        <div className="flex min-w-0 flex-1 justify-center lg:px-2">
           <button
             onClick={onOpenCommand}
             className="hidden h-9 w-full max-w-md items-center gap-2 rounded-lg border border-white/[0.08] bg-surface-2/60 px-3 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:border-white/[0.14] hover:bg-surface-3 hover:text-foreground lg:flex"
           >
-            <Search className="h-4 w-4" />
-            <span className="flex-1 text-left">Buscar jugadores, pestañas, rivales…</span>
-            <kbd className="rounded-md border border-white/[0.08] bg-background px-1.5 py-0.5 text-[10px] font-medium">
+            <Search className="h-4 w-4 shrink-0" />
+            <span className="flex-1 truncate text-left">Buscar jugadores, pestañas, rivales…</span>
+            <kbd className="shrink-0 rounded-md border border-white/[0.08] bg-background px-1.5 py-0.5 text-[10px] font-medium">
               ⌘K
             </kbd>
           </button>
+        </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+        {/* Derecha: vista · acciones · liga · sesión */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="lg:hidden"
+            onClick={onOpenCommand}
+            aria-label="Buscar"
+          >
+            <Search className="h-[18px] w-[18px]" />
+          </Button>
+
+          {onToggleDensity && (
+            <div className="hidden items-center gap-2 lg:flex" title="Modo compacto (D)">
+              <span className="text-xs text-muted-foreground">Compacto</span>
+              <Switch checked={dense} onCheckedChange={onToggleDensity} aria-label="Densidad compacta" />
+            </div>
+          )}
+
+          <Separator orientation="vertical" className="hidden h-5 lg:block" />
+
+          {onRefresh && (
             <Button
               variant="ghost"
               size="icon-sm"
-              className="lg:hidden"
-              onClick={onOpenCommand}
-              aria-label="Buscar"
+              onClick={onRefresh}
+              disabled={isRefreshing}
+              aria-label="Recargar datos"
+              title="Recargar datos (R)"
             >
-              <Search className="h-[18px] w-[18px]" />
+              <RefreshCcw className={`h-[18px] w-[18px] ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
+          )}
 
-            <NotificationBell count={alertCount} alerts={alerts} />
+          <NotificationBell count={alertCount} alerts={alerts} />
 
-            {leagues.length > 0 && (
-              <LeagueSelector
-                leagues={leagues}
-                selectedLeague={selectedLeague}
-                onSelectLeague={onSelectLeague}
-              />
-            )}
+          <Separator orientation="vertical" className="h-5" />
 
-            <form action="/api/auth/logout" method="POST" className="hidden sm:block">
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon-sm"
-                className="text-muted-foreground hover:text-foreground"
-                aria-label="Cerrar sesión"
-              >
-                <LogOut className="h-[18px] w-[18px]" />
-              </Button>
-            </form>
-          </div>
+          {leagues.length > 0 && (
+            <LeagueSelector
+              leagues={leagues}
+              selectedLeague={selectedLeague}
+              onSelectLeague={onSelectLeague}
+            />
+          )}
+
+          <form action="/api/auth/logout" method="POST" className="hidden sm:block">
+            <Button
+              type="submit"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="h-[18px] w-[18px]" />
+            </Button>
+          </form>
         </div>
       </div>
     </header>
@@ -146,7 +199,7 @@ function LeagueSelector({
           <span className="hidden max-w-[160px] truncate sm:inline">
             {selectedLeague?.name || 'Seleccionar liga'}
           </span>
-          <span className="max-w-[100px] truncate sm:hidden">
+          <span className="hidden max-w-[100px] truncate min-[480px]:inline sm:hidden">
             {selectedLeague?.name?.slice(0, 10) || 'Liga'}
           </span>
           <ChevronDown className="h-3.5 w-3.5 opacity-50" />

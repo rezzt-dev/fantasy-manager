@@ -5,6 +5,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Input } from '../ui/input';
 import { AlertCircle, Mail, KeyRound, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function LoginForm() {
@@ -83,13 +84,13 @@ export default function LoginForm() {
                 <label htmlFor="username" className="text-sm font-medium text-foreground">
                   Email
                 </label>
-                <input
+                <Input
                   id="username"
                   type="email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="tu@email.com"
-                  className="flex h-10 w-full rounded-lg border border-white/[0.10] bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:border-white/[0.20] focus-visible:ring-2 focus-visible:ring-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-surface-2"
                   required
                 />
               </div>
@@ -98,13 +99,13 @@ export default function LoginForm() {
                 <label htmlFor="password" className="text-sm font-medium text-foreground">
                   Contraseña
                 </label>
-                <input
+                <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="flex h-10 w-full rounded-lg border border-white/[0.10] bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:border-white/[0.20] focus-visible:ring-2 focus-visible:ring-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="bg-surface-2"
                   required
                 />
               </div>
@@ -151,7 +152,7 @@ export default function LoginForm() {
                   onChange={(e) => setToken(e.target.value)}
                   rows={4}
                   placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs..."
-                  className="flex min-h-[80px] w-full rounded-lg border border-white/[0.10] bg-background px-3 py-2 text-sm font-mono text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:border-white/[0.20] focus-visible:ring-2 focus-visible:ring-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex min-h-[80px] w-full rounded-lg border border-white/[0.10] bg-surface-2 px-3 py-2 text-sm font-mono text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:border-white/[0.20] focus-visible:ring-2 focus-visible:ring-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                   required
                 />
               </div>
