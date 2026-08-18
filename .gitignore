@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-debug.log*
+.npm
+
+# Package manager lockfiles (keep pnpm-lock.yaml tracked; ignore others if mixed)
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+.astro/
+.output/
+*.tsbuildinfo
+
+# Runtime / generated data
+data/
+!data/.gitkeep
+
+# Cache / session artifacts
+.freebuff/
+.vite/
+.cache/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Playwright / E2E
+test-results/
+playwright-report/
+playwright/.cache/
+e2e/tmp-*/
+e2e/screenshot-*.png
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Misc
+coverage/
+.nyc_output/
