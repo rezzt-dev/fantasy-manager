@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { generateRecommendations, computeBestMoves } from '../../lib/recommendations/engine';
-import { getToken, fetchOfficialAPI, CMP } from '../../lib/fantasy/api-proxy';
+import { getToken, fetchOfficialAPI, fetchCurrentLineup, CMP } from '../../lib/fantasy/api-proxy';
 import { buildLeagueAnalysis } from '../../lib/analysis/league-analysis';
 import { analyzeClauseRisks } from '../../lib/recommendations/clause-risk';
 import { recommendCaptain } from '../../lib/recommendations/captain';
@@ -81,23 +81,24 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     // Parámetros calibrados del motor (data/engine-params.json, Fase 3).
     await loadEngineParams();
 
-    const [leagues, teamData, lineup, money, rawMarket, standing, week, allPlayers] = await Promise.all([
+    // La jornada actual la necesitamos para pedir la alineación completa por
+    // semana; si falla, fetchCurrentLineup vuelve al endpoint genérico.
+    const week = await fetchOfficialAPI<WeekInfo>(`${CMP}/week/current`, token);
+    const currentWeek = week?.number ?? week?.weekNumber ?? 1;
+
+    const [leagues, teamData, lineup, money, rawMarket, standing, allPlayers] = await Promise.all([
       fetchOfficialAPI<FantasyLeague[]>(`${CMP}/leagues`, token),
       fetchOfficialAPI<TeamData>(`${CMP}/leagues/${leagueId}/teams/${teamId}`, token),
-      fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token),
+      fetchCurrentLineup(token, teamId, currentWeek),
       fetchOfficialAPI<TeamMoney>(`${CMP}/teams/${teamId}/money`, token),
       fetchOfficialAPI<MarketPlayer[]>(`${CMP}/league/${leagueId}/market`, token),
       fetchOfficialAPI<StandingEntry[]>(`${CMP}/leagues/${leagueId}/standing`, token),
-      fetchOfficialAPI<WeekInfo>(`${CMP}/week/current`, token),
       fetchOfficialAPI<PlayerMaster[]>(`${CMP}/players`, token),
     ]);
 
     // La API de mercado suele devolver los jugadores sin equipo; los cruzamos
     // con el catálogo global para que siempre aparezca el club al que pertenecen.
     const market = enrichMarketPlayers(rawMarket, allPlayers);
-
-    // La API devuelve la jornada como `weekNumber` (algunos entornos usan `number`).
-    const currentWeek = week?.number ?? week?.weekNumber ?? 1;
     const calendar = await fetchOfficialAPI<Match[]>(`${CMP}/calendar`, token, { weekNumber: String(currentWeek) });
 
     const league = leagues.find((l) => l.id === leagueId);

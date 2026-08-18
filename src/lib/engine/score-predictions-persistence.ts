@@ -1,6 +1,8 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { ScorePredictionsResponse, TeamScorePrediction } from '../../types/analysis';
+import { readJsonl, writeFileAtomic, writeJsonlAtomic } from './jsonl';
+import { withFileLock } from './file-lock';
 
 /**
  * Persistencia de predicciones de puntuación por equipo de liga.
@@ -42,7 +44,7 @@ export async function saveScorePredictions(
   response: ScorePredictionsResponse,
 ): Promise<void> {
   await mkdir(SCORE_DIR, { recursive: true });
-  await writeFile(snapshotFile(leagueId, week), JSON.stringify(response, null, 2));
+  await writeFileAtomic(snapshotFile(leagueId, week), JSON.stringify(response, null, 2));
 }
 
 export async function appendScorePredictionHistory(
@@ -66,14 +68,15 @@ export async function appendScorePredictionHistory(
     degraded: p.predictedLineup.degraded,
   }));
 
-  const existing = await readJsonl<ScoreHistoryRecord>(HISTORY_FILE);
-  const byKey = new Map(existing.map((r) => [`${r.leagueId}:${r.week}:${r.teamId}`, r]));
-  for (const record of records) {
-    byKey.set(`${record.leagueId}:${record.week}:${record.teamId}`, record);
-  }
+  await withFileLock(HISTORY_FILE, async () => {
+    const existing = await readJsonl<ScoreHistoryRecord>(HISTORY_FILE);
+    const byKey = new Map(existing.map((r) => [`${r.leagueId}:${r.week}:${r.teamId}`, r]));
+    for (const record of records) {
+      byKey.set(`${record.leagueId}:${record.week}:${record.teamId}`, record);
+    }
 
-  const body = [...byKey.values()].map((r) => JSON.stringify(r)).join('\n') + '\n';
-  await writeFile(HISTORY_FILE, body);
+    await writeJsonlAtomic(HISTORY_FILE, [...byKey.values()]);
+  });
 }
 
 export async function loadScorePredictionHistory(
@@ -93,17 +96,5 @@ export async function loadScorePredictionSnapshot(
     return JSON.parse(raw) as ScorePredictionsResponse;
   } catch {
     return null;
-  }
-}
-
-async function readJsonl<T>(file: string): Promise<T[]> {
-  try {
-    const raw = await readFile(file, 'utf8');
-    return raw
-      .split('\n')
-      .filter((line) => line.trim().length > 0)
-      .map((line) => JSON.parse(line) as T);
-  } catch {
-    return [];
   }
 }

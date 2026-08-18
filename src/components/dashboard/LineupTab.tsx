@@ -11,6 +11,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Switch } from '../ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
@@ -37,6 +38,7 @@ interface FormationEntry {
 
 interface FilledEntry extends FormationEntry {
   suggested?: boolean;
+  expectedPoints?: number;
 }
 
 interface FilledRow {
@@ -52,66 +54,47 @@ const POSITION_ROWS: { positionId: number; label: string }[] = [
   { positionId: 4, label: 'Delanteros' },
 ];
 
-function buildFilledRows(
-  formation: Formation,
-  teamPlayers: TeamPlayer[],
-  optimalLineup?: OptimalLineup,
-): FilledRow[] {
+function buildOfficialRows(formation: Formation, teamPlayers: TeamPlayer[]): FilledRow[] {
   const officialByPos: Record<number, FormationEntry[]> = {
     1: formation.goalkeeper || [],
     2: formation.defender || [],
     3: formation.midfielder || [],
     4: formation.attacker || [],
   };
-  const officialIds = new Set(
-    Object.values(officialByPos).flatMap((entries) => entries.map((e) => e.playerMaster.id)),
-  );
-
-  let targets: Record<number, number> = { 1: 1, 2: 4, 3: 4, 4: 2 };
-  if (optimalLineup?.formation) {
-    const [d, m, a] = optimalLineup.formation.split('-').map((n) => parseInt(n, 10));
-    if ([d, m, a].every((n) => Number.isFinite(n))) targets = { 1: 1, 2: d, 3: m, 4: a };
-  }
-
-  // Set of player master IDs actually in our squad
-  const ownedPlayerMasterIds = new Set(teamPlayers.map(p => p.playerMaster.id));
-
-  const suggestionPool = (positionId: number): PlayerMaster[] => {
-    // Only suggest starters from optimalLineup if they are ACTUALLY owned by the user!
-    const fromOptimal = (optimalLineup?.starters || [])
-      .filter((e) => e.player.positionId === positionId && ownedPlayerMasterIds.has(e.player.id) && !officialIds.has(e.player.id))
-      .map((e) => e.player);
-
-    const rest = teamPlayers
-      .map((tp) => tp.playerMaster)
-      .filter(
-        (p) =>
-          p.positionId === positionId &&
-          !officialIds.has(p.id) &&
-          !fromOptimal.some((o) => o.id === p.id),
-      )
-      .sort((a, b) => (b.points || b.lastSeasonPoints || 0) - (a.points || a.lastSeasonPoints || 0));
-    return [...fromOptimal, ...rest];
-  };
-
-  const teamPlayerById = new Map(teamPlayers.map((tp) => [tp.playerMaster.id, tp]));
 
   return POSITION_ROWS.map(({ positionId, label }) => {
     const official = officialByPos[positionId];
-    const target = Math.max(targets[positionId], official.length);
-    const fill = suggestionPool(positionId)
-      .slice(0, Math.max(0, target - official.length))
-      .map((p): FilledEntry => {
-        const tp = teamPlayerById.get(p.id);
-        return {
-          playerMaster: p,
-          buyoutClause: tp?.buyoutClause ?? 0,
-          playerTeamId: tp?.playerTeamId ?? p.id,
-          suggested: true,
-        };
-      });
-    return { positionId, label, entries: [...official, ...fill] };
+    return {
+      positionId,
+      label,
+      entries: official.map((e): FilledEntry => ({ ...e, suggested: false })),
+    };
   });
+}
+
+function buildRecommendedRows(optimalLineup: OptimalLineup, teamPlayers: TeamPlayer[]): FilledRow[] {
+  const teamPlayerById = new Map(teamPlayers.map((tp) => [tp.playerMaster.id, tp]));
+  const byPosition: Record<number, FilledEntry[]> = { 1: [], 2: [], 3: [], 4: [] };
+
+  for (const starter of optimalLineup.starters) {
+    const tp = teamPlayerById.get(starter.player.id);
+    if (!tp) continue; // solo mostramos jugadores que realmente están en tu plantilla
+    const list = byPosition[starter.player.positionId] || [];
+    list.push({
+      playerMaster: starter.player,
+      buyoutClause: tp.buyoutClause,
+      playerTeamId: tp.playerTeamId,
+      suggested: false,
+      expectedPoints: starter.expectedPoints,
+    });
+    byPosition[starter.player.positionId] = list;
+  }
+
+  return POSITION_ROWS.map(({ positionId, label }) => ({
+    positionId,
+    label,
+    entries: byPosition[positionId] || [],
+  }));
 }
 
 export default function LineupTab({ league }: LineupTabProps) {
@@ -121,7 +104,7 @@ export default function LineupTab({ league }: LineupTabProps) {
 
   const lineupQuery = useQuery({
     queryKey: ['lineup', teamId],
-    queryFn: () => fantasyAPI.getTeamLineup(teamId),
+    queryFn: () => LaLigaFantasyClient.getCurrentLineup(teamId),
     enabled: !!teamId,
   });
 
@@ -159,6 +142,9 @@ export default function LineupTab({ league }: LineupTabProps) {
     playerTeamId: string;
     positionId: number;
   } | null>(null);
+
+  // Vista: tu once oficial tal cual viene de LaLiga, o el mejor once calculado con tus jugadores.
+  const [viewMode, setViewMode] = useState<'actual' | 'recommended'>('actual');
 
   const isLoading = lineupQuery.isLoading || teamQuery.isLoading;
   const hasError = lineupQuery.error || teamQuery.error;
@@ -205,21 +191,43 @@ export default function LineupTab({ league }: LineupTabProps) {
     ...(localFormation.midfielder || []),
     ...(localFormation.attacker || []),
   ];
-  const lineupIds = new Set(allFormationEntries.map((e) => e.playerMaster.id));
   const totalLineup = allFormationEntries.length;
 
-  const filledRows = buildFilledRows(localFormation, teamPlayers, optimalLineup);
-  const filledEntries = filledRows.flatMap((row) => row.entries);
-  const isIncomplete = totalLineup < filledEntries.length;
+  const teamPlayerById = new Map(teamPlayers.map((tp) => [tp.playerMaster.id, tp]));
 
-  const filledIds = new Set(filledEntries.map((e) => e.playerMaster.id));
-  const bench = teamPlayers.filter((p) => !filledIds.has(p.playerMaster.id));
+  // Vista recomendada: once óptimo calculado con tus jugadores.
+  // Vista actual: tu once oficial sin rellenar con sugerencias.
+  const isRecommendedView = viewMode === 'recommended';
+  const displayRows = isRecommendedView && optimalLineup
+    ? buildRecommendedRows(optimalLineup, teamPlayers)
+    : buildOfficialRows(localFormation, teamPlayers);
+  const displayEntries = displayRows.flatMap((row) => row.entries);
+  const displayCount = displayEntries.length;
+
+  // Incompleto solo se evalúa en la vista oficial; en la recomendada siempre hay 11.
+  const isIncomplete = !isRecommendedView && totalLineup < 11;
+
+  const displayIds = new Set(displayEntries.map((e) => e.playerMaster.id));
+  const recommendedBenchXp = new Map<string, number>(
+    isRecommendedView && optimalLineup ? optimalLineup.bench.map((e) => [e.player.id, e.expectedPoints]) : [],
+  );
+  const bench = isRecommendedView && optimalLineup
+    ? optimalLineup.bench.map((entry) => {
+        const tp = teamPlayerById.get(entry.player.id);
+        if (tp) return tp;
+        return {
+          buyoutClause: 0,
+          managerId: 0,
+          playerTeamId: entry.player.id,
+          isShielded: false,
+          playerMaster: entry.player,
+        } as TeamPlayer;
+      })
+    : teamPlayers.filter((p) => !displayIds.has(p.playerMaster.id));
 
   const injuredOrDoubtful = allFormationEntries.filter(
     (e) => e.playerMaster.playerStatus === 'injured' || e.playerMaster.playerStatus === 'doubtful',
   );
-
-  const teamPlayerById = new Map(teamPlayers.map((tp) => [tp.playerMaster.id, tp]));
 
   // Re-initialize / Reset lineup changes
   const resetChanges = () => {
@@ -285,6 +293,8 @@ export default function LineupTab({ league }: LineupTabProps) {
       attacker: at,
       coach: [...(localFormation.coach || [])],
     });
+
+    setViewMode('actual');
 
     toast.success('✨ ¡Alineación óptima recomendada aplicada (filtrando solo tus jugadores reales)! Haz clic en "Guardar Alineación" para guardarla.');
   };
@@ -399,9 +409,24 @@ export default function LineupTab({ league }: LineupTabProps) {
     <div className="space-y-6 pb-20 lg:pb-0">
       <SectionHeader
         title="Alineación"
-        description="Tu once titular y jugadores disponibles en el banquillo."
+        description={
+          isRecommendedView
+            ? 'El mejor once calculado con los jugadores de tu plantilla.'
+            : 'Tu once titular y jugadores disponibles en el banquillo.'
+        }
         action={
           <div className="flex flex-wrap items-center gap-2">
+            {optimalLineup && (
+              <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-surface-2 px-3 py-1.5">
+                <span className={`text-xs font-medium ${viewMode === 'actual' ? 'text-foreground' : 'text-muted-foreground'}`}>Mi once</span>
+                <Switch
+                  checked={viewMode === 'recommended'}
+                  onCheckedChange={(checked) => setViewMode(checked ? 'recommended' : 'actual')}
+                  aria-label="Alternar entre mi once y el mejor once recomendado"
+                />
+                <span className={`text-xs font-medium ${viewMode === 'recommended' ? 'text-foreground' : 'text-muted-foreground'}`}>Mejor once</span>
+              </div>
+            )}
             {injuredOrDoubtful.length > 0 && (
               <Badge variant="warning" className="gap-1.5">
                 <AlertTriangle className="h-3.5 w-3.5" />
@@ -410,14 +435,14 @@ export default function LineupTab({ league }: LineupTabProps) {
             )}
             <Badge variant="secondary" className="font-display text-xs">
               <Swords className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-              {totalLineup} titulares
+              {displayCount} titulares
             </Badge>
           </div>
         }
       />
 
       {/* Floating Save Actions Bar if modified */}
-      {isModified && (
+      {isModified && !isRecommendedView && (
         <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
           <div className="flex items-center gap-2 text-sm text-amber-200">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
@@ -443,14 +468,24 @@ export default function LineupTab({ league }: LineupTabProps) {
       {tacticalScheme && <TacticalSchemeCard scheme={tacticalScheme} />}
 
       {isIncomplete && (
-        <div className="flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-          <div className="text-sm">
-            <span className="font-semibold text-foreground">Tu alineación oficial está incompleta ({totalLineup} de 11 jugadores).</span>
-            <span className="text-muted-foreground">
-              {' '}Completamos el campo con los mejores jugadores disponibles de tu plantilla, marcados como «Sugerido». Confirma el once en la app oficial.
-            </span>
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <div className="text-sm">
+              <span className="font-semibold text-foreground">Tu alineación oficial está incompleta ({totalLineup} de 11 jugadores).</span>
+              <span className="text-muted-foreground">
+                {' '}Activa "Mejor once" para ver la propuesta completa con tus jugadores, o confirma el once en la app oficial.
+              </span>
+            </div>
           </div>
+          <Button
+            variant="ghost"
+            size="xs"
+            className="shrink-0 text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
+            onClick={() => window.open(`/api/debug/lineup?leagueId=${encodeURIComponent(leagueId)}&teamId=${teamId}`, '_blank')}
+          >
+            Diagnosticar alineación
+          </Button>
         </div>
       )}
 
@@ -496,11 +531,15 @@ export default function LineupTab({ league }: LineupTabProps) {
               </svg>
 
               <div className="relative z-10 flex min-h-[420px] flex-1 flex-col justify-between gap-3 overflow-y-auto py-3 sm:min-h-[540px] sm:py-4 lg:min-h-[680px]">
-                {filledRows.map((row) => (
+                {displayRows.map((row) => (
                   <PositionRow
                     key={row.positionId}
                     entries={row.entries}
                     onPlayerClick={(p) => {
+                      if (isRecommendedView) {
+                        setSelectedPlayer(teamPlayerById.get(p.id) || null);
+                        return;
+                      }
                       const entry = row.entries.find((e) => e.playerMaster.id === p.id);
                       if (entry) {
                         setSwappingStarter({
@@ -513,7 +552,7 @@ export default function LineupTab({ league }: LineupTabProps) {
                     }}
                   />
                 ))}
-                {localFormation.coach && localFormation.coach.length > 0 && (
+                {localFormation.coach && localFormation.coach.length > 0 && viewMode !== 'recommended' && (
                   <PositionRow entries={localFormation.coach} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
                 )}
               </div>
@@ -526,18 +565,23 @@ export default function LineupTab({ league }: LineupTabProps) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                Once titular ({totalLineup} oficial{totalLineup === 1 ? '' : 'es'}{isIncomplete ? ` + ${filledEntries.length - totalLineup} sugerido${filledEntries.length - totalLineup === 1 ? '' : 's'}` : ''})
+                {isRecommendedView ? 'Mejor once recomendado' : `Once titular (${totalLineup} oficial${totalLineup === 1 ? '' : 'es'})`}
               </CardTitle>
-              <CardDescription>Listado de los jugadores seleccionados localmente para la jornada</CardDescription>
+              <CardDescription>
+                {isRecommendedView
+                  ? 'Jugadores de tu plantilla que maximizan los puntos esperados de la jornada.'
+                  : 'Listado de los jugadores seleccionados localmente para la jornada.'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.04}>
-                {filledEntries.map((entry) => (
+                {displayEntries.map((entry) => (
                   <StaggerItem key={entry.playerTeamId}>
                     <PlayerCard
                       player={entry.playerMaster}
                       buyoutClause={entry.buyoutClause}
                       suggested={entry.suggested}
+                      expectedPoints={entry.expectedPoints}
                       onClick={() => setSelectedPlayer(teamPlayerById.get(entry.playerMaster.id) || null)}
                     />
                   </StaggerItem>
@@ -567,6 +611,7 @@ export default function LineupTab({ league }: LineupTabProps) {
                         player={p.playerMaster}
                         buyoutClause={p.buyoutClause}
                         isShielded={p.isShielded}
+                        expectedPoints={recommendedBenchXp.get(p.playerMaster.id) ?? null}
                         onClick={() => setSelectedPlayer(p)}
                       />
                     </StaggerItem>
@@ -687,6 +732,7 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
   const player = entry.playerMaster;
   const points = player.points || player.lastSeasonPoints || 0;
   const isWarning = player.playerStatus === 'injured' || player.playerStatus === 'doubtful';
+  const showExpected = typeof entry.expectedPoints === 'number';
 
   return (
     <motion.button
@@ -708,6 +754,11 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
         <span>•</span>
         <span>{points} pts</span>
       </div>
+      {showExpected && (
+        <div className="mt-1 text-xs font-semibold text-emerald-400">
+          {entry.expectedPoints?.toFixed(1)} xP
+        </div>
+      )}
       <div className="mt-2 flex w-full items-center justify-center gap-1.5">
         <PlayerStatusBadge status={player.playerStatus} />
         {entry.suggested && (

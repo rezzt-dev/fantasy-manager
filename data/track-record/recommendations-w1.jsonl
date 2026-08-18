@@ -100,3 +100,4 @@
 {"playerId":"2819","week":1,"leagueId":"017832595","teamId":37401377,"recordedAt":"2026-08-18T21:58:50.090Z","modelVersion":"components-v1.2","type":"buy","deltaXp":0,"price":675833,"actualPoints":null,"settledAt":null}
 {"playerId":"2479","week":1,"leagueId":"017832595","teamId":37401377,"recordedAt":"2026-08-18T22:01:13.400Z","modelVersion":"components-v1.2","type":"change_lineup","deltaXp":2.3,"actualPoints":null,"settledAt":null}
 {"playerId":"3084","week":1,"leagueId":"017832595","teamId":37401377,"recordedAt":"2026-08-18T22:15:29.595Z","modelVersion":"components-v1.2","type":"buy","deltaXp":0,"price":51647833,"actualPoints":null,"settledAt":null}
+{"playerId":"2616","week":1,"leagueId":"017832595","teamId":37401377,"recordedAt":"2026-08-18T23:32:14.606Z","modelVersion":"components-v1.2","type":"change_lineup","deltaXp":3.6,"actualPoints":null,"settledAt":null}

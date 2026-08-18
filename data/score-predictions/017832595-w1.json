@@ -1,1277 +1,16 @@
 {
   "week": 1,
   "leagueId": "017832595",
-  "generatedAt": "2026-08-18T22:07:04.857Z",
+  "generatedAt": "2026-08-18T23:50:00.397Z",
   "coachEnabled": true,
   "captainEnabled": true,
   "benchEnabled": true,
   "predictions": [
     {
-      "teamId": 37401377,
-      "managerId": 11789333,
-      "managerName": "nicotiza fc",
-      "teamValue": 211261820,
-      "predictedLineup": {
-        "formation": "3-4-3",
-        "starters": [
-          {
-            "player": {
-              "id": "2519",
-              "name": "Augusto Batalla",
-              "nickname": "A. Batalla",
-              "slug": "augusto-batalla",
-              "positionId": 1,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 213,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t184/p2519/256x256/p2519_t184_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "14",
-                "name": "Rayo Vallecano",
-                "slug": "rayo-vallecano",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t184/color/t184_rayo-vallecano.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t184/gray/t184_rayo-vallecano.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t184/white/t184_rayo-vallecano.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t184/color/t184_rayo-vallecano.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t184/white/t184_rayo-vallecano.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      90,
-                      2
-                    ],
-                    "goals": [
-                      0,
-                      0
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      0,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      2,
-                      1
-                    ],
-                    "effective_clearance": [
-                      2,
-                      0
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      2,
-                      -2
-                    ],
-                    "yellow_card": [
-                      0,
-                      0
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      0,
-                      0
-                    ],
-                    "won_contest": [
-                      0,
-                      0
-                    ],
-                    "ball_recovery": [
-                      16,
-                      3
-                    ],
-                    "poss_lost_all": [
-                      15,
-                      -1
-                    ],
-                    "penalty_conceded": [
-                      0,
-                      0
-                    ],
-                    "marca_points": [
-                      -1,
-                      2
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": 5,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": 5,
-              "points": 5,
-              "marketValue": 39147630
-            },
-            "xp": 3.7268614095166663,
-            "expectedPoints": 3.7268614095166663,
-            "riskAdjustedXp": 3.7268614095166663,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "season-average",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "2938",
-              "name": "Ville Koski",
-              "nickname": "Koski",
-              "slug": "ville-koski",
-              "positionId": 2,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 23,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t173/p2938/256x256/p2938_t173_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "21",
-                "name": "Deportivo Alavés",
-                "slug": "d-alaves",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t173/color/t173_d-alaves.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t173/gray/t173_d-alaves.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t173/white/t173_d-alaves.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t173/color/t173_d-alaves.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t173/white/t173_d-alaves.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      90,
-                      2
-                    ],
-                    "goals": [
-                      0,
-                      0
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      0,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      0,
-                      0
-                    ],
-                    "effective_clearance": [
-                      3,
-                      1
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      0,
-                      3
-                    ],
-                    "yellow_card": [
-                      0,
-                      0
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      0,
-                      0
-                    ],
-                    "won_contest": [
-                      1,
-                      0
-                    ],
-                    "ball_recovery": [
-                      0,
-                      0
-                    ],
-                    "poss_lost_all": [
-                      5,
-                      0
-                    ],
-                    "penalty_conceded": [
-                      0,
-                      0
-                    ],
-                    "marca_points": [
-                      -1,
-                      2
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": 8,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": 8,
-              "points": 8,
-              "marketValue": 915020
-            },
-            "xp": 6.077320963530666,
-            "expectedPoints": 6.077320963530666,
-            "riskAdjustedXp": 6.077320963530666,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "season-average",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "1959",
-              "name": "Santiago Mouriño",
-              "nickname": "Mouriño",
-              "slug": "santiago-mourino",
-              "positionId": 2,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 127,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t449/p1959/256x256/p1959_t449_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "20",
-                "name": "Villarreal CF",
-                "slug": "villarreal-cf",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t449/color/t449_villarreal-cf.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t449/gray/t449_villarreal-cf.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t449/white/t449_villarreal-cf.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t449/color/t449_villarreal-cf.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t449/white/t449_villarreal-cf.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      88,
-                      2
-                    ],
-                    "goals": [
-                      0,
-                      0
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      0,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      0,
-                      0
-                    ],
-                    "effective_clearance": [
-                      2,
-                      0
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      2,
-                      -2
-                    ],
-                    "yellow_card": [
-                      1,
-                      -1
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      1,
-                      0
-                    ],
-                    "won_contest": [
-                      0,
-                      0
-                    ],
-                    "ball_recovery": [
-                      8,
-                      1
-                    ],
-                    "poss_lost_all": [
-                      15,
-                      -1
-                    ],
-                    "penalty_conceded": [
-                      0,
-                      0
-                    ],
-                    "marca_points": [
-                      -1,
-                      0
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": -1,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": -1,
-              "points": -1,
-              "marketValue": 38360790
-            },
-            "xp": 2.726386664766754,
-            "expectedPoints": 2.726386664766754,
-            "riskAdjustedXp": 2.726386664766754,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "1991",
-              "name": "César Tárrega",
-              "nickname": "Tárrega",
-              "slug": "cesar-tarrega",
-              "positionId": 2,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 127,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t191/p1991/256x256/p1991_t191_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "18",
-                "name": "Valencia CF",
-                "slug": "valencia-cf",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t191/color/t191_valencia-cf.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t191/gray/t191_valencia-cf.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t191/white/t191_valencia-cf.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t191/color/t191_valencia-cf.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t191/white/t191_valencia-cf.png"
-              },
-              "lastStats": [],
-              "averagePoints": 0,
-              "points": 0,
-              "marketValue": 9126086
-            },
-            "xp": 2.4883362420164556,
-            "expectedPoints": 2.4883362420164556,
-            "riskAdjustedXp": 2.4883362420164556,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "1031",
-              "name": "Santiago Comesaña",
-              "nickname": "Comesaña",
-              "slug": "santi-c-v",
-              "positionId": 3,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 175,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t449/p1031/256x256/p1031_t449_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "20",
-                "name": "Villarreal CF",
-                "slug": "villarreal-cf",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t449/color/t449_villarreal-cf.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t449/gray/t449_villarreal-cf.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t449/white/t449_villarreal-cf.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t449/color/t449_villarreal-cf.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t449/white/t449_villarreal-cf.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      56,
-                      1
-                    ],
-                    "goals": [
-                      0,
-                      0
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      0,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      0,
-                      0
-                    ],
-                    "effective_clearance": [
-                      2,
-                      0
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      2,
-                      -1
-                    ],
-                    "yellow_card": [
-                      0,
-                      0
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      0,
-                      0
-                    ],
-                    "won_contest": [
-                      0,
-                      0
-                    ],
-                    "ball_recovery": [
-                      2,
-                      0
-                    ],
-                    "poss_lost_all": [
-                      6,
-                      0
-                    ],
-                    "penalty_conceded": [
-                      1,
-                      -2
-                    ],
-                    "marca_points": [
-                      -1,
-                      1
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": -1,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": -1,
-              "points": -1,
-              "marketValue": 33933004
-            },
-            "xp": 2.9030065596567978,
-            "expectedPoints": 2.9030065596567978,
-            "riskAdjustedXp": 2.9030065596567978,
-            "expectedMinutes": 51,
-            "pStarter": 0.595,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "2394",
-              "name": "Williot Swedberg",
-              "nickname": "Williot",
-              "slug": "williot-swedberg",
-              "positionId": 3,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 133,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t176/p2394/256x256/p2394_t176_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "6",
-                "name": "Celta",
-                "slug": "rc-celta",
-                "assets": "{\"color\":\"https://assets-fantasy.llt-services.com/teambadge/t176/color/t176_rc-celta.png\",\"white\":\"https://assets-fantasy.llt-services.com/teambadge/t176/white/t176_rc-celta.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t176/color/t176_rc-celta.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t176/white/t176_rc-celta.png"
-              },
-              "lastStats": [],
-              "averagePoints": 0,
-              "points": 0,
-              "marketValue": 7846553
-            },
-            "xp": 2.8631649169969995,
-            "expectedPoints": 2.8631649169969995,
-            "riskAdjustedXp": 2.8631649169969995,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "1070",
-              "name": "Inigo Ruiz de Galarreta",
-              "nickname": "De Galarreta",
-              "slug": "r-de-galarreta",
-              "positionId": 3,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 156,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t174/p1070/256x256/p1070_t174_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "3",
-                "name": "Athletic Club",
-                "slug": "athletic-club",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t174/color/t174_athletic-club.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t174/gray/t174_athletic-club.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t174/white/t174_athletic-club.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t174/color/t174_athletic-club.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t174/white/t174_athletic-club.png"
-              },
-              "lastStats": [],
-              "averagePoints": 0,
-              "points": 0,
-              "marketValue": 12620955
-            },
-            "xp": 1.7835087719298244,
-            "expectedPoints": 1.7835087719298244,
-            "riskAdjustedXp": 1.7835087719298244,
-            "expectedMinutes": 46,
-            "pStarter": 0.51,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "2616",
-              "name": "Carlos Álvarez",
-              "nickname": "C. Alvarez",
-              "slug": "carlos-a",
-              "positionId": 3,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 113,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t855/p2616/256x256/p2616_t855_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "11",
-                "name": "Levante UD",
-                "slug": "levante-ud",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t855/color/t855_levante-ud.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t855/gray/t855_levante-ud.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t855/white/t855_levante-ud.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t855/color/t855_levante-ud.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t855/white/t855_levante-ud.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      45,
-                      1
-                    ],
-                    "goals": [
-                      0,
-                      0
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      0,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      0,
-                      0
-                    ],
-                    "effective_clearance": [
-                      0,
-                      0
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      2,
-                      -1
-                    ],
-                    "yellow_card": [
-                      0,
-                      0
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      0,
-                      0
-                    ],
-                    "won_contest": [
-                      0,
-                      0
-                    ],
-                    "ball_recovery": [
-                      3,
-                      0
-                    ],
-                    "poss_lost_all": [
-                      4,
-                      0
-                    ],
-                    "penalty_conceded": [
-                      0,
-                      0
-                    ],
-                    "marca_points": [
-                      -1,
-                      0
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": 0,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": 0,
-              "points": 0,
-              "marketValue": 19418123
-            },
-            "xp": 0,
-            "expectedPoints": 0,
-            "riskAdjustedXp": 0,
-            "expectedMinutes": 0,
-            "pStarter": 0,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "2520",
-              "name": "Roberto Fernández",
-              "nickname": "Roberto",
-              "slug": "roberto-fernandez-2",
-              "positionId": 4,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 151,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t177/p2520/256x256/p2520_t177_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "8",
-                "name": "RCD Espanyol",
-                "slug": "rcd-espanyol",
-                "assets": "{\"color\":\"https://assets-fantasy.llt-services.com/teambadge/t177/color/t177_rcd-espanyol.png\",\"white\":\"https://assets-fantasy.llt-services.com/teambadge/t177/white/t177_rcd-espanyol.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t177/color/t177_rcd-espanyol.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t177/white/t177_rcd-espanyol.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      90,
-                      2
-                    ],
-                    "goals": [
-                      2,
-                      8
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      0,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      0,
-                      0
-                    ],
-                    "effective_clearance": [
-                      0,
-                      0
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      0,
-                      1
-                    ],
-                    "yellow_card": [
-                      0,
-                      0
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      2,
-                      1
-                    ],
-                    "won_contest": [
-                      0,
-                      0
-                    ],
-                    "ball_recovery": [
-                      1,
-                      0
-                    ],
-                    "poss_lost_all": [
-                      8,
-                      0
-                    ],
-                    "penalty_conceded": [
-                      0,
-                      0
-                    ],
-                    "marca_points": [
-                      -1,
-                      4
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": 16,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": 16,
-              "points": 16,
-              "marketValue": 7792913
-            },
-            "xp": 12.387064192799999,
-            "expectedPoints": 12.387064192799999,
-            "riskAdjustedXp": 12.387064192799999,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "season-average",
-            "isCaptain": true,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "3073",
-              "name": "Andrés Martín",
-              "nickname": "Andrés Martín",
-              "slug": "andres-2",
-              "positionId": 4,
-              "playerStatus": "ok",
-              "lastSeasonPoints": null,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t189/p3073/256x256/p3073_t189_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "49",
-                "name": "R. Racing Club",
-                "slug": "r-racing-club",
-                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t189/color/t189_r-racing-club.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t189/gray/t189_r-racing-club.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t189/white/t189_r-racing-club.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t189/color/t189_r-racing-club.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t189/white/t189_r-racing-club.png"
-              },
-              "lastStats": [
-                {
-                  "stats": {
-                    "mins_played": [
-                      90,
-                      2
-                    ],
-                    "goals": [
-                      1,
-                      4
-                    ],
-                    "goal_assist": [
-                      0,
-                      0
-                    ],
-                    "offtarget_att_assist": [
-                      0,
-                      0
-                    ],
-                    "pen_area_entries": [
-                      1,
-                      0
-                    ],
-                    "penalty_won": [
-                      0,
-                      0
-                    ],
-                    "penalty_save": [
-                      0,
-                      0
-                    ],
-                    "saves": [
-                      0,
-                      0
-                    ],
-                    "effective_clearance": [
-                      0,
-                      0
-                    ],
-                    "penalty_failed": [
-                      0,
-                      0
-                    ],
-                    "own_goals": [
-                      0,
-                      0
-                    ],
-                    "goals_conceded": [
-                      2,
-                      -1
-                    ],
-                    "yellow_card": [
-                      0,
-                      0
-                    ],
-                    "second_yellow_card": [
-                      0,
-                      0
-                    ],
-                    "red_card": [
-                      0,
-                      0
-                    ],
-                    "total_scoring_att": [
-                      1,
-                      0
-                    ],
-                    "won_contest": [
-                      1,
-                      0
-                    ],
-                    "ball_recovery": [
-                      8,
-                      1
-                    ],
-                    "poss_lost_all": [
-                      19,
-                      -1
-                    ],
-                    "penalty_conceded": [
-                      0,
-                      0
-                    ],
-                    "marca_points": [
-                      -1,
-                      3
-                    ]
-                  },
-                  "weekNumber": 1,
-                  "totalPoints": 8,
-                  "isInIdealFormation": false
-                }
-              ],
-              "averagePoints": 8,
-              "points": 8,
-              "marketValue": 19402511
-            },
-            "xp": 5.207179427120001,
-            "expectedPoints": 5.207179427120001,
-            "riskAdjustedXp": 5.207179427120001,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "season-average",
-            "isCaptain": false,
-            "isCoach": false
-          },
-          {
-            "player": {
-              "id": "2603",
-              "name": "Ferran Jutglà",
-              "nickname": "Ferran Jutglà",
-              "slug": "ferran-1",
-              "positionId": 4,
-              "playerStatus": "ok",
-              "lastSeasonPoints": 142,
-              "images": {
-                "transparent": {
-                  "256x256": "https://assets-fantasy.llt-services.com/players/t176/p2603/256x256/p2603_t176_1_001_000.png"
-                }
-              },
-              "team": {
-                "id": "6",
-                "name": "Celta",
-                "slug": "rc-celta",
-                "assets": "{\"color\":\"https://assets-fantasy.llt-services.com/teambadge/t176/color/t176_rc-celta.png\",\"white\":\"https://assets-fantasy.llt-services.com/teambadge/t176/white/t176_rc-celta.png\"}",
-                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t176/color/t176_rc-celta.png",
-                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t176/white/t176_rc-celta.png"
-              },
-              "lastStats": [],
-              "averagePoints": 0,
-              "points": 0,
-              "marketValue": 9547752
-            },
-            "xp": 3.056912918899052,
-            "expectedPoints": 3.056912918899052,
-            "riskAdjustedXp": 3.056912918899052,
-            "expectedMinutes": 66,
-            "pStarter": 0.85,
-            "source": "last-season",
-            "isCaptain": false,
-            "isCoach": false
-          }
-        ],
-        "bench": [],
-        "captain": {
-          "player": {
-            "id": "2520",
-            "name": "Roberto Fernández",
-            "nickname": "Roberto",
-            "slug": "roberto-fernandez-2",
-            "positionId": 4,
-            "playerStatus": "ok",
-            "lastSeasonPoints": 151,
-            "images": {
-              "transparent": {
-                "256x256": "https://assets-fantasy.llt-services.com/players/t177/p2520/256x256/p2520_t177_1_001_000.png"
-              }
-            },
-            "team": {
-              "id": "8",
-              "name": "RCD Espanyol",
-              "slug": "rcd-espanyol",
-              "assets": "{\"color\":\"https://assets-fantasy.llt-services.com/teambadge/t177/color/t177_rcd-espanyol.png\",\"white\":\"https://assets-fantasy.llt-services.com/teambadge/t177/white/t177_rcd-espanyol.png\"}",
-              "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t177/color/t177_rcd-espanyol.png",
-              "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t177/white/t177_rcd-espanyol.png"
-            },
-            "lastStats": [
-              {
-                "stats": {
-                  "mins_played": [
-                    90,
-                    2
-                  ],
-                  "goals": [
-                    2,
-                    8
-                  ],
-                  "goal_assist": [
-                    0,
-                    0
-                  ],
-                  "offtarget_att_assist": [
-                    0,
-                    0
-                  ],
-                  "pen_area_entries": [
-                    0,
-                    0
-                  ],
-                  "penalty_won": [
-                    0,
-                    0
-                  ],
-                  "penalty_save": [
-                    0,
-                    0
-                  ],
-                  "saves": [
-                    0,
-                    0
-                  ],
-                  "effective_clearance": [
-                    0,
-                    0
-                  ],
-                  "penalty_failed": [
-                    0,
-                    0
-                  ],
-                  "own_goals": [
-                    0,
-                    0
-                  ],
-                  "goals_conceded": [
-                    0,
-                    1
-                  ],
-                  "yellow_card": [
-                    0,
-                    0
-                  ],
-                  "second_yellow_card": [
-                    0,
-                    0
-                  ],
-                  "red_card": [
-                    0,
-                    0
-                  ],
-                  "total_scoring_att": [
-                    2,
-                    1
-                  ],
-                  "won_contest": [
-                    0,
-                    0
-                  ],
-                  "ball_recovery": [
-                    1,
-                    0
-                  ],
-                  "poss_lost_all": [
-                    8,
-                    0
-                  ],
-                  "penalty_conceded": [
-                    0,
-                    0
-                  ],
-                  "marca_points": [
-                    -1,
-                    4
-                  ]
-                },
-                "weekNumber": 1,
-                "totalPoints": 16,
-                "isInIdealFormation": false
-              }
-            ],
-            "averagePoints": 16,
-            "points": 16,
-            "marketValue": 7792913
-          },
-          "xp": 12.387064192799999,
-          "expectedPoints": 12.387064192799999,
-          "riskAdjustedXp": 12.387064192799999,
-          "expectedMinutes": 66,
-          "pStarter": 0.85,
-          "source": "season-average",
-          "isCaptain": true,
-          "isCoach": false
-        },
-        "coach": {
-          "player": {
-            "id": "3097",
-            "name": "Beñat San José",
-            "nickname": "Beñat",
-            "slug": "benat-san-jose",
-            "positionId": 5,
-            "playerStatus": "ok",
-            "lastSeasonPoints": null,
-            "images": {
-              "transparent": {
-                "256x256": "https://assets-fantasy.llt-services.com/players/t184/man3097/256x256/man3097_t184_1_001_000.png"
-              }
-            },
-            "team": {
-              "id": "14",
-              "name": "Rayo Vallecano",
-              "slug": "rayo-vallecano",
-              "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t184/color/t184_rayo-vallecano.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t184/gray/t184_rayo-vallecano.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t184/white/t184_rayo-vallecano.png\"}",
-              "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t184/color/t184_rayo-vallecano.png",
-              "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t184/white/t184_rayo-vallecano.png"
-            },
-            "lastStats": [
-              {
-                "stats": {
-                  "won_match": [
-                    0,
-                    0
-                  ],
-                  "lost_match": [
-                    1,
-                    0
-                  ],
-                  "drawn_match": [
-                    0,
-                    0
-                  ],
-                  "marca_points": [
-                    -1,
-                    0
-                  ]
-                },
-                "weekNumber": 1,
-                "totalPoints": 0,
-                "isInIdealFormation": false
-              }
-            ],
-            "averagePoints": 0,
-            "points": 0,
-            "marketValue": 1512549
-          },
-          "xp": 0,
-          "expectedPoints": 0,
-          "riskAdjustedXp": 0,
-          "expectedMinutes": 24,
-          "pStarter": 0.15,
-          "source": "position-average",
-          "isCaptain": false,
-          "isCoach": true
-        },
-        "fieldExpected": 43.2,
-        "captainBonus": 12.4,
-        "coachPoints": 0,
-        "benchExpected": 0,
-        "totalExpected": 55.6,
-        "dataQuality": {
-          "level": "low",
-          "notes": [
-            "Alineación inferida desde la plantilla (la API no expone la alineación rival)."
-          ]
-        },
-        "degraded": false,
-        "inferred": true
-      },
-      "coachPrediction": {
-        "teamId": 37401377,
-        "expectedPoints": 0,
-        "source": "fallback",
-        "notes": [
-          "El equipo descansa esta jornada."
-        ]
-      }
-    },
-    {
       "teamId": 37401723,
       "managerId": 5757192,
       "managerName": "Carcapri FC",
-      "teamValue": 215127414,
+      "teamValue": 214602735,
       "predictedLineup": {
         "formation": "5-4-1",
         "starters": [
@@ -1300,7 +39,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 37961048
+              "marketValue": 37437146
             },
             "xp": 5.467999164791262,
             "expectedPoints": 5.467999164791262,
@@ -1428,7 +167,7 @@
               ],
               "averagePoints": 17,
               "points": 17,
-              "marketValue": 15574761
+              "marketValue": 16414367
             },
             "xp": 12.914307047502666,
             "expectedPoints": 12.914307047502666,
@@ -1464,7 +203,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5096327
+              "marketValue": 5012308
             },
             "xp": 2.0785588972431075,
             "expectedPoints": 2.0785588972431075,
@@ -1500,7 +239,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 28554474
+              "marketValue": 28326168
             },
             "xp": 1.6721199438530887,
             "expectedPoints": 1.6721199438530887,
@@ -1628,7 +367,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 7232303
+              "marketValue": 7224568
             },
             "xp": 1.4140030924506664,
             "expectedPoints": 1.4140030924506664,
@@ -1756,7 +495,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 4565896
+              "marketValue": 4488737
             },
             "xp": 0.9601877158663157,
             "expectedPoints": 0.9601877158663157,
@@ -1884,7 +623,7 @@
               ],
               "averagePoints": 6,
               "points": 6,
-              "marketValue": 27161321
+              "marketValue": 27549308
             },
             "xp": 4.346804150392,
             "expectedPoints": 4.346804150392,
@@ -1920,7 +659,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 56952456
+              "marketValue": 56561640
             },
             "xp": 1.7587094723523902,
             "expectedPoints": 1.7587094723523902,
@@ -1956,7 +695,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 7564103
+              "marketValue": 7710332
             },
             "xp": 1.7532456140350874,
             "expectedPoints": 1.7532456140350874,
@@ -1992,7 +731,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 1316854
+              "marketValue": 1293981
             },
             "xp": 0.7254297570999562,
             "expectedPoints": 0.7254297570999562,
@@ -2120,7 +859,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 7333065
+              "marketValue": 7232571
             },
             "xp": 1.3849503092333333,
             "expectedPoints": 1.3849503092333333,
@@ -2250,7 +989,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 5931880
+              "marketValue": 5782153
             },
             "xp": 0.5268853515626667,
             "expectedPoints": 0.5268853515626667,
@@ -2379,7 +1118,7 @@
             ],
             "averagePoints": 17,
             "points": 17,
-            "marketValue": 15574761
+            "marketValue": 16414367
           },
           "xp": 12.914307047502666,
           "expectedPoints": 12.914307047502666,
@@ -2415,7 +1154,7 @@
             "lastStats": [],
             "averagePoints": 0,
             "points": 0,
-            "marketValue": 4037918
+            "marketValue": 3895988
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -2453,7 +1192,7 @@
       "teamId": 37385019,
       "managerId": 4948149,
       "managerName": "Futruneta FC",
-      "teamValue": 190694885,
+      "teamValue": 193314847,
       "predictedLineup": {
         "formation": "5-4-1",
         "starters": [
@@ -2574,7 +1313,7 @@
               ],
               "averagePoints": 7,
               "points": 7,
-              "marketValue": 37463330
+              "marketValue": 38101137
             },
             "xp": 5.071271508790667,
             "expectedPoints": 5.071271508790667,
@@ -2702,7 +1441,7 @@
               ],
               "averagePoints": 4,
               "points": 4,
-              "marketValue": 12865758
+              "marketValue": 13306196
             },
             "xp": 3.263076953106666,
             "expectedPoints": 3.263076953106666,
@@ -2738,7 +1477,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 9059783
+              "marketValue": 9072537
             },
             "xp": 2.841637361230105,
             "expectedPoints": 2.841637361230105,
@@ -2866,7 +1605,7 @@
               ],
               "averagePoints": -1,
               "points": -1,
-              "marketValue": 2745839
+              "marketValue": 2699282
             },
             "xp": 2.3505716906444887,
             "expectedPoints": 2.3505716906444887,
@@ -2902,7 +1641,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 2912917
+              "marketValue": 2932241
             },
             "xp": 0.9260526315789473,
             "expectedPoints": 0.9260526315789473,
@@ -2938,7 +1677,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 10295620
+              "marketValue": 10295291
             },
             "xp": 0.9171052631578945,
             "expectedPoints": 0.9171052631578945,
@@ -3066,7 +1805,7 @@
               ],
               "averagePoints": 8,
               "points": 8,
-              "marketValue": 50036006
+              "marketValue": 51035561
             },
             "xp": 6.526153906213332,
             "expectedPoints": 6.526153906213332,
@@ -3194,7 +1933,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 3353640
+              "marketValue": 3416112
             },
             "xp": 3.7983256022066665,
             "expectedPoints": 3.7983256022066665,
@@ -3322,7 +2061,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 13164604
+              "marketValue": 13320588
             },
             "xp": 3.622336791993334,
             "expectedPoints": 3.622336791993334,
@@ -3358,7 +2097,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 9590965
+              "marketValue": 9446672
             },
             "xp": 2.368666666666666,
             "expectedPoints": 2.368666666666666,
@@ -3394,7 +2133,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 14389367
+              "marketValue": 14773074
             },
             "xp": 2.706578947368421,
             "expectedPoints": 2.706578947368421,
@@ -3524,7 +2263,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 3161852
+              "marketValue": 3554550
             },
             "xp": 3.2544871419500003,
             "expectedPoints": 3.2544871419500003,
@@ -3560,7 +2299,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5201404
+              "marketValue": 5185897
             },
             "xp": 0.8977247430037893,
             "expectedPoints": 0.8977247430037893,
@@ -3688,7 +2427,7 @@
               ],
               "averagePoints": -2,
               "points": -2,
-              "marketValue": 968048
+              "marketValue": 966295
             },
             "xp": 0.6276819216028069,
             "expectedPoints": 0.6276819216028069,
@@ -3724,7 +2463,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 7063863
+              "marketValue": 6956237
             },
             "xp": 0.5547368421052631,
             "expectedPoints": 0.5547368421052631,
@@ -3760,7 +2499,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5534975
+              "marketValue": 5425348
             },
             "xp": 0.27074238281066665,
             "expectedPoints": 0.27074238281066665,
@@ -3889,7 +2628,7 @@
             ],
             "averagePoints": 8,
             "points": 8,
-            "marketValue": 50036006
+            "marketValue": 51035561
           },
           "xp": 6.526153906213332,
           "expectedPoints": 6.526153906213332,
@@ -3949,7 +2688,7 @@
             ],
             "averagePoints": 2,
             "points": 2,
-            "marketValue": 1530620
+            "marketValue": 1482874
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -3987,7 +2726,7 @@
       "teamId": 37401405,
       "managerId": 3552044,
       "managerName": "MarquiLokura",
-      "teamValue": 153896692,
+      "teamValue": 154821308,
       "predictedLineup": {
         "formation": "3-4-3",
         "starters": [
@@ -4108,7 +2847,7 @@
               ],
               "averagePoints": 11,
               "points": 11,
-              "marketValue": 38002836
+              "marketValue": 38692655
             },
             "xp": 8.51610663255,
             "expectedPoints": 8.51610663255,
@@ -4144,7 +2883,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 10692207
+              "marketValue": 10545913
             },
             "xp": 2.0439268702318416,
             "expectedPoints": 2.0439268702318416,
@@ -4272,7 +3011,7 @@
               ],
               "averagePoints": 7,
               "points": 7,
-              "marketValue": 5588128
+              "marketValue": 5785898
             },
             "xp": 1.9336930338506668,
             "expectedPoints": 1.9336930338506668,
@@ -4308,7 +3047,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 3508684
+              "marketValue": 3440217
             },
             "xp": 0.9785252621315789,
             "expectedPoints": 0.9785252621315789,
@@ -4436,7 +3175,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 13258207
+              "marketValue": 13568164
             },
             "xp": 3.2544871419500003,
             "expectedPoints": 3.2544871419500003,
@@ -4564,7 +3303,7 @@
               ],
               "averagePoints": 4,
               "points": 4,
-              "marketValue": 14784817
+              "marketValue": 14731133
             },
             "xp": 3.038660481765333,
             "expectedPoints": 3.038660481765333,
@@ -4600,7 +3339,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 16069574
+              "marketValue": 16114339
             },
             "xp": 2.0653411908022283,
             "expectedPoints": 2.0653411908022283,
@@ -4728,7 +3467,7 @@
               ],
               "averagePoints": 3,
               "points": 3,
-              "marketValue": 5752101
+              "marketValue": 5682298
             },
             "xp": 1.672091528315,
             "expectedPoints": 1.672091528315,
@@ -4856,7 +3595,7 @@
               ],
               "averagePoints": 8,
               "points": 8,
-              "marketValue": 25496409
+              "marketValue": 25881773
             },
             "xp": 6.077320963530666,
             "expectedPoints": 6.077320963530666,
@@ -4892,7 +3631,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 7006087
+              "marketValue": 6930450
             },
             "xp": 1.1037764956844212,
             "expectedPoints": 1.1037764956844212,
@@ -4928,7 +3667,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 6552945
+              "marketValue": 6465777
             },
             "xp": 0.998280701754386,
             "expectedPoints": 0.998280701754386,
@@ -5058,7 +3797,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 3907603
+              "marketValue": 3806950
             },
             "xp": 0.47337994792000004,
             "expectedPoints": 0.47337994792000004,
@@ -5094,7 +3833,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 1069764
+              "marketValue": 1043226
             },
             "xp": 0.04771929824561403,
             "expectedPoints": 0.04771929824561403,
@@ -5223,7 +3962,7 @@
             ],
             "averagePoints": 11,
             "points": 11,
-            "marketValue": 38002836
+            "marketValue": 38692655
           },
           "xp": 8.51610663255,
           "expectedPoints": 8.51610663255,
@@ -5259,7 +3998,7 @@
             "lastStats": [],
             "averagePoints": 0,
             "points": 0,
-            "marketValue": 2207330
+            "marketValue": 2132515
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -5297,7 +4036,7 @@
       "teamId": 37401369,
       "managerId": 3793207,
       "managerName": "DaimielRoñoso FC",
-      "teamValue": 148684709,
+      "teamValue": 148231783,
       "predictedLineup": {
         "formation": "3-5-2",
         "starters": [
@@ -5418,7 +4157,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 7733769
+              "marketValue": 7888908
             },
             "xp": 3.710996541339999,
             "expectedPoints": 3.710996541339999,
@@ -5454,7 +4193,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 12392023
+              "marketValue": 12294334
             },
             "xp": 2.6737719298245612,
             "expectedPoints": 2.6737719298245612,
@@ -5490,7 +4229,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 4358733
+              "marketValue": 4386237
             },
             "xp": 2.195810688223263,
             "expectedPoints": 2.195810688223263,
@@ -5526,7 +4265,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 9115992
+              "marketValue": 9022190
             },
             "xp": 1.521871723785092,
             "expectedPoints": 1.521871723785092,
@@ -5654,7 +4393,7 @@
               ],
               "averagePoints": 11,
               "points": 11,
-              "marketValue": 3475549
+              "marketValue": 3678096
             },
             "xp": 8.164192390947997,
             "expectedPoints": 8.164192390947997,
@@ -5690,7 +4429,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 7661883
+              "marketValue": 7677454
             },
             "xp": 2.6450818320647365,
             "expectedPoints": 2.6450818320647365,
@@ -5726,7 +4465,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 6144895
+              "marketValue": 6015339
             },
             "xp": 2.368666666666666,
             "expectedPoints": 2.368666666666666,
@@ -5762,7 +4501,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 13999535
+              "marketValue": 14025032
             },
             "xp": 2.069996355018912,
             "expectedPoints": 2.069996355018912,
@@ -5890,7 +4629,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 953123
+              "marketValue": 928477
             },
             "xp": 1.0010821679690667,
             "expectedPoints": 1.0010821679690667,
@@ -5926,7 +4665,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 8517584
+              "marketValue": 8519258
             },
             "xp": 2.625488633308701,
             "expectedPoints": 2.625488633308701,
@@ -5962,7 +4701,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 7493723
+              "marketValue": 7374131
             },
             "xp": 1.0774122807017543,
             "expectedPoints": 1.0774122807017543,
@@ -6000,7 +4739,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 38973534
+              "marketValue": 38615591
             },
             "xp": 3.70395899507507,
             "expectedPoints": 3.70395899507507,
@@ -6036,7 +4775,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 396791
+              "marketValue": 394398
             },
             "xp": 0.3287844880762105,
             "expectedPoints": 0.3287844880762105,
@@ -6164,7 +4903,7 @@
               ],
               "averagePoints": 1,
               "points": 1,
-              "marketValue": 3445042
+              "marketValue": 3425483
             },
             "xp": 0.26344267578133335,
             "expectedPoints": 0.26344267578133335,
@@ -6292,7 +5031,7 @@
               ],
               "averagePoints": 4,
               "points": 4,
-              "marketValue": 5962692
+              "marketValue": 6011743
             },
             "xp": 0,
             "expectedPoints": 0,
@@ -6421,7 +5160,7 @@
             ],
             "averagePoints": 11,
             "points": 11,
-            "marketValue": 3475549
+            "marketValue": 3678096
           },
           "xp": 8.164192390947997,
           "expectedPoints": 8.164192390947997,
@@ -6457,7 +5196,7 @@
             "lastStats": [],
             "averagePoints": 0,
             "points": 0,
-            "marketValue": 3585404
+            "marketValue": 3455466
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -6495,7 +5234,7 @@
       "teamId": 37401365,
       "managerId": 10029120,
       "managerName": "Princesos_FC",
-      "teamValue": 282557301,
+      "teamValue": 287157650,
       "predictedLineup": {
         "formation": "4-3-3",
         "starters": [
@@ -6524,7 +5263,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 8449774
+              "marketValue": 8492275
             },
             "xp": 4.363333333333332,
             "expectedPoints": 4.363333333333332,
@@ -6560,7 +5299,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 28318335
+              "marketValue": 28402635
             },
             "xp": 2.0653411908022283,
             "expectedPoints": 2.0653411908022283,
@@ -6596,7 +5335,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 3975296
+              "marketValue": 4031761
             },
             "xp": 1.4679284496610876,
             "expectedPoints": 1.4679284496610876,
@@ -6632,7 +5371,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 17876037
+              "marketValue": 18024141
             },
             "xp": 1.3614912280701752,
             "expectedPoints": 1.3614912280701752,
@@ -6668,7 +5407,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 14065778
+              "marketValue": 14079477
             },
             "xp": 0.8297894222875789,
             "expectedPoints": 0.8297894222875789,
@@ -6796,7 +5535,7 @@
               ],
               "averagePoints": 6,
               "points": 6,
-              "marketValue": 30085284
+              "marketValue": 30361570
             },
             "xp": 4.6451490723,
             "expectedPoints": 4.6451490723,
@@ -6924,7 +5663,7 @@
               ],
               "averagePoints": 4,
               "points": 4,
-              "marketValue": 24357671
+              "marketValue": 25029822
             },
             "xp": 2.6035897135600004,
             "expectedPoints": 2.6035897135600004,
@@ -6960,7 +5699,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 90505181
+              "marketValue": 91443979
             },
             "xp": 2.28453216374269,
             "expectedPoints": 2.28453216374269,
@@ -7088,7 +5827,7 @@
               ],
               "averagePoints": 10,
               "points": 10,
-              "marketValue": 34647154
+              "marketValue": 36965599
             },
             "xp": 7.244673583986668,
             "expectedPoints": 7.244673583986668,
@@ -7216,7 +5955,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 6459990
+              "marketValue": 6423889
             },
             "xp": 2.9350697835233333,
             "expectedPoints": 2.9350697835233333,
@@ -7252,7 +5991,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 9282313
+              "marketValue": 9563853
             },
             "xp": 0.998280701754386,
             "expectedPoints": 0.998280701754386,
@@ -7290,7 +6029,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 13184286
+              "marketValue": 13028977
             },
             "xp": 0.6288362236200703,
             "expectedPoints": 0.6288362236200703,
@@ -7419,7 +6158,7 @@
             ],
             "averagePoints": 10,
             "points": 10,
-            "marketValue": 34647154
+            "marketValue": 36965599
           },
           "xp": 7.244673583986668,
           "expectedPoints": 7.244673583986668,
@@ -7455,7 +6194,7 @@
             "lastStats": [],
             "averagePoints": 0,
             "points": 0,
-            "marketValue": 1350202
+            "marketValue": 1309672
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -7493,7 +6232,7 @@
       "teamId": 37401374,
       "managerId": 11790907,
       "managerName": "Blackout FC",
-      "teamValue": 195420839,
+      "teamValue": 197478007,
       "predictedLineup": {
         "formation": "5-4-1",
         "starters": [
@@ -7522,7 +6261,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 2079850
+              "marketValue": 2036422
             },
             "xp": 0.31473684210526315,
             "expectedPoints": 0.31473684210526315,
@@ -7650,7 +6389,7 @@
               ],
               "averagePoints": 8,
               "points": 8,
-              "marketValue": 9396429
+              "marketValue": 9760951
             },
             "xp": 6.193532096399999,
             "expectedPoints": 6.193532096399999,
@@ -7686,7 +6425,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 36848972
+              "marketValue": 37383357
             },
             "xp": 3.5730701754385956,
             "expectedPoints": 3.5730701754385956,
@@ -7722,7 +6461,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 6643920
+              "marketValue": 6579831
             },
             "xp": 2.7985822496963153,
             "expectedPoints": 2.7985822496963153,
@@ -7850,7 +6589,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 8285765
+              "marketValue": 8048919
             },
             "xp": 1.016662155126767,
             "expectedPoints": 1.016662155126767,
@@ -7886,7 +6625,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 10399838
+              "marketValue": 10606751
             },
             "xp": 1.0087719298245612,
             "expectedPoints": 1.0087719298245612,
@@ -8014,7 +6753,7 @@
               ],
               "averagePoints": 8,
               "points": 8,
-              "marketValue": 19186968
+              "marketValue": 19760158
             },
             "xp": 5.962978255226666,
             "expectedPoints": 5.962978255226666,
@@ -8050,7 +6789,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 32466990
+              "marketValue": 32785701
             },
             "xp": 2.870614035087719,
             "expectedPoints": 2.870614035087719,
@@ -8086,7 +6825,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 6919703
+              "marketValue": 6911551
             },
             "xp": 2.7139607383268944,
             "expectedPoints": 2.7139607383268944,
@@ -8214,7 +6953,7 @@
               ],
               "averagePoints": 6,
               "points": 6,
-              "marketValue": 4777465
+              "marketValue": 4855759
             },
             "xp": 2.6744797689,
             "expectedPoints": 2.6744797689,
@@ -8342,7 +7081,7 @@
               ],
               "averagePoints": 3,
               "points": 3,
-              "marketValue": 20144326
+              "marketValue": 20471475
             },
             "xp": 2.2361168457099994,
             "expectedPoints": 2.2361168457099994,
@@ -8380,7 +7119,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 13901273
+              "marketValue": 14082347
             },
             "xp": 0.8875846439811229,
             "expectedPoints": 0.8875846439811229,
@@ -8416,7 +7155,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5879155
+              "marketValue": 5733453
             },
             "xp": 0.6978947368421052,
             "expectedPoints": 0.6978947368421052,
@@ -8544,7 +7283,7 @@
               ],
               "averagePoints": 1,
               "points": 1,
-              "marketValue": 17674160
+              "marketValue": 17664470
             },
             "xp": 0.2966433593733333,
             "expectedPoints": 0.2966433593733333,
@@ -8673,7 +7412,7 @@
             ],
             "averagePoints": 8,
             "points": 8,
-            "marketValue": 9396429
+            "marketValue": 9760951
           },
           "xp": 6.193532096399999,
           "expectedPoints": 6.193532096399999,
@@ -8733,7 +7472,7 @@
             ],
             "averagePoints": 5,
             "points": 5,
-            "marketValue": 816025
+            "marketValue": 796862
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -8771,7 +7510,7 @@
       "teamId": 37401696,
       "managerId": 3611356,
       "managerName": "GoldenC FC",
-      "teamValue": 173793964,
+      "teamValue": 173345527,
       "predictedLineup": {
         "formation": "3-5-2",
         "starters": [
@@ -8892,7 +7631,7 @@
               ],
               "averagePoints": 4,
               "points": 4,
-              "marketValue": 20859810
+              "marketValue": 21509584
             },
             "xp": 2.8280061849013327,
             "expectedPoints": 2.8280061849013327,
@@ -9020,7 +7759,7 @@
               ],
               "averagePoints": 3,
               "points": 3,
-              "marketValue": 13051252
+              "marketValue": 13134474
             },
             "xp": 2.173402075196,
             "expectedPoints": 2.173402075196,
@@ -9148,7 +7887,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5300856
+              "marketValue": 5214752
             },
             "xp": 1.7842545307303506,
             "expectedPoints": 1.7842545307303506,
@@ -9276,7 +8015,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 4165073
+              "marketValue": 4067828
             },
             "xp": 0.7178432154582456,
             "expectedPoints": 0.7178432154582456,
@@ -9312,7 +8051,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5375039
+              "marketValue": 5348551
             },
             "xp": 2.3944148514764216,
             "expectedPoints": 2.3944148514764216,
@@ -9440,7 +8179,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 4311778
+              "marketValue": 4238886
             },
             "xp": 2.1138715246192983,
             "expectedPoints": 2.1138715246192983,
@@ -9476,7 +8215,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 53967464
+              "marketValue": 53545340
             },
             "xp": 0.639530717219051,
             "expectedPoints": 0.639530717219051,
@@ -9604,7 +8343,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 17707769
+              "marketValue": 17324162
             },
             "xp": 0.5932867187466666,
             "expectedPoints": 0.5932867187466666,
@@ -9640,7 +8379,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 2112921
+              "marketValue": 2102634
             },
             "xp": 0.3731555612690527,
             "expectedPoints": 0.3731555612690527,
@@ -9768,7 +8507,7 @@
               ],
               "averagePoints": 12,
               "points": 12,
-              "marketValue": 6293248
+              "marketValue": 6714163
             },
             "xp": 9.2902981446,
             "expectedPoints": 9.2902981446,
@@ -9804,7 +8543,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 27051350
+              "marketValue": 26903271
             },
             "xp": 2.165263157894737,
             "expectedPoints": 2.165263157894737,
@@ -9934,7 +8673,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 1017858
+              "marketValue": 991138
             },
             "xp": 0.09277179104912281,
             "expectedPoints": 0.09277179104912281,
@@ -10063,7 +8802,7 @@
             ],
             "averagePoints": 12,
             "points": 12,
-            "marketValue": 6293248
+            "marketValue": 6714163
           },
           "xp": 9.2902981446,
           "expectedPoints": 9.2902981446,
@@ -10099,7 +8838,7 @@
             "lastStats": [],
             "averagePoints": 0,
             "points": 0,
-            "marketValue": 9171649
+            "marketValue": 8906515
           },
           "xp": 0,
           "expectedPoints": 0,
@@ -10134,10 +8873,1406 @@
       }
     },
     {
+      "teamId": 37401377,
+      "managerId": 11789333,
+      "managerName": "nicotiza fc",
+      "teamValue": 209468992,
+      "predictedLineup": {
+        "formation": "3-4-3",
+        "starters": [
+          {
+            "player": {
+              "points": 5,
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      90,
+                      2
+                    ],
+                    "goals": [
+                      0,
+                      0
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      2,
+                      1
+                    ],
+                    "effective_clearance": [
+                      2,
+                      0
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      2,
+                      -2
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      0,
+                      0
+                    ],
+                    "won_contest": [
+                      0,
+                      0
+                    ],
+                    "ball_recovery": [
+                      16,
+                      3
+                    ],
+                    "poss_lost_all": [
+                      15,
+                      -1
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      2
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": 5,
+                  "isInIdealFormation": false
+                }
+              ],
+              "weekPoints": 5,
+              "averagePoints": 5,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t184/p2519/256x256/p2519_t184_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "2519",
+              "teamId": 14,
+              "name": "Augusto Batalla",
+              "lastSeasonPoints": 213,
+              "nickname": "A. Batalla",
+              "positionId": 1,
+              "position": "Portero",
+              "marketValue": 38788816,
+              "playerStatus": "ok"
+            },
+            "xp": 3.7268614095166663,
+            "expectedPoints": 3.7268614095166663,
+            "riskAdjustedXp": 3.7268614095166663,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "season-average",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 1,
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      88,
+                      2
+                    ],
+                    "goals": [
+                      0,
+                      0
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      5,
+                      1
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      1,
+                      0
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      1,
+                      -3
+                    ],
+                    "total_scoring_att": [
+                      0,
+                      0
+                    ],
+                    "won_contest": [
+                      0,
+                      0
+                    ],
+                    "ball_recovery": [
+                      6,
+                      1
+                    ],
+                    "poss_lost_all": [
+                      13,
+                      -1
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      1
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": 1,
+                  "isInIdealFormation": false
+                }
+              ],
+              "weekPoints": 1,
+              "averagePoints": 1,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t179/p2479/256x256/p2479_t179_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "2479",
+              "teamId": 17,
+              "name": "Kike Salas",
+              "lastSeasonPoints": 130,
+              "nickname": "Kike Salas",
+              "positionId": 2,
+              "position": "Defensa",
+              "marketValue": 11289950,
+              "playerStatus": "suspended"
+            },
+            "xp": 0.078686660156,
+            "expectedPoints": 0.078686660156,
+            "riskAdjustedXp": 0.078686660156,
+            "expectedMinutes": 24,
+            "pStarter": 0.15,
+            "source": "season-average",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 0,
+              "lastStats": [],
+              "averagePoints": 0,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t191/p1991/256x256/p1991_t191_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "1991",
+              "teamId": 18,
+              "name": "César Tárrega",
+              "lastSeasonPoints": 127,
+              "nickname": "Tárrega",
+              "positionId": 2,
+              "position": "Defensa",
+              "marketValue": 9139919,
+              "playerStatus": "ok"
+            },
+            "xp": 2.4883362420164556,
+            "expectedPoints": 2.4883362420164556,
+            "riskAdjustedXp": 2.4883362420164556,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": -1,
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      88,
+                      2
+                    ],
+                    "goals": [
+                      0,
+                      0
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      2,
+                      0
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      2,
+                      -2
+                    ],
+                    "yellow_card": [
+                      1,
+                      -1
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      1,
+                      0
+                    ],
+                    "won_contest": [
+                      0,
+                      0
+                    ],
+                    "ball_recovery": [
+                      8,
+                      1
+                    ],
+                    "poss_lost_all": [
+                      15,
+                      -1
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      0
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": -1,
+                  "isInIdealFormation": false
+                }
+              ],
+              "weekPoints": -1,
+              "averagePoints": -1,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t449/p1959/256x256/p1959_t449_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "1959",
+              "teamId": 20,
+              "name": "Santiago Mouriño",
+              "lastSeasonPoints": 127,
+              "nickname": "Mouriño",
+              "positionId": 2,
+              "position": "Defensa",
+              "marketValue": 37273620,
+              "playerStatus": "ok"
+            },
+            "xp": 2.726386664766754,
+            "expectedPoints": 2.726386664766754,
+            "riskAdjustedXp": 2.726386664766754,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 0,
+              "lastStats": [],
+              "averagePoints": 0,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t174/p1070/256x256/p1070_t174_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "1070",
+              "teamId": 3,
+              "name": "Inigo Ruiz de Galarreta",
+              "lastSeasonPoints": 156,
+              "nickname": "De Galarreta",
+              "positionId": 3,
+              "position": "Centrocampista",
+              "marketValue": 12786831,
+              "playerStatus": "ok"
+            },
+            "xp": 1.7835087719298244,
+            "expectedPoints": 1.7835087719298244,
+            "riskAdjustedXp": 1.7835087719298244,
+            "expectedMinutes": 46,
+            "pStarter": 0.51,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 0,
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      45,
+                      1
+                    ],
+                    "goals": [
+                      0,
+                      0
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      0,
+                      0
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      2,
+                      -1
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      0,
+                      0
+                    ],
+                    "won_contest": [
+                      0,
+                      0
+                    ],
+                    "ball_recovery": [
+                      3,
+                      0
+                    ],
+                    "poss_lost_all": [
+                      4,
+                      0
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      0
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": 0,
+                  "isInIdealFormation": false
+                }
+              ],
+              "weekPoints": 0,
+              "averagePoints": 0,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t855/p2616/256x256/p2616_t855_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "2616",
+              "teamId": 11,
+              "name": "Carlos Álvarez",
+              "lastSeasonPoints": 113,
+              "nickname": "C. Alvarez",
+              "positionId": 3,
+              "position": "Centrocampista",
+              "marketValue": 19012705,
+              "playerStatus": "ok"
+            },
+            "xp": 0,
+            "expectedPoints": 0,
+            "riskAdjustedXp": 0,
+            "expectedMinutes": 0,
+            "pStarter": 0,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 0,
+              "lastStats": [],
+              "averagePoints": 0,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t191/p2612/256x256/p2612_t191_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "2612",
+              "teamId": 18,
+              "name": "Filip Ugrinic",
+              "lastSeasonPoints": 114,
+              "nickname": "Ugrinic",
+              "positionId": 3,
+              "position": "Centrocampista",
+              "marketValue": 3678821,
+              "playerStatus": "ok"
+            },
+            "xp": 2.2336246581879995,
+            "expectedPoints": 2.2336246581879995,
+            "riskAdjustedXp": 2.2336246581879995,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": -1,
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      56,
+                      1
+                    ],
+                    "goals": [
+                      0,
+                      0
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      2,
+                      0
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      2,
+                      -1
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      0,
+                      0
+                    ],
+                    "won_contest": [
+                      0,
+                      0
+                    ],
+                    "ball_recovery": [
+                      2,
+                      0
+                    ],
+                    "poss_lost_all": [
+                      6,
+                      0
+                    ],
+                    "penalty_conceded": [
+                      1,
+                      -2
+                    ],
+                    "marca_points": [
+                      -1,
+                      1
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": -1,
+                  "isInIdealFormation": false
+                }
+              ],
+              "weekPoints": -1,
+              "averagePoints": -1,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t449/p1031/256x256/p1031_t449_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "1031",
+              "teamId": 20,
+              "name": "Santiago Comesaña",
+              "lastSeasonPoints": 175,
+              "nickname": "Comesaña",
+              "positionId": 3,
+              "position": "Centrocampista",
+              "marketValue": 32978311,
+              "playerStatus": "ok"
+            },
+            "xp": 2.9030065596567978,
+            "expectedPoints": 2.9030065596567978,
+            "riskAdjustedXp": 2.9030065596567978,
+            "expectedMinutes": 51,
+            "pStarter": 0.595,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 8,
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      90,
+                      2
+                    ],
+                    "goals": [
+                      1,
+                      4
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      1,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      0,
+                      0
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      2,
+                      -1
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      1,
+                      0
+                    ],
+                    "won_contest": [
+                      1,
+                      0
+                    ],
+                    "ball_recovery": [
+                      8,
+                      1
+                    ],
+                    "poss_lost_all": [
+                      19,
+                      -1
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      3
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": 8,
+                  "isInIdealFormation": false
+                }
+              ],
+              "weekPoints": 8,
+              "averagePoints": 8,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t189/p3073/256x256/p3073_t189_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "3073",
+              "teamId": 49,
+              "name": "Andrés Martín",
+              "nickname": "Andrés Martín",
+              "positionId": 4,
+              "position": "Delantero",
+              "marketValue": 19896394,
+              "playerStatus": "ok"
+            },
+            "xp": 5.207179427120001,
+            "expectedPoints": 5.207179427120001,
+            "riskAdjustedXp": 5.207179427120001,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "season-average",
+            "isCaptain": true,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 0,
+              "lastStats": [],
+              "averagePoints": 0,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t191/p1191/256x256/p1191_t191_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "1191",
+              "teamId": 18,
+              "name": "Hugo Duro Perales",
+              "lastSeasonPoints": 134,
+              "nickname": "Hugo Duro",
+              "positionId": 4,
+              "position": "Delantero",
+              "marketValue": 8519258,
+              "playerStatus": "ok"
+            },
+            "xp": 2.625488633308701,
+            "expectedPoints": 2.625488633308701,
+            "riskAdjustedXp": 2.625488633308701,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "points": 0,
+              "lastStats": [],
+              "averagePoints": 0,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t176/p2603/256x256/p2603_t176_1_001_000.png"
+                }
+              },
+              "isInIdealFormation": false,
+              "id": "2603",
+              "teamId": 6,
+              "name": "Ferran Jutglà",
+              "lastSeasonPoints": 142,
+              "nickname": "Ferran Jutglà",
+              "positionId": 4,
+              "position": "Delantero",
+              "marketValue": 9566381,
+              "playerStatus": "ok"
+            },
+            "xp": 3.056912918899052,
+            "expectedPoints": 3.056912918899052,
+            "riskAdjustedXp": 3.056912918899052,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          }
+        ],
+        "bench": [
+          {
+            "player": {
+              "id": "2520",
+              "name": "Roberto Fernández",
+              "nickname": "Roberto",
+              "slug": "roberto-fernandez-2",
+              "positionId": 4,
+              "playerStatus": "ok",
+              "lastSeasonPoints": 151,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t177/p2520/256x256/p2520_t177_1_001_000.png"
+                }
+              },
+              "team": {
+                "id": "8",
+                "name": "RCD Espanyol",
+                "slug": "rcd-espanyol",
+                "assets": "{\"color\":\"https://assets-fantasy.llt-services.com/teambadge/t177/color/t177_rcd-espanyol.png\",\"white\":\"https://assets-fantasy.llt-services.com/teambadge/t177/white/t177_rcd-espanyol.png\"}",
+                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t177/color/t177_rcd-espanyol.png",
+                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t177/white/t177_rcd-espanyol.png"
+              },
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      90,
+                      2
+                    ],
+                    "goals": [
+                      2,
+                      8
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      0,
+                      0
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      0,
+                      1
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      2,
+                      1
+                    ],
+                    "won_contest": [
+                      0,
+                      0
+                    ],
+                    "ball_recovery": [
+                      1,
+                      0
+                    ],
+                    "poss_lost_all": [
+                      8,
+                      0
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      4
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": 16,
+                  "isInIdealFormation": false
+                }
+              ],
+              "averagePoints": 16,
+              "points": 16,
+              "marketValue": 8463872
+            },
+            "xp": 12.387064192799999,
+            "expectedPoints": 12.387064192799999,
+            "riskAdjustedXp": 12.387064192799999,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "season-average",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "id": "2938",
+              "name": "Ville Koski",
+              "nickname": "Koski",
+              "slug": "ville-koski",
+              "positionId": 2,
+              "playerStatus": "ok",
+              "lastSeasonPoints": 23,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t173/p2938/256x256/p2938_t173_1_001_000.png"
+                }
+              },
+              "team": {
+                "id": "21",
+                "name": "Deportivo Alavés",
+                "slug": "d-alaves",
+                "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t173/color/t173_d-alaves.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t173/gray/t173_d-alaves.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t173/white/t173_d-alaves.png\"}",
+                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t173/color/t173_d-alaves.png",
+                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t173/white/t173_d-alaves.png"
+              },
+              "lastStats": [
+                {
+                  "stats": {
+                    "mins_played": [
+                      90,
+                      2
+                    ],
+                    "goals": [
+                      0,
+                      0
+                    ],
+                    "goal_assist": [
+                      0,
+                      0
+                    ],
+                    "offtarget_att_assist": [
+                      0,
+                      0
+                    ],
+                    "pen_area_entries": [
+                      0,
+                      0
+                    ],
+                    "penalty_won": [
+                      0,
+                      0
+                    ],
+                    "penalty_save": [
+                      0,
+                      0
+                    ],
+                    "saves": [
+                      0,
+                      0
+                    ],
+                    "effective_clearance": [
+                      3,
+                      1
+                    ],
+                    "penalty_failed": [
+                      0,
+                      0
+                    ],
+                    "own_goals": [
+                      0,
+                      0
+                    ],
+                    "goals_conceded": [
+                      0,
+                      3
+                    ],
+                    "yellow_card": [
+                      0,
+                      0
+                    ],
+                    "second_yellow_card": [
+                      0,
+                      0
+                    ],
+                    "red_card": [
+                      0,
+                      0
+                    ],
+                    "total_scoring_att": [
+                      0,
+                      0
+                    ],
+                    "won_contest": [
+                      1,
+                      0
+                    ],
+                    "ball_recovery": [
+                      0,
+                      0
+                    ],
+                    "poss_lost_all": [
+                      5,
+                      0
+                    ],
+                    "penalty_conceded": [
+                      0,
+                      0
+                    ],
+                    "marca_points": [
+                      -1,
+                      2
+                    ]
+                  },
+                  "weekNumber": 1,
+                  "totalPoints": 8,
+                  "isInIdealFormation": false
+                }
+              ],
+              "averagePoints": 8,
+              "points": 8,
+              "marketValue": 1041608
+            },
+            "xp": 6.077320963530666,
+            "expectedPoints": 6.077320963530666,
+            "riskAdjustedXp": 6.077320963530666,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "season-average",
+            "isCaptain": false,
+            "isCoach": false
+          },
+          {
+            "player": {
+              "id": "2394",
+              "name": "Williot Swedberg",
+              "nickname": "Williot",
+              "slug": "williot-swedberg",
+              "positionId": 3,
+              "playerStatus": "ok",
+              "lastSeasonPoints": 133,
+              "images": {
+                "transparent": {
+                  "256x256": "https://assets-fantasy.llt-services.com/players/t176/p2394/256x256/p2394_t176_1_001_000.png"
+                }
+              },
+              "team": {
+                "id": "6",
+                "name": "Celta",
+                "slug": "rc-celta",
+                "assets": "{\"color\":\"https://assets-fantasy.llt-services.com/teambadge/t176/color/t176_rc-celta.png\",\"white\":\"https://assets-fantasy.llt-services.com/teambadge/t176/white/t176_rc-celta.png\"}",
+                "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t176/color/t176_rc-celta.png",
+                "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t176/white/t176_rc-celta.png"
+              },
+              "lastStats": [],
+              "averagePoints": 0,
+              "points": 0,
+              "marketValue": 7765059
+            },
+            "xp": 2.8631649169969995,
+            "expectedPoints": 2.8631649169969995,
+            "riskAdjustedXp": 2.8631649169969995,
+            "expectedMinutes": 66,
+            "pStarter": 0.85,
+            "source": "last-season",
+            "isCaptain": false,
+            "isCoach": false
+          }
+        ],
+        "captain": {
+          "player": {
+            "points": 8,
+            "lastStats": [
+              {
+                "stats": {
+                  "mins_played": [
+                    90,
+                    2
+                  ],
+                  "goals": [
+                    1,
+                    4
+                  ],
+                  "goal_assist": [
+                    0,
+                    0
+                  ],
+                  "offtarget_att_assist": [
+                    0,
+                    0
+                  ],
+                  "pen_area_entries": [
+                    1,
+                    0
+                  ],
+                  "penalty_won": [
+                    0,
+                    0
+                  ],
+                  "penalty_save": [
+                    0,
+                    0
+                  ],
+                  "saves": [
+                    0,
+                    0
+                  ],
+                  "effective_clearance": [
+                    0,
+                    0
+                  ],
+                  "penalty_failed": [
+                    0,
+                    0
+                  ],
+                  "own_goals": [
+                    0,
+                    0
+                  ],
+                  "goals_conceded": [
+                    2,
+                    -1
+                  ],
+                  "yellow_card": [
+                    0,
+                    0
+                  ],
+                  "second_yellow_card": [
+                    0,
+                    0
+                  ],
+                  "red_card": [
+                    0,
+                    0
+                  ],
+                  "total_scoring_att": [
+                    1,
+                    0
+                  ],
+                  "won_contest": [
+                    1,
+                    0
+                  ],
+                  "ball_recovery": [
+                    8,
+                    1
+                  ],
+                  "poss_lost_all": [
+                    19,
+                    -1
+                  ],
+                  "penalty_conceded": [
+                    0,
+                    0
+                  ],
+                  "marca_points": [
+                    -1,
+                    3
+                  ]
+                },
+                "weekNumber": 1,
+                "totalPoints": 8,
+                "isInIdealFormation": false
+              }
+            ],
+            "weekPoints": 8,
+            "averagePoints": 8,
+            "images": {
+              "transparent": {
+                "256x256": "https://assets-fantasy.llt-services.com/players/t189/p3073/256x256/p3073_t189_1_001_000.png"
+              }
+            },
+            "isInIdealFormation": false,
+            "id": "3073",
+            "teamId": 49,
+            "name": "Andrés Martín",
+            "nickname": "Andrés Martín",
+            "positionId": 4,
+            "position": "Delantero",
+            "marketValue": 19896394,
+            "playerStatus": "ok"
+          },
+          "xp": 5.207179427120001,
+          "expectedPoints": 5.207179427120001,
+          "riskAdjustedXp": 5.207179427120001,
+          "expectedMinutes": 66,
+          "pStarter": 0.85,
+          "source": "season-average",
+          "isCaptain": true,
+          "isCoach": false
+        },
+        "coach": {
+          "player": {
+            "id": "3097",
+            "name": "Beñat San José",
+            "nickname": "Beñat",
+            "slug": "benat-san-jose",
+            "positionId": 5,
+            "playerStatus": "ok",
+            "lastSeasonPoints": null,
+            "images": {
+              "transparent": {
+                "256x256": "https://assets-fantasy.llt-services.com/players/t184/man3097/256x256/man3097_t184_1_001_000.png"
+              }
+            },
+            "team": {
+              "id": "14",
+              "name": "Rayo Vallecano",
+              "slug": "rayo-vallecano",
+              "assets": "{\"color\": \"https://assets-fantasy.llt-services.com/teambadge/t184/color/t184_rayo-vallecano.png\",\"gray\": \"https://assets-fantasy.llt-services.com/teambadge/t184/gray/t184_rayo-vallecano.png\",\"white\": \"https://assets-fantasy.llt-services.com/teambadge/t184/white/t184_rayo-vallecano.png\"}",
+              "badgeColor": "https://assets-fantasy.llt-services.com/teambadge/t184/color/t184_rayo-vallecano.png",
+              "badgeWhite": "https://assets-fantasy.llt-services.com/teambadge/t184/white/t184_rayo-vallecano.png"
+            },
+            "lastStats": [
+              {
+                "stats": {
+                  "won_match": [
+                    0,
+                    0
+                  ],
+                  "lost_match": [
+                    1,
+                    0
+                  ],
+                  "drawn_match": [
+                    0,
+                    0
+                  ],
+                  "marca_points": [
+                    -1,
+                    0
+                  ]
+                },
+                "weekNumber": 1,
+                "totalPoints": 0,
+                "isInIdealFormation": false
+              }
+            ],
+            "averagePoints": 0,
+            "points": 0,
+            "marketValue": 1465526
+          },
+          "xp": 0,
+          "expectedPoints": 0,
+          "riskAdjustedXp": 0,
+          "expectedMinutes": 24,
+          "pStarter": 0.15,
+          "source": "position-average",
+          "isCaptain": false,
+          "isCoach": true
+        },
+        "fieldExpected": 26.8,
+        "captainBonus": 5.2,
+        "coachPoints": 0,
+        "benchExpected": 21.3,
+        "totalExpected": 32,
+        "dataQuality": {
+          "level": "low",
+          "notes": [
+            "Alineación real del equipo.",
+            "Algún titular no está al 100% según la API; los puntos esperados ya están penalizados."
+          ]
+        },
+        "degraded": true,
+        "inferred": false
+      },
+      "coachPrediction": {
+        "teamId": 37401377,
+        "expectedPoints": 0,
+        "source": "fallback",
+        "notes": [
+          "El equipo descansa esta jornada."
+        ]
+      }
+    },
+    {
       "teamId": 37401726,
       "managerId": 3790241,
       "managerName": "migueleti fc",
-      "teamValue": 192364484,
+      "teamValue": 191669295,
       "predictedLineup": {
         "formation": "3-5-2",
         "starters": [
@@ -10258,7 +10393,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 670556
+              "marketValue": 657212
             },
             "xp": 0.6775230128557191,
             "expectedPoints": 0.6775230128557191,
@@ -10386,7 +10521,7 @@
               ],
               "averagePoints": 10,
               "points": 10,
-              "marketValue": 3892358
+              "marketValue": 4233341
             },
             "xp": 7.7419151205,
             "expectedPoints": 7.7419151205,
@@ -10422,7 +10557,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 39211366
+              "marketValue": 39510183
             },
             "xp": 2.134561403508772,
             "expectedPoints": 2.134561403508772,
@@ -10458,7 +10593,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5280233
+              "marketValue": 5385813
             },
             "xp": 0.927295321637427,
             "expectedPoints": 0.927295321637427,
@@ -10586,7 +10721,7 @@
               ],
               "averagePoints": 4,
               "points": 4,
-              "marketValue": 22846109
+              "marketValue": 22506240
             },
             "xp": 2.968797233071999,
             "expectedPoints": 2.968797233071999,
@@ -10622,7 +10757,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 24453612
+              "marketValue": 24565065
             },
             "xp": 1.8133038943978184,
             "expectedPoints": 1.8133038943978184,
@@ -10658,7 +10793,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 4232194
+              "marketValue": 4307815
             },
             "xp": 1.254217303154316,
             "expectedPoints": 1.254217303154316,
@@ -10786,7 +10921,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 2420507
+              "marketValue": 2388577
             },
             "xp": 1.0589271375848888,
             "expectedPoints": 1.0589271375848888,
@@ -10822,7 +10957,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 3452188
+              "marketValue": 3419517
             },
             "xp": 0.9146198830409356,
             "expectedPoints": 0.9146198830409356,
@@ -10950,7 +11085,7 @@
               ],
               "averagePoints": 5,
               "points": 5,
-              "marketValue": 27667431
+              "marketValue": 27483110
             },
             "xp": 2.842832193994444,
             "expectedPoints": 2.842832193994444,
@@ -10986,7 +11121,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 26307726
+              "marketValue": 26007847
             },
             "xp": 0.7543031877802857,
             "expectedPoints": 0.7543031877802857,
@@ -11116,7 +11251,7 @@
               ],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 6299182
+              "marketValue": 6154164
             },
             "xp": 0.5936011204750877,
             "expectedPoints": 0.5936011204750877,
@@ -11152,7 +11287,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 830079
+              "marketValue": 819976
             },
             "xp": 0.5891228070175438,
             "expectedPoints": 0.5891228070175438,
@@ -11280,7 +11415,7 @@
               ],
               "averagePoints": 2,
               "points": 2,
-              "marketValue": 2391263
+              "marketValue": 2329862
             },
             "xp": 0.5268853515626667,
             "expectedPoints": 0.5268853515626667,
@@ -11316,7 +11451,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 5533772
+              "marketValue": 5412259
             },
             "xp": 0.3792982456140351,
             "expectedPoints": 0.3792982456140351,
@@ -11352,7 +11487,7 @@
               "lastStats": [],
               "averagePoints": 0,
               "points": 0,
-              "marketValue": 597769
+              "marketValue": 587337
             },
             "xp": 0.2503259063190175,
             "expectedPoints": 0.2503259063190175,
@@ -11481,7 +11616,7 @@
             ],
             "averagePoints": 10,
             "points": 10,
-            "marketValue": 3892358
+            "marketValue": 4233341
           },
           "xp": 7.7419151205,
           "expectedPoints": 7.7419151205,
@@ -11517,7 +11652,7 @@
             "lastStats": [],
             "averagePoints": 0,
             "points": 0,
-            "marketValue": 5384922
+            "marketValue": 5209115
           },
           "xp": 0,
           "expectedPoints": 0,

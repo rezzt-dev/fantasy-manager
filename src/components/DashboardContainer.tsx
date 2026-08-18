@@ -11,6 +11,7 @@ import type { DashboardTab } from './layout/Sidebar';
 import { useDashboardTab } from '../hooks/useDashboardTab';
 import { useDensity } from '../hooks/useDensity';
 import { useSidebarCollapsed } from '../hooks/useSidebarCollapsed';
+import { useNotifications } from '../hooks/useNotifications';
 import OverviewTab from './dashboard/OverviewTab';
 import TeamTab from './dashboard/TeamTab';
 import LineupTab from './dashboard/LineupTab';
@@ -37,6 +38,7 @@ export default function DashboardContainer() {
   const { dense, setDense } = useDensity();
   const { collapsed: sidebarCollapsed, toggleCollapsed: toggleSidebarCollapsed } = useSidebarCollapsed();
   const { tab, changeTab, isReady } = useDashboardTab('overview');
+  const { isRead, markAllAsRead } = useNotifications();
 
   const {
     data: leagues,
@@ -73,6 +75,8 @@ export default function DashboardContainer() {
     teamQuery.data,
     recommendationsQuery.data,
   ]);
+
+  const visibleAlerts = useMemo(() => alerts.filter((a) => !isRead(a.id)), [alerts, isRead]);
 
   const commandPlayers = useMemo(
     () =>
@@ -234,8 +238,9 @@ export default function DashboardContainer() {
         isRefreshing={isRefreshing}
         dense={dense}
         onToggleDensity={setDense}
-        alertCount={alerts.length}
-        alerts={alerts}
+        alertCount={visibleAlerts.length}
+        alerts={visibleAlerts}
+        onMarkAllNotificationsAsRead={() => markAllAsRead(alerts.map((a) => a.id))}
       >
         {selectedLeague ? (
           <TabContent league={selectedLeague} tab={tab} />
@@ -358,7 +363,7 @@ function buildAlerts(
   unavailable.forEach((p) => {
     const status = p.playerMaster.playerStatus;
     alerts.push({
-      id: `status-${p.playerMaster.id}`,
+      id: `status-${p.playerMaster.id}-${status}`,
       type: status === 'injured' ? 'danger' : 'warning',
       title: `${p.playerMaster.nickname} ${status === 'injured' ? 'lesionado' : 'dudoso'}`,
       description: 'Revisa su disponibilidad para la jornada.',

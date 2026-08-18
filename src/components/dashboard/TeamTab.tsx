@@ -202,7 +202,7 @@ export default function TeamTab({ league }: TeamTabProps) {
   if (error) return <ErrorState title="Error cargando plantilla" description={error.message} onRetry={refetch} />;
 
   const totalValue = players.reduce((sum, p) => sum + p.playerMaster.marketValue, 0);
-  const totalPoints = players.reduce((sum, p) => sum + (p.playerMaster.points || p.playerMaster.lastSeasonPoints || 0), 0);
+  const totalPoints = players.reduce((sum, p) => sum + (p.playerMaster.points || 0), 0);
   const healthyCount = players.filter((p) => p.playerMaster.playerStatus === 'ok').length;
 
   return (

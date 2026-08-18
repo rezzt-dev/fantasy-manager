@@ -24,6 +24,7 @@ interface AppLayoutProps {
   onToggleDensity?: (dense: boolean) => void;
   alertCount?: number;
   alerts?: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
+  onMarkAllNotificationsAsRead?: () => void;
 }
 
 export default function AppLayout({
@@ -40,6 +41,7 @@ export default function AppLayout({
   onToggleDensity,
   alertCount = 0,
   alerts = [],
+  onMarkAllNotificationsAsRead,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { collapsed } = useSidebarCollapsed();
@@ -72,6 +74,7 @@ export default function AppLayout({
           onToggleDensity={onToggleDensity}
           alertCount={alertCount}
           alerts={alerts}
+          onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
         />
 
         <main className="flex-1 overflow-x-hidden p-4 sm:p-5 lg:p-6 [.density-dense_&]:p-3 [.density-dense_&]:sm:p-4 [.density-dense_&]:lg:p-5">

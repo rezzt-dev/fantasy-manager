@@ -76,6 +76,24 @@ async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
 
 const CMP = '/v1/competition/1';
 
+/**
+ * La API oficial de LaLiga Fantasy usa `midfield`/`striker` en la formación,
+ * mientras que este proyecto usa internamente `midfielder`/`attacker`.
+ */
+function normalizeFormation(lineup: TeamLineup): TeamLineup {
+  const formation = lineup.formation as any;
+  return {
+    ...lineup,
+    formation: {
+      goalkeeper: formation.goalkeeper || [],
+      defender: formation.defender || [],
+      midfielder: formation.midfielder || formation.midfield || [],
+      attacker: formation.attacker || formation.striker || [],
+      coach: formation.coach || [],
+    },
+  };
+}
+
 // Keep existing fantasyAPI for compatibility with read-only callers
 export const fantasyAPI = {
   getLeagues: () => fetchJSON<FantasyLeague[]>(`/api/proxy${CMP}/leagues?x-lang=es`),
@@ -84,10 +102,10 @@ export const fantasyAPI = {
     fetchJSON<TeamData>(`/api/proxy${CMP}/leagues/${leagueId}/teams/${teamId}?x-lang=es`),
 
   getTeamLineup: (teamId: number) =>
-    fetchJSON<TeamLineup>(`/api/proxy${CMP}/teams/${teamId}/lineup?x-lang=es`),
+    fetchJSON<TeamLineup>(`/api/proxy${CMP}/teams/${teamId}/lineup?x-lang=es`).then(normalizeFormation),
 
   getTeamLineupByWeek: (teamId: number, week: number) =>
-    fetchJSON<TeamLineup>(`/api/proxy${CMP}/teams/${teamId}/lineup/week/${week}?x-lang=es`),
+    fetchJSON<TeamLineup>(`/api/proxy${CMP}/teams/${teamId}/lineup/week/${week}?x-lang=es`).then(normalizeFormation),
 
   getTeamMoney: (teamId: number) =>
     fetchJSON<TeamMoney>(`/api/proxy${CMP}/teams/${teamId}/money?x-lang=es`),
@@ -197,8 +215,21 @@ export const LaLigaFantasyClient = {
   // Obtener mercado
   getMarket: (leagueId: string) => fantasyAPI.getMarket(leagueId),
 
-  // Obtener alineación actual
-  getCurrentLineup: (teamId: number) => fantasyAPI.getTeamLineup(teamId),
+  // Obtener alineación actual: la API suele devolver el once completo en el
+  // endpoint por jornada; si falla, volvemos al genérico.
+  getCurrentLineup: async (teamId: number) => {
+    try {
+      const week = await fantasyAPI.getCurrentWeek();
+      const weekNumber = week?.number ?? week?.weekNumber ?? 1;
+      try {
+        return await fantasyAPI.getTeamLineupByWeek(teamId, weekNumber);
+      } catch {
+        return await fantasyAPI.getTeamLineup(teamId);
+      }
+    } catch {
+      return await fantasyAPI.getTeamLineup(teamId);
+    }
+  },
 
   // Modificar alineación (Objective 4 - Corrected keys aligned with LineupEditor.js)
   updateLineup: (

@@ -1,8 +1,9 @@
-import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { XI_PER_DAY } from './form';
 import type { PlayerWeekStat } from './player-stats';
 import { withFileLock } from './file-lock';
+import { readJsonl, writeFileAtomic, writeJsonlAtomic } from './jsonl';
 
 /**
  * Track record del motor (§6.1 del diseño): persiste CADA predicción y CADA
@@ -95,23 +96,11 @@ function recommendationsFile(week: number): string {
   return path.join(TRACK_RECORD_DIR, `recommendations-w${week}.jsonl`);
 }
 
-async function readJsonl<T>(file: string): Promise<T[]> {
-  try {
-    const raw = await readFile(file, 'utf8');
-    return raw
-      .split('\n')
-      .filter((line) => line.trim().length > 0)
-      .map((line) => JSON.parse(line) as T);
-  } catch {
-    return [];
-  }
-}
-
 async function appendJsonl<T>(file: string, records: T[]): Promise<void> {
   if (records.length === 0) return;
   await mkdir(TRACK_RECORD_DIR, { recursive: true });
-  const body = records.map((r) => JSON.stringify(r)).join('\n') + '\n';
-  await appendFile(file, body);
+  const existing = await readJsonl<T>(file);
+  await writeJsonlAtomic(file, [...existing, ...records]);
 }
 
 /**
@@ -175,28 +164,30 @@ export async function settleTrackRecord(
     if (!(week < currentWeek)) continue;
 
     const file = path.join(TRACK_RECORD_DIR, fileName);
-    const records = await readJsonl<PredictionRecord | RecommendationRecord>(file);
-    let touched = false;
+    await withFileLock(file, async () => {
+      const records = await readJsonl<PredictionRecord | RecommendationRecord>(file);
+      let touched = false;
 
-    for (const record of records) {
-      if (record.actualPoints !== null) continue;
-      const outcome = await resolveOutcome(record.playerId, week);
-      if (outcome === null) {
-        summary.recordsPending += 1;
-        continue;
+      for (const record of records) {
+        if (record.actualPoints !== null) continue;
+        const outcome = await resolveOutcome(record.playerId, week);
+        if (outcome === null) {
+          summary.recordsPending += 1;
+          continue;
+        }
+        record.actualPoints = outcome.points;
+        if ('idealXi' in record || match[1] === 'predictions') {
+          (record as PredictionRecord).idealXi = outcome.idealXi;
+        }
+        record.settledAt = new Date().toISOString();
+        summary.recordsSettled += 1;
+        touched = true;
       }
-      record.actualPoints = outcome.points;
-      if ('idealXi' in record || match[1] === 'predictions') {
-        (record as PredictionRecord).idealXi = outcome.idealXi;
-      }
-      record.settledAt = new Date().toISOString();
-      summary.recordsSettled += 1;
-      touched = true;
-    }
 
-    if (touched) {
-      await writeFile(file, records.map((r) => JSON.stringify(r)).join('\n') + '\n');
-    }
+      if (touched) {
+        await writeJsonlAtomic(file, records);
+      }
+    });
     if (!summary.weeksSettled.includes(week)) summary.weeksSettled.push(week);
   }
 
@@ -310,16 +301,14 @@ export async function evaluateTrackRecord(currentWeek: number): Promise<TrackRec
 export async function persistMetrics(
   metrics: WalkForwardMetrics & { leagueId: string; week: number; trackRecord?: TrackRecordMetrics },
 ): Promise<void> {
-  await mkdir(TRACK_RECORD_DIR, { recursive: true });
   const file = path.join(TRACK_RECORD_DIR, 'metrics-latest.json');
-  await writeFile(file, JSON.stringify({ computedAt: new Date().toISOString(), ...metrics }, null, 2));
+  await writeFileAtomic(file, JSON.stringify({ computedAt: new Date().toISOString(), ...metrics }, null, 2));
 }
 
 /** Persiste la tabla de puntuación derivada de playerStats (§4.2). */
 export async function persistScoringTable(table: unknown): Promise<void> {
-  await mkdir(TRACK_RECORD_DIR, { recursive: true });
   const file = path.join(TRACK_RECORD_DIR, 'scoring-table.json');
-  await writeFile(file, JSON.stringify(table, null, 2));
+  await writeFileAtomic(file, JSON.stringify(table, null, 2));
 }
 
 function lineupsFile(week: number): string {
@@ -329,10 +318,12 @@ function lineupsFile(week: number): string {
 /** Persiste el once recomendado de una jornada (primera escritura gana). */
 export async function persistLineup(record: LineupRecord): Promise<boolean> {
   const file = lineupsFile(record.week);
-  const existing = await readJsonl<LineupRecord>(file);
-  if (existing.some((r) => r.leagueId === record.leagueId && r.teamId === record.teamId)) return false;
-  await appendJsonl(file, [record]);
-  return true;
+  return withFileLock(file, async () => {
+    const existing = await readJsonl<LineupRecord>(file);
+    if (existing.some((r) => r.leagueId === record.leagueId && r.teamId === record.teamId)) return false;
+    await appendJsonl(file, [record]);
+    return true;
+  });
 }
 
 // ---------------------------------------------------------------------------

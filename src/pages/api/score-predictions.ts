@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { getToken, fetchOfficialAPI, CMP } from '../../lib/fantasy/api-proxy';
+import { getToken, fetchOfficialAPI, fetchCurrentLineup, CMP } from '../../lib/fantasy/api-proxy';
 import { fetchTeamsMaster } from '../../lib/fantasy/teams';
 import { fetchTeamElos } from '../../lib/engine/sources/clubelo';
 import { fetchProbableLineups } from '../../lib/engine/sources/jornadaperfecta';
@@ -65,13 +65,15 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       return new Response(JSON.stringify({ error: 'No token configured' }), { status: 401 });
     }
 
-    const [leagues, teamData, ownLineup, money, standing, week, allPlayers] = await Promise.all([
+    const week = await fetchOfficialAPI<WeekInfo>(`${CMP}/week/current`, token);
+    const currentWeek = week?.number ?? week?.weekNumber ?? 1;
+
+    const [leagues, teamData, ownLineup, money, standing, allPlayers] = await Promise.all([
       fetchOfficialAPI<FantasyLeague[]>(`${CMP}/leagues`, token),
       fetchOfficialAPI<TeamData>(`${CMP}/leagues/${leagueId}/teams/${teamId}`, token),
-      fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token),
+      fetchCurrentLineup(token, teamId, currentWeek),
       fetchOfficialAPI<TeamMoney>(`${CMP}/teams/${teamId}/money`, token),
       fetchOfficialAPI<StandingEntry[]>(`${CMP}/leagues/${leagueId}/standing`, token),
-      fetchOfficialAPI<WeekInfo>(`${CMP}/week/current`, token),
       fetchOfficialAPI<PlayerMaster[]>(`${CMP}/players`, token),
     ]);
 
@@ -79,8 +81,6 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     if (!league) {
       return new Response(JSON.stringify({ error: 'League not found' }), { status: 404 });
     }
-
-    const currentWeek = week?.number ?? week?.weekNumber ?? 1;
     const calendar = await fetchOfficialAPI<Match[]>(`${CMP}/calendar`, token, { weekNumber: String(currentWeek) });
 
     const officialTeams = await fetchTeamsMaster(token);

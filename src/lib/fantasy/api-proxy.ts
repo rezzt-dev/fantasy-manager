@@ -1,6 +1,6 @@
 import type { AstroSession } from 'astro';
 import { getEnv, getEnvOptional } from '../env';
-import type { AuthTokens } from '../../types/fantasy';
+import type { AuthTokens, TeamLineup } from '../../types/fantasy';
 
 const TARGET = getEnv('PROXY_FANTASY_TARGET', 'https://fantasy-api.llt-services.com');
 const X_APP = getEnv('PROXY_DEFAULT_X_APP', '2');
@@ -140,4 +140,36 @@ export async function fetchOfficialAPI<T>(path: string, token: string, query?: R
     throw new Error(`HTTP ${res.status}: ${text}`);
   }
   return res.json() as Promise<T>;
+}
+
+/**
+ * La API oficial de LaLiga Fantasy usa `midfield`/`striker` en la formación,
+ * mientras que este proyecto usa internamente `midfielder`/`attacker`.
+ */
+export function normalizeFormation(lineup: TeamLineup): TeamLineup {
+  const formation = lineup.formation as any;
+  return {
+    ...lineup,
+    formation: {
+      goalkeeper: formation.goalkeeper || [],
+      defender: formation.defender || [],
+      midfielder: formation.midfielder || formation.midfield || [],
+      attacker: formation.attacker || formation.striker || [],
+      coach: formation.coach || [],
+    },
+  };
+}
+
+/**
+ * Alineación de la jornada actual. El endpoint por semana suele devolver el
+ * once completo, mientras que el genérico a veces solo devuelve los jugadores
+ * ya confirmados. Si el específico falla, se vuelve al genérico.
+ */
+export async function fetchCurrentLineup(token: string, teamId: number, weekNumber: number): Promise<TeamLineup> {
+  try {
+    return normalizeFormation(await fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup/week/${weekNumber}`, token));
+  } catch (error) {
+    console.warn('[fetchCurrentLineup] lineup by week failed, falling back:', error instanceof Error ? error.message : error);
+    return normalizeFormation(await fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token));
+  }
 }

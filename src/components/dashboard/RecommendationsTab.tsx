@@ -526,9 +526,6 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                   </div>
                 </div>
               )}
-              {activeAction?.type === 'withdraw' && (
-                <p className="pt-2">¿Seguro que quieres retirar a <strong>{activeAction.player.nickname}</strong> de la venta en el mercado?</p>
-              )}
               {activeAction?.type === 'bid' && (
                 <div className="space-y-3 pt-2">
                   <p>Introduce tu puja por <strong>{activeAction.player.nickname}</strong>:</p>

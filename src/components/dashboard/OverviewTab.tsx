@@ -32,12 +32,14 @@ import {
   Zap,
 } from 'lucide-react';
 import { positionColor, getPositionName, statusText } from '../../lib/format';
+import { useNotifications } from '../../hooks/useNotifications';
 
 interface OverviewTabProps {
   league: FantasyLeague;
 }
 
 export default function OverviewTab({ league }: OverviewTabProps) {
+  const { isRead, markAsRead } = useNotifications();
   const teamId = league.team.id;
   const leagueId = league.id;
 
@@ -105,11 +107,19 @@ export default function OverviewTab({ league }: OverviewTabProps) {
   const highPriority = recommendations.filter((r) => r.priority === 'high').slice(0, 4);
 
   const HARD_NEWS_CATEGORIES = new Set(['injury', 'illness', 'suspension']);
-  const unavailablePlayers = teamPlayers.filter((p) => p.playerMaster.playerStatus !== 'ok');
+  const unavailablePlayers = teamPlayers.filter(
+    (p) => p.playerMaster.playerStatus !== 'ok' && !isRead(`status-${p.playerMaster.id}-${p.playerMaster.playerStatus}`),
+  );
   const newsAlerts = recommendations
-    .filter((r) => (r.externalSignals || []).some((s) => s.signal === 'sell' && s.category && HARD_NEWS_CATEGORIES.has(s.category)))
+    .filter(
+      (r) =>
+        !isRead(`news-${r.id}`) &&
+        (r.externalSignals || []).some((s) => s.signal === 'sell' && s.category && HARD_NEWS_CATEGORIES.has(s.category)),
+    )
     .slice(0, 3);
-  const clauseAlerts = recommendations.filter((r) => r.type === 'protect_clause' && (r.riskScore ?? 0) >= 70).slice(0, 3);
+  const clauseAlerts = recommendations
+    .filter((r) => r.type === 'protect_clause' && (r.riskScore ?? 0) >= 70 && !isRead(`clause-${r.id}`))
+    .slice(0, 3);
 
   const positionData = teamPlayers.reduce<Record<string, { name: string; value: number; color: string }>>(
     (acc, p) => {
@@ -181,6 +191,7 @@ export default function OverviewTab({ league }: OverviewTabProps) {
           level="warning"
           title="Bajas o dudas en tu plantilla"
           description={`Tienes ${unavailablePlayers.length} jugador${unavailablePlayers.length > 1 ? 'es' : ''} ${unavailablePlayers.map((p) => p.playerMaster.nickname).join(', ')}.`}
+          onDismiss={() => unavailablePlayers.forEach((p) => markAsRead(`status-${p.playerMaster.id}-${p.playerMaster.playerStatus}`))}
         />
       )}
 
@@ -276,6 +287,7 @@ export default function OverviewTab({ league }: OverviewTabProps) {
               level="danger"
               title={rec.player.nickname}
               description={rec.reason}
+              onDismiss={() => markAsRead(`news-${rec.id}`)}
             />
           ))}
           {clauseAlerts.map((rec) => (
@@ -284,6 +296,7 @@ export default function OverviewTab({ league }: OverviewTabProps) {
               level="warning"
               title={`${rec.player.nickname} en riesgo`}
               description={`Riesgo de clausulazo ${rec.riskScore}/100`}
+              onDismiss={() => markAsRead(`clause-${rec.id}`)}
             />
           ))}
         </div>

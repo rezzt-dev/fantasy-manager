@@ -45,6 +45,7 @@ interface HeaderProps {
   onToggleDensity?: (dense: boolean) => void;
   alertCount?: number;
   alerts?: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
+  onMarkAllNotificationsAsRead?: () => void;
 }
 
 export default function Header({
@@ -59,6 +60,7 @@ export default function Header({
   onToggleDensity,
   alertCount = 0,
   alerts = [],
+  onMarkAllNotificationsAsRead,
 }: HeaderProps) {
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
@@ -149,7 +151,7 @@ export default function Header({
             </Button>
           )}
 
-          <NotificationBell count={alertCount} alerts={alerts} />
+          <NotificationBell count={alertCount} alerts={alerts} onMarkAllAsRead={onMarkAllNotificationsAsRead} />
 
           <Separator orientation="vertical" className="h-5" />
 
@@ -230,11 +232,18 @@ function LeagueSelector({
 function NotificationBell({
   count,
   alerts,
+  onMarkAllAsRead,
 }: {
   count: number;
   alerts: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
+  onMarkAllAsRead?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+
+  const handleMarkAllAsRead = () => {
+    onMarkAllAsRead?.();
+    setOpen(false);
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -288,7 +297,7 @@ function NotificationBell({
         </div>
         {alerts.length > 0 && (
           <div className="border-t border-white/[0.06] px-4 py-2">
-            <Button variant="ghost" size="sm" className="h-8 w-full justify-start gap-2 text-xs" onClick={() => setOpen(false)}>
+            <Button variant="ghost" size="sm" className="h-8 w-full justify-start gap-2 text-xs" onClick={handleMarkAllAsRead}>
               <CheckCircle2 className="h-3.5 w-3.5" />
               Marcar como leídas
             </Button>

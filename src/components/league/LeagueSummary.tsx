@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import fantasyAPI from '../../lib/fantasy/api';
+import fantasyAPI, { LaLigaFantasyClient } from '../../lib/fantasy/api';
 import type { FantasyLeague } from '../../types/fantasy';
 import { EuroIcon, Users, TrendingUp, Wallet } from 'lucide-react';
 import RecommendationPanel from '../recommendations/RecommendationPanel';
@@ -22,7 +22,7 @@ export default function LeagueSummary({ league }: { league: FantasyLeague }) {
 
   const lineupQuery = useQuery({
     queryKey: ['lineup', teamId],
-    queryFn: () => fantasyAPI.getTeamLineup(teamId),
+    queryFn: () => LaLigaFantasyClient.getCurrentLineup(teamId),
     enabled: !!teamId,
   });
 

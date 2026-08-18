@@ -125,6 +125,7 @@ export interface MarketPlayer {
 export interface Formation {
   goalkeeper: { playerMaster: PlayerMaster; buyoutClause: number; playerTeamId: string }[];
   defender: { playerMaster: PlayerMaster; buyoutClause: number; playerTeamId: string }[];
+  /** La API oficial usa `midfield`/`striker`; internamente normalizamos a `midfielder`/`attacker`. */
   midfielder: { playerMaster: PlayerMaster; buyoutClause: number; playerTeamId: string }[];
   attacker: { playerMaster: PlayerMaster; buyoutClause: number; playerTeamId: string }[];
   coach?: { playerMaster: PlayerMaster; buyoutClause: number; playerTeamId: string }[];

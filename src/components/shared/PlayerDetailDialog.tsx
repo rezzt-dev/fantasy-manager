@@ -91,7 +91,7 @@ export default function PlayerDetailDialog({
   // Determine ownership and market status
   const userTeamId = league?.team?.id;
   const userMoney = league?.team?.money || 0;
-  const isOurs = teamPlayer || (userTeamId && teamPlayer?.managerId === userTeamId);
+  const isOurs = !!teamPlayer;
 
   const resetActionState = () => {
     setActiveAction(null);

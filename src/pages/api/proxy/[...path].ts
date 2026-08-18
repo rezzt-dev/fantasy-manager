@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getEnv, getEnvOptional } from '../../../lib/env';
 import type { MarketPlayer, PlayerMaster } from '../../../types/fantasy';
 import { enrichMarketPlayers } from '../../../lib/fantasy/market-enrich';
+import { enrichResponseTeams, fetchTeamNameMap, mayNeedTeamEnrichment } from '../../../lib/fantasy/player-team-enrich';
 import { getToken } from '../../../lib/fantasy/api-proxy';
 
 const TARGET = getEnv('PROXY_FANTASY_TARGET', 'https://fantasy-api.llt-services.com');
@@ -35,6 +36,34 @@ async function fetchAllPlayersCached(token: string): Promise<PlayerMaster[]> {
 function isMarketPath(path: string): boolean {
   // /v1/competition/1/league/{leagueId}/market (con o sin barra final)
   return /^v1\/competition\/1\/league\/[^\/]+\/market\/?$/.test(path);
+}
+
+function buildResponseHeaders(upstream: Response): Headers {
+  const responseHeaders = new Headers();
+  upstream.headers.forEach((value, key) => {
+    if (['content-encoding', 'content-length', 'transfer-encoding'].includes(key.toLowerCase())) return;
+    responseHeaders.set(key, value);
+  });
+  responseHeaders.set('Access-Control-Allow-Origin', '*');
+  return responseHeaders;
+}
+
+function jsonResponse(upstream: Response, body: string): Response {
+  const headers = buildResponseHeaders(upstream);
+  headers.set('Content-Type', 'application/json');
+  return new Response(body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers,
+  });
+}
+
+function rawResponse(upstream: Response, body: BodyInit): Response {
+  return new Response(body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: buildResponseHeaders(upstream),
+  });
 }
 
 async function proxyHandler({ request, params, cookies, session }: Parameters<APIRoute>[0]) {
@@ -74,46 +103,43 @@ async function proxyHandler({ request, params, cookies, session }: Parameters<AP
     });
     clearTimeout(timeout);
 
+    const contentType = upstream.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+
     // El endpoint de mercado a veces omite el equipo en playerMaster. Lo
     // enriquecemos con el catálogo global para que el dashboard siempre muestre
     // el club al que pertenece el jugador.
-    if (path && request.method === 'GET' && upstream.ok && isMarketPath(path)) {
+    if (path && request.method === 'GET' && upstream.ok && isMarketPath(path) && isJson) {
       try {
         const market = (await upstream.clone().json()) as MarketPlayer[];
         const allPlayers = await fetchAllPlayersCached(token);
         const enriched = enrichMarketPlayers(market, allPlayers);
-        const body = JSON.stringify(enriched);
-        const responseHeaders = new Headers();
-        upstream.headers.forEach((value, key) => {
-          if (['content-encoding', 'content-length', 'transfer-encoding'].includes(key.toLowerCase())) return;
-          responseHeaders.set(key, value);
-        });
-        responseHeaders.set('Content-Type', 'application/json');
-        responseHeaders.set('Access-Control-Allow-Origin', '*');
-        return new Response(body, {
-          status: upstream.status,
-          statusText: upstream.statusText,
-          headers: responseHeaders,
-        });
+        return jsonResponse(upstream, JSON.stringify(enriched));
       } catch (enrichError) {
         console.warn('[proxy] market enrichment failed:', enrichError instanceof Error ? enrichError.message : enrichError);
+        // Fallthrough: devuelve la respuesta original o con enriquecimiento general.
+      }
+    }
+
+    // Para cualquier respuesta JSON que contenga jugadores, enriquecemos el
+    // campo `team` usando el listado oficial de equipos. Esto cubre plantillas,
+    // alineaciones, detalle de jugador y el propio catálogo global.
+    if (request.method === 'GET' && upstream.ok && isJson) {
+      try {
+        const data = (await upstream.clone().json()) as unknown;
+        if (mayNeedTeamEnrichment(data)) {
+          const teamNames = await fetchTeamNameMap(token);
+          enrichResponseTeams(data, teamNames);
+          return jsonResponse(upstream, JSON.stringify(data));
+        }
+      } catch (enrichError) {
+        console.warn('[proxy] team enrichment failed:', enrichError instanceof Error ? enrichError.message : enrichError);
         // Fallthrough: devuelve la respuesta original tal cual.
       }
     }
 
     const responseBody = await upstream.arrayBuffer();
-    const responseHeaders = new Headers();
-    upstream.headers.forEach((value, key) => {
-      if (['content-encoding', 'content-length', 'transfer-encoding'].includes(key.toLowerCase())) return;
-      responseHeaders.set(key, value);
-    });
-    responseHeaders.set('Access-Control-Allow-Origin', '*');
-
-    return new Response(responseBody, {
-      status: upstream.status,
-      statusText: upstream.statusText,
-      headers: responseHeaders,
-    });
+    return rawResponse(upstream, responseBody);
   } catch (error) {
     clearTimeout(timeout);
     const message = error instanceof Error ? error.message : 'Unknown error';
