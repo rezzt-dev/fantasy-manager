@@ -67,12 +67,13 @@ export async function appendScorePredictionHistory(
   }));
 
   const existing = await readJsonl<ScoreHistoryRecord>(HISTORY_FILE);
-  const known = new Set(existing.map((r) => `${r.leagueId}:${r.week}:${r.teamId}`));
-  const fresh = records.filter((r) => !known.has(`${r.leagueId}:${r.week}:${r.teamId}`));
+  const byKey = new Map(existing.map((r) => [`${r.leagueId}:${r.week}:${r.teamId}`, r]));
+  for (const record of records) {
+    byKey.set(`${record.leagueId}:${record.week}:${record.teamId}`, record);
+  }
 
-  if (fresh.length === 0) return;
-  const body = fresh.map((r) => JSON.stringify(r)).join('\n') + '\n';
-  await writeFile(HISTORY_FILE, body, { flag: 'a' });
+  const body = [...byKey.values()].map((r) => JSON.stringify(r)).join('\n') + '\n';
+  await writeFile(HISTORY_FILE, body);
 }
 
 export async function loadScorePredictionHistory(

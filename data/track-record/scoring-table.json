@@ -5,25 +5,25 @@
       "saves": 0.5,
       "effective_clearance": 0,
       "goals_conceded": -0.5,
-      "ball_recovery": 0.17708333333333331,
+      "ball_recovery": 0.1875,
       "poss_lost_all": -0.06666666666666667,
       "marca_points": -2
     },
     "2": {
       "mins_played": 0.022222222222222223,
       "effective_clearance": 0.2,
-      "won_contest": 0.5,
-      "poss_lost_all": -0.07692307692307693,
-      "marca_points": -1,
-      "goals_conceded": -1,
+      "won_contest": 0,
+      "poss_lost_all": -0.06666666666666667,
+      "marca_points": -2,
+      "goals_conceded": 0,
       "yellow_card": -1,
       "total_scoring_att": 0,
-      "ball_recovery": 0.0625,
+      "ball_recovery": 0,
       "red_card": -3,
       "pen_area_entries": 0
     },
     "3": {
-      "mins_played": 0.025974025974025976,
+      "mins_played": 0.026875901875901876,
       "goals_conceded": -0.5,
       "ball_recovery": 0,
       "poss_lost_all": 0,
@@ -38,54 +38,55 @@
       "yellow_card": -1
     },
     "4": {
-      "mins_played": 0.02345679012345679,
+      "mins_played": 0.026234567901234566,
       "goals": 4,
       "total_scoring_att": 0,
       "ball_recovery": 0,
       "poss_lost_all": 0,
-      "marca_points": -2.5,
+      "marca_points": -2,
       "pen_area_entries": 0,
-      "goals_conceded": -0.5,
+      "goals_conceded": -0.25,
       "won_contest": 0,
       "effective_clearance": 0,
+      "yellow_card": -1,
       "offtarget_att_assist": 1
     },
     "5": {
       "lost_match": 0,
       "marca_points": 0,
-      "drawn_match": 2
+      "won_match": 5
     }
   },
   "samples": {
     "1": {
-      "mins_played": 2,
+      "mins_played": 3,
       "saves": 2,
       "effective_clearance": 1,
       "goals_conceded": 2,
-      "ball_recovery": 2,
-      "poss_lost_all": 2,
-      "marca_points": 3
+      "ball_recovery": 3,
+      "poss_lost_all": 3,
+      "marca_points": 4
     },
     "2": {
-      "mins_played": 9,
-      "effective_clearance": 9,
-      "won_contest": 3,
-      "poss_lost_all": 9,
-      "marca_points": 12,
-      "goals_conceded": 5,
-      "yellow_card": 3,
+      "mins_played": 7,
+      "effective_clearance": 7,
+      "won_contest": 1,
+      "poss_lost_all": 7,
+      "marca_points": 9,
+      "goals_conceded": 3,
+      "yellow_card": 1,
       "total_scoring_att": 1,
-      "ball_recovery": 8,
+      "ball_recovery": 6,
       "red_card": 1,
-      "pen_area_entries": 2
+      "pen_area_entries": 3
     },
     "3": {
-      "mins_played": 7,
-      "goals_conceded": 5,
-      "ball_recovery": 6,
-      "poss_lost_all": 7,
-      "marca_points": 7,
-      "effective_clearance": 5,
+      "mins_played": 6,
+      "goals_conceded": 4,
+      "ball_recovery": 5,
+      "poss_lost_all": 6,
+      "marca_points": 6,
+      "effective_clearance": 4,
       "penalty_conceded": 2,
       "total_scoring_att": 2,
       "won_contest": 2,
@@ -95,23 +96,24 @@
       "yellow_card": 2
     },
     "4": {
-      "mins_played": 6,
+      "mins_played": 8,
       "goals": 3,
-      "total_scoring_att": 5,
-      "ball_recovery": 6,
-      "poss_lost_all": 6,
-      "marca_points": 6,
+      "total_scoring_att": 7,
+      "ball_recovery": 8,
+      "poss_lost_all": 8,
+      "marca_points": 8,
       "pen_area_entries": 3,
-      "goals_conceded": 1,
-      "won_contest": 2,
-      "effective_clearance": 3,
+      "goals_conceded": 2,
+      "won_contest": 3,
+      "effective_clearance": 5,
+      "yellow_card": 1,
       "offtarget_att_assist": 1
     },
     "5": {
-      "lost_match": 1,
-      "marca_points": 2,
-      "drawn_match": 1
+      "lost_match": 2,
+      "marca_points": 3,
+      "won_match": 1
     }
   },
-  "derivedAt": "2026-08-17T21:11:09.107Z"
+  "derivedAt": "2026-08-18T22:15:39.732Z"
 }

@@ -226,21 +226,21 @@ export default function TeamTab({ league }: TeamTabProps) {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
           <div className="text-xs text-muted-foreground">Jugadores</div>
           <div className="mt-2 text-2xl font-bold font-display text-foreground">{players.length}</div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
           <div className="text-xs text-muted-foreground">Disponibles</div>
           <div className="mt-2 text-2xl font-bold font-display text-foreground">{healthyCount}</div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
           <div className="text-xs text-muted-foreground">Valor total</div>
           <div className="mt-2 text-2xl font-bold font-display text-foreground">
             <Currency value={totalValue} />
           </div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
           <div className="text-xs text-muted-foreground">Puntos totales</div>
           <div className="mt-2 text-2xl font-bold font-display text-foreground">{totalPoints}</div>
         </div>
@@ -299,6 +299,9 @@ export default function TeamTab({ league }: TeamTabProps) {
         isShielded={selectedPlayer?.isShielded}
         starterInfo={selectedPlayer ? starterInfo[selectedPlayer.playerMaster.id] : undefined}
         signals={selectedPlayer ? signalsByPlayer[selectedPlayer.playerMaster.id] : undefined}
+        teamPlayer={selectedPlayer || undefined}
+        league={league}
+        onActionSuccess={refetch}
       />
     </div>
   );

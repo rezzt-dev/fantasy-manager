@@ -15,6 +15,7 @@ import { Trophy, TrendingUp, Users, AlertCircle, Shield, ChevronDown, ChevronUp 
 import KpiCard from '../shared/KpiCard';
 import SectionHeader from '../shared/SectionHeader';
 import ErrorState from '../shared/ErrorState';
+import EmptyState from '../shared/EmptyState';
 import LoadingSection from '../shared/LoadingSection';
 import DataTable from '../shared/DataTable';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -244,6 +245,19 @@ export default function ScorePredictionsTab({ league }: ScorePredictionsTabProps
   if (!data) return null;
 
   const { predictions, notes, week, history } = data;
+
+  if (predictions.length === 0) {
+    return (
+      <div className="space-y-6 pb-20 lg:pb-0">
+        <SectionHeader title="Puntuación" description={`Predicción de puntos por equipo · Jornada ${week} · ${league.name}`} />
+        <EmptyState
+          title="Sin predicciones disponibles"
+          description={notes[0] || 'No se ha podido calcular la predicción de ningún equipo para esta jornada.'}
+        />
+      </div>
+    );
+  }
+
   const leader = predictions[0];
   const average = predictions.reduce((sum, p) => sum + p.predictedLineup.totalExpected, 0) / Math.max(predictions.length, 1);
   const lowQualityCount = predictions.filter((p) => p.predictedLineup.dataQuality.level === 'low').length;

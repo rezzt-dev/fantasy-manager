@@ -38,7 +38,7 @@ const navigation: NavSection[] = [
     label: 'Mercado',
     items: [
       { id: 'market', label: 'Mercado', icon: ShoppingCart },
-      { id: 'recommendations', label: 'Recomendaciones', icon: Lightbulb },
+      { id: 'recommendations', label: 'Centro Estrategia', icon: Lightbulb },
     ],
   },
   {

@@ -437,6 +437,9 @@ export default function MarketTab({ league }: MarketTabProps) {
         open={!!selectedPlayer}
         onOpenChange={(open) => !open && setSelectedPlayer(null)}
         signals={selectedPlayer ? externalSignals[selectedPlayer.playerMaster.id] : undefined}
+        marketPlayer={selectedPlayer || undefined}
+        league={league}
+        onActionSuccess={refetch}
       />
     </div>
   );

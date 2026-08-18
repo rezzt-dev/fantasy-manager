@@ -2,6 +2,7 @@ import { appendFile, mkdir, readFile, readdir, writeFile } from 'node:fs/promise
 import path from 'node:path';
 import { XI_PER_DAY } from './form';
 import type { PlayerWeekStat } from './player-stats';
+import { withFileLock } from './file-lock';
 
 /**
  * Track record del motor (§6.1 del diseño): persiste CADA predicción y CADA
@@ -122,11 +123,13 @@ export async function persistPredictions(
   records: PredictionRecord[],
 ): Promise<{ appended: number; skipped: number }> {
   const file = predictionsFile(week);
-  const existing = await readJsonl<PredictionRecord>(file);
-  const known = new Set(existing.map((r) => r.playerId));
-  const fresh = records.filter((r) => !known.has(r.playerId));
-  await appendJsonl(file, fresh);
-  return { appended: fresh.length, skipped: records.length - fresh.length };
+  return withFileLock(file, async () => {
+    const existing = await readJsonl<PredictionRecord>(file);
+    const known = new Set(existing.map((r) => `${r.leagueId}:${r.playerId}`));
+    const fresh = records.filter((r) => !known.has(`${r.leagueId}:${r.playerId}`));
+    await appendJsonl(file, fresh);
+    return { appended: fresh.length, skipped: records.length - fresh.length };
+  });
 }
 
 /**
@@ -137,11 +140,13 @@ export async function persistRecommendations(
   records: RecommendationRecord[],
 ): Promise<{ appended: number; skipped: number }> {
   const file = recommendationsFile(week);
-  const existing = await readJsonl<RecommendationRecord>(file);
-  const known = new Set(existing.map((r) => `${r.type}:${r.playerId}`));
-  const fresh = records.filter((r) => !known.has(`${r.type}:${r.playerId}`));
-  await appendJsonl(file, fresh);
-  return { appended: fresh.length, skipped: records.length - fresh.length };
+  return withFileLock(file, async () => {
+    const existing = await readJsonl<RecommendationRecord>(file);
+    const known = new Set(existing.map((r) => `${r.leagueId}:${r.type}:${r.playerId}`));
+    const fresh = records.filter((r) => !known.has(`${r.leagueId}:${r.type}:${r.playerId}`));
+    await appendJsonl(file, fresh);
+    return { appended: fresh.length, skipped: records.length - fresh.length };
+  });
 }
 
 /**

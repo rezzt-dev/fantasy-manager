@@ -253,6 +253,8 @@ export default function RivalsTab({ league }: RivalsTabProps) {
         onOpenChange={(open) => !open && setSelectedPlayer(null)}
         buyoutClause={selectedPlayer?.buyoutClause}
         isShielded={selectedPlayer?.isShielded}
+        league={league}
+        onActionSuccess={refetch}
       />
     </div>
   );

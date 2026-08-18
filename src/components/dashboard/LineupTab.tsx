@@ -1,14 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import fantasyAPI from '../../lib/fantasy/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+import fantasyAPI, { LaLigaFantasyClient } from '../../lib/fantasy/api';
 import type { FantasyLeague, Formation, PlayerMaster, TeamPlayer } from '../../types/fantasy';
 import type { OptimalLineup, TacticalScheme } from '../../types/analysis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import Currency from '../shared/Currency';
@@ -18,7 +21,7 @@ import EmptyState from '../shared/EmptyState';
 import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
 import { StaggerContainer, StaggerItem } from '../ui/motion';
-import { Shield, Users, Swords, AlertTriangle, Sparkles, ArrowRightLeft, Wallet } from 'lucide-react';
+import { Shield, Users, Swords, AlertTriangle, Sparkles, ArrowRightLeft, Wallet, Save, RefreshCw, Loader2 } from 'lucide-react';
 import { positionShortName } from '../../lib/format';
 import { useState } from 'react';
 
@@ -70,10 +73,15 @@ function buildFilledRows(
     if ([d, m, a].every((n) => Number.isFinite(n))) targets = { 1: 1, 2: d, 3: m, 4: a };
   }
 
+  // Set of player master IDs actually in our squad
+  const ownedPlayerMasterIds = new Set(teamPlayers.map(p => p.playerMaster.id));
+
   const suggestionPool = (positionId: number): PlayerMaster[] => {
+    // Only suggest starters from optimalLineup if they are ACTUALLY owned by the user!
     const fromOptimal = (optimalLineup?.starters || [])
-      .filter((e) => e.player.positionId === positionId && !officialIds.has(e.player.id))
+      .filter((e) => e.player.positionId === positionId && ownedPlayerMasterIds.has(e.player.id) && !officialIds.has(e.player.id))
       .map((e) => e.player);
+
     const rest = teamPlayers
       .map((tp) => tp.playerMaster)
       .filter(
@@ -109,6 +117,7 @@ function buildFilledRows(
 export default function LineupTab({ league }: LineupTabProps) {
   const teamId = league.team.id;
   const leagueId = league.id;
+  const queryClient = useQueryClient();
 
   const lineupQuery = useQuery({
     queryKey: ['lineup', teamId],
@@ -136,10 +145,37 @@ export default function LineupTab({ league }: LineupTabProps) {
   });
   const tacticalScheme: TacticalScheme | undefined = recommendationsQuery.data?.tacticalScheme;
 
+  // Real action and local states
   const [selectedPlayer, setSelectedPlayer] = useState<TeamPlayer | null>(null);
+  const [localFormation, setLocalFormation] = useState<Formation | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
+
+  // State for swapping a starting player
+  const [swappingStarter, setSwappingStarter] = useState<{
+    playerMaster: PlayerMaster;
+    buyoutClause: number;
+    playerTeamId: string;
+    positionId: number;
+  } | null>(null);
 
   const isLoading = lineupQuery.isLoading || teamQuery.isLoading;
   const hasError = lineupQuery.error || teamQuery.error;
+
+  const formation = lineupQuery.data?.formation;
+  const teamPlayers = teamQuery.data?.players || [];
+
+  if (formation && !isInitialized) {
+    setLocalFormation({
+      goalkeeper: [...(formation.goalkeeper || [])],
+      defender: [...(formation.defender || [])],
+      midfielder: [...(formation.midfielder || [])],
+      attacker: [...(formation.attacker || [])],
+      coach: [...(formation.coach || [])],
+    });
+    setIsInitialized(true);
+  }
 
   if (isLoading) return <LineupSkeleton />;
   if (hasError)
@@ -154,10 +190,7 @@ export default function LineupTab({ league }: LineupTabProps) {
       />
     );
 
-  const formation = lineupQuery.data?.formation;
-  const teamPlayers = teamQuery.data?.players || [];
-
-  if (!formation) {
+  if (!formation || !localFormation) {
     return (
       <EmptyState
         title="Sin alineación"
@@ -167,15 +200,15 @@ export default function LineupTab({ league }: LineupTabProps) {
   }
 
   const allFormationEntries = [
-    ...(formation.goalkeeper || []),
-    ...(formation.defender || []),
-    ...(formation.midfielder || []),
-    ...(formation.attacker || []),
+    ...(localFormation.goalkeeper || []),
+    ...(localFormation.defender || []),
+    ...(localFormation.midfielder || []),
+    ...(localFormation.attacker || []),
   ];
   const lineupIds = new Set(allFormationEntries.map((e) => e.playerMaster.id));
   const totalLineup = allFormationEntries.length;
 
-  const filledRows = buildFilledRows(formation, teamPlayers, optimalLineup);
+  const filledRows = buildFilledRows(localFormation, teamPlayers, optimalLineup);
   const filledEntries = filledRows.flatMap((row) => row.entries);
   const isIncomplete = totalLineup < filledEntries.length;
 
@@ -187,6 +220,180 @@ export default function LineupTab({ league }: LineupTabProps) {
   );
 
   const teamPlayerById = new Map(teamPlayers.map((tp) => [tp.playerMaster.id, tp]));
+
+  // Re-initialize / Reset lineup changes
+  const resetChanges = () => {
+    setLocalFormation({
+      goalkeeper: [...(formation.goalkeeper || [])],
+      defender: [...(formation.defender || [])],
+      midfielder: [...(formation.midfielder || [])],
+      attacker: [...(formation.attacker || [])],
+      coach: [...(formation.coach || [])],
+    });
+    toast.info('🔄 Cambios de alineación descartados.');
+  };
+
+  // Check if lineup was modified compared to official
+  const isModified = JSON.stringify(
+    allFormationEntries.map((e) => e.playerTeamId).sort()
+  ) !== JSON.stringify(
+    [
+      ...(formation.goalkeeper || []),
+      ...(formation.defender || []),
+      ...(formation.midfielder || []),
+      ...(formation.attacker || []),
+    ].map((e) => e.playerTeamId).sort()
+  );
+
+  // Apply recommended lineup starters (CRITICAL: Filter to only include OWNED players)
+  const applyRecommendedLineup = () => {
+    if (!optimalLineup) return;
+
+    const playerMap = new Map(teamPlayers.map((p) => [p.playerMaster.id, p]));
+    const gk: any[] = [];
+    const df: any[] = [];
+    const mf: any[] = [];
+    const at: any[] = [];
+
+    // Filter optimal starters: must actually belong to our squad!
+    const ownedStarters = optimalLineup.starters.filter(s => playerMap.has(s.player.id));
+
+    ownedStarters.forEach((starter) => {
+      const p = starter.player;
+      const tp = playerMap.get(p.id)!; // guaranteed to exist since we filtered
+      const entry = {
+        playerMaster: p,
+        buyoutClause: tp.buyoutClause,
+        playerTeamId: tp.playerTeamId,
+      };
+
+      if (p.positionId === 1) gk.push(entry);
+      else if (p.positionId === 2) df.push(entry);
+      else if (p.positionId === 3) mf.push(entry);
+      else if (p.positionId === 4) at.push(entry);
+    });
+
+    if (gk.length === 0) {
+      toast.error('⚠️ No se puede aplicar la recomendación porque no tienes ningún portero de tu plantilla sugerido en la alineación óptima.');
+      return;
+    }
+
+    setLocalFormation({
+      goalkeeper: gk,
+      defender: df,
+      midfielder: mf,
+      attacker: at,
+      coach: [...(localFormation.coach || [])],
+    });
+
+    toast.success('✨ ¡Alineación óptima recomendada aplicada (filtrando solo tus jugadores reales)! Haz clic en "Guardar Alineación" para guardarla.');
+  };
+
+  // Perform starter bench player swap (with strict position validation)
+  const handleSwap = (benchPlayer: TeamPlayer) => {
+    if (!swappingStarter) return;
+
+    // Strict validation: Ensure position matches
+    if (benchPlayer.playerMaster.positionId !== swappingStarter.positionId) {
+      toast.error('❌ Error de validación: El jugador del banquillo debe jugar en la misma posición.');
+      return;
+    }
+
+    // Strict validation: Ensure player actually belongs to our official squad
+    const ownedPlayerTeamIds = new Set(teamPlayers.map((p) => p.playerTeamId));
+    if (!ownedPlayerTeamIds.has(benchPlayer.playerTeamId)) {
+      toast.error('❌ Error de validación: El jugador seleccionado no pertenece a tu plantilla.');
+      return;
+    }
+
+    const posId = swappingStarter.positionId;
+    const starterId = swappingStarter.playerMaster.id;
+    const key = posId === 1 ? 'goalkeeper' : posId === 2 ? 'defender' : posId === 3 ? 'midfielder' : 'attacker';
+
+    const list = [...localFormation[key]];
+    const index = list.findIndex((e) => e.playerMaster.id === starterId);
+    if (index === -1) return;
+
+    list[index] = {
+      playerMaster: benchPlayer.playerMaster,
+      buyoutClause: benchPlayer.buyoutClause,
+      playerTeamId: benchPlayer.playerTeamId,
+    };
+
+    setLocalFormation({
+      ...localFormation,
+      [key]: list,
+    });
+
+    toast.success(`🔄 ${swappingStarter.playerMaster.nickname} sustituido por ${benchPlayer.playerMaster.nickname}.`);
+    setSwappingStarter(null);
+  };
+
+  // Save the lineup to LaLiga Fantasy
+  const handleSaveLineup = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    try {
+      const defenderCount = localFormation.defender.length;
+      const midfielderCount = localFormation.midfielder.length;
+      const attackerCount = localFormation.attacker.length;
+      const formationArray = [defenderCount, midfielderCount, attackerCount];
+
+      // CRITICAL SECURITY VALIDATION: Confirm all players in payload belong to our official squad by playerTeamId!
+      const ownedPlayerTeamIds = new Set(teamPlayers.map(p => p.playerTeamId));
+      const gkId = localFormation.goalkeeper[0]?.playerTeamId || null;
+      const defIds = localFormation.defender.map((e) => e.playerTeamId);
+      const mfIds = localFormation.midfielder.map((e) => e.playerTeamId);
+      const strIds = localFormation.attacker.map((e) => e.playerTeamId);
+
+      const payloadIds = [
+        ...gkId ? [gkId] : [],
+        ...defIds,
+        ...mfIds,
+        ...strIds,
+      ];
+
+      const invalidId = payloadIds.find(id => !ownedPlayerTeamIds.has(id));
+      if (invalidId) {
+        const allEntries = [
+          ...localFormation.goalkeeper,
+          ...localFormation.defender,
+          ...localFormation.midfielder,
+          ...localFormation.attacker,
+        ];
+        const invalidPlayer = allEntries.find(e => e.playerTeamId === invalidId);
+        const name = invalidPlayer?.playerMaster?.nickname || 'Desconocido';
+        toast.error(`❌ Error de validación: El jugador ${name} no pertenece realmente a tu plantilla de LaLiga.`);
+        setIsSaving(false);
+        return;
+      }
+
+      // Exact request payload fields mapped to the official B2C schema from LineupEditor.js
+      const payload = {
+        tactical_formation: formationArray,
+        goalkeeper: gkId,
+        defender: defIds,
+        midfield: mfIds,
+        striker: strIds,
+      };
+
+      await LaLigaFantasyClient.updateLineup(teamId, payload);
+      toast.success('⚽ ¡Alineación actualizada en tu cuenta de LaLiga Fantasy!');
+
+      // Reset initialization state so that localFormation is reloaded from the fresh server response
+      setIsInitialized(false);
+
+      queryClient.invalidateQueries();
+      lineupQuery.refetch();
+    } catch (err: any) {
+      console.error('[Save Lineup Error]', err);
+      toast.error(`❌ Error al guardar la alineación: ${err.message || 'Error desconocido'}`);
+    } finally {
+      setIsSaving(false);
+      setShowConfirmSave(false);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
@@ -209,7 +416,30 @@ export default function LineupTab({ league }: LineupTabProps) {
         }
       />
 
-      {optimalLineup && <RecommendedLineupCard optimalLineup={optimalLineup} />}
+      {/* Floating Save Actions Bar if modified */}
+      {isModified && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
+          <div className="flex items-center gap-2 text-sm text-amber-200">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+            <span>Tienes cambios sin guardar en tu alineación local.</span>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="ghost" size="sm" onClick={resetChanges} className="text-white hover:bg-white/[0.08]">
+              <RefreshCw className="h-4 w-4 mr-1.5" /> Descartar
+            </Button>
+            <Button variant="default" size="sm" onClick={() => setShowConfirmSave(true)}>
+              <Save className="h-4 w-4 mr-1.5" /> Guardar alineación
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {optimalLineup && (
+        <RecommendedLineupCard
+          optimalLineup={optimalLineup}
+          onApply={applyRecommendedLineup}
+        />
+      )}
       {tacticalScheme && <TacticalSchemeCard scheme={tacticalScheme} />}
 
       {isIncomplete && (
@@ -267,10 +497,24 @@ export default function LineupTab({ league }: LineupTabProps) {
 
               <div className="relative z-10 flex min-h-[420px] flex-1 flex-col justify-between gap-3 overflow-y-auto py-3 sm:min-h-[540px] sm:py-4 lg:min-h-[680px]">
                 {filledRows.map((row) => (
-                  <PositionRow key={row.positionId} entries={row.entries} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
+                  <PositionRow
+                    key={row.positionId}
+                    entries={row.entries}
+                    onPlayerClick={(p) => {
+                      const entry = row.entries.find((e) => e.playerMaster.id === p.id);
+                      if (entry) {
+                        setSwappingStarter({
+                          playerMaster: p,
+                          buyoutClause: entry.buyoutClause,
+                          playerTeamId: entry.playerTeamId,
+                          positionId: row.positionId,
+                        });
+                      }
+                    }}
+                  />
                 ))}
-                {formation.coach && formation.coach.length > 0 && (
-                  <PositionRow entries={formation.coach} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
+                {localFormation.coach && localFormation.coach.length > 0 && (
+                  <PositionRow entries={localFormation.coach} onPlayerClick={(p) => setSelectedPlayer(teamPlayerById.get(p.id) || null)} />
                 )}
               </div>
             </div>
@@ -284,7 +528,7 @@ export default function LineupTab({ league }: LineupTabProps) {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 Once titular ({totalLineup} oficial{totalLineup === 1 ? '' : 'es'}{isIncomplete ? ` + ${filledEntries.length - totalLineup} sugerido${filledEntries.length - totalLineup === 1 ? '' : 's'}` : ''})
               </CardTitle>
-              <CardDescription>Listado completo de los jugadores que puntúan esta jornada</CardDescription>
+              <CardDescription>Listado de los jugadores seleccionados localmente para la jornada</CardDescription>
             </CardHeader>
             <CardContent>
               <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.04}>
@@ -310,7 +554,7 @@ export default function LineupTab({ league }: LineupTabProps) {
                 <Users className="h-4 w-4 text-muted-foreground" />
                 Banquillo
               </CardTitle>
-              <CardDescription>Jugadores disponibles para sustituir titulares</CardDescription>
+              <CardDescription>Jugadores en el banquillo (pueden sustituir a titulares del mismo puesto)</CardDescription>
             </CardHeader>
             <CardContent>
               {bench.length === 0 ? (
@@ -334,13 +578,89 @@ export default function LineupTab({ league }: LineupTabProps) {
         </TabsContent>
       </Tabs>
 
+      {/* Main Details Dialog */}
       <PlayerDetailDialog
         player={selectedPlayer?.playerMaster || null}
         open={!!selectedPlayer}
         onOpenChange={(open) => !open && setSelectedPlayer(null)}
         buyoutClause={selectedPlayer?.buyoutClause}
         isShielded={selectedPlayer?.isShielded}
+        teamPlayer={selectedPlayer || undefined}
+        league={league}
+        onActionSuccess={lineupQuery.refetch}
       />
+
+      {/* Swapping Starter Dialog */}
+      <Dialog open={!!swappingStarter} onOpenChange={(open) => !open && setSwappingStarter(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sustituir a {swappingStarter?.playerMaster.nickname}</DialogTitle>
+            <DialogDescription>
+              Selecciona un jugador disponible de tu banquillo de la posición de{' '}
+              <strong>{swappingStarter ? positionShortName(swappingStarter.playerMaster.position, swappingStarter.positionId) : ''}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-60 overflow-y-auto space-y-2 py-3 scrollbar-thin">
+            {bench.filter((p) => p.playerMaster.positionId === swappingStarter?.positionId).length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-4">No tienes jugadores de esta posición en tu banquillo.</p>
+            ) : (
+              bench
+                .filter((p) => p.playerMaster.positionId === swappingStarter?.positionId)
+                .map((benchPlayer) => (
+                  <button
+                    key={benchPlayer.playerTeamId}
+                    onClick={() => handleSwap(benchPlayer)}
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-white/[0.06] bg-card hover:bg-surface-2 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <PlayerAvatar player={benchPlayer.playerMaster} size="md" />
+                      <div>
+                        <div className="font-semibold text-foreground">{benchPlayer.playerMaster.nickname}</div>
+                        <PlayerStatusBadge status={benchPlayer.playerMaster.playerStatus} />
+                      </div>
+                    </div>
+                    <div className="text-right text-xs font-semibold text-muted-foreground">
+                      {benchPlayer.playerMaster.points || benchPlayer.playerMaster.lastSeasonPoints || 0} pts
+                    </div>
+                  </button>
+                ))
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSwappingStarter(null)} className="hover:bg-white/[0.06] text-muted-foreground hover:text-foreground">
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Lineup Confirmation Dialog */}
+      <Dialog open={showConfirmSave} onOpenChange={setShowConfirmSave}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>¿Guardar alineación?</DialogTitle>
+            <DialogDescription>
+              ¿Seguro que quieres guardar estos cambios en tu cuenta oficial de LaLiga Fantasy?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setShowConfirmSave(false)} disabled={isSaving} className="hover:bg-white/[0.06] text-muted-foreground hover:text-foreground">
+              Cancelar
+            </Button>
+            <Button variant="default" onClick={handleSaveLineup} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Guardando...
+                </>
+              ) : (
+                'Confirmar'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -400,7 +720,13 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
   );
 }
 
-function RecommendedLineupCard({ optimalLineup }: { optimalLineup: OptimalLineup }) {
+function RecommendedLineupCard({
+  optimalLineup,
+  onApply
+}: {
+  optimalLineup: OptimalLineup;
+  onApply: () => void;
+}) {
   const improvement = optimalLineup.improvement;
   const positions: { positionId: number; label: string }[] = [
     { positionId: 1, label: 'POR' },
@@ -428,12 +754,17 @@ function RecommendedLineupCard({ optimalLineup }: { optimalLineup: OptimalLineup
               )}
             </CardDescription>
           </div>
-          <div className="text-right">
-            <span className="font-display text-2xl font-bold text-foreground">{optimalLineup.totalExpected.toFixed(1)}</span>
-            <span className="text-muted-foreground"> pts esperados</span>
-            <span className={`ml-2 text-xs font-semibold ${improvement >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              ({improvement >= 0 ? '+' : ''}{improvement.toFixed(1)} vs actual)
-            </span>
+          <div className="flex flex-col sm:items-end gap-2 text-right">
+            <div>
+              <span className="font-display text-2xl font-bold text-foreground">{optimalLineup.totalExpected.toFixed(1)}</span>
+              <span className="text-muted-foreground"> pts esperados</span>
+              <span className={`ml-2 text-xs font-semibold ${improvement >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                ({improvement >= 0 ? '+' : ''}{improvement.toFixed(1)} vs actual)
+              </span>
+            </div>
+            <Button variant="glass" size="xs" onClick={onApply} className="text-xs font-semibold">
+              ✨ Aplicar recomendación
+            </Button>
           </div>
         </div>
       </CardHeader>

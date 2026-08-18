@@ -4,6 +4,7 @@ import type { ValueTrend } from '../engine/sources/types';
 import { estimatePoints, estimatePointsDetailed, type EstimatorContext } from './points-estimator';
 import { combinedSignal } from './external-intelligence';
 import { starterScoreFromLastSeason } from '../analysis/starter-score';
+import { combinedSignal as cs } from './external-intelligence';
 import { computeAvailableBudget } from '../analysis/tactical-scheme';
 import { getClauseProtection } from '../clause-availability';
 
@@ -329,7 +330,7 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
   }
 
   // 4. Protección de cláusulas con riesgo real de ser clausuladas
-  if (league.config.features.buyoutClause) {
+  if (league?.config?.features?.buyoutClause) {
     for (const risk of clauseRisks) {
       if (risk.riskScore < 30) continue;
       if (!Number.isFinite(risk.recommendedClause) || risk.recommendedClause <= 0) continue;
@@ -354,9 +355,8 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
     }
   }
 
-  // 5. Clausulazos ofensivos: jugadores de rivales disponibles (ni blindados ni
-  // con cláusula bloqueada — incluye las 2 semanas de protección post-clausulazo)
-  if (league.config.features.buyoutClause) {
+  // 5. Clausulazos ofensivos: jugadores de rivales disponibles
+  if (league?.config?.features?.buyoutClause) {
     const buyoutCandidates = rivals
       .flatMap((rival) => rival.players.map((tp) => ({ rival, tp })))
       .filter(({ tp }) => {
@@ -414,7 +414,7 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
   }
 
   // 6. Capitán recomendado (solo si la liga tiene la feature premium activada)
-  if (league.config.premiumFeatures.captain !== false && captain?.captain) {
+  if (league?.config?.premiumFeatures?.captain !== false && captain?.captain) {
     const cap = captain.captain;
     // ΔxP del capitán: ganancia marginal sobre la mejor alternativa (los
     // puntos del capitán se duplican, así que es la decisión más apalancada).

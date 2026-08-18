@@ -1,7 +1,8 @@
-import type { APIRoute, AstroSession } from 'astro';
+import type { APIRoute } from 'astro';
 import { getEnv, getEnvOptional } from '../../../lib/env';
-import type { AuthTokens, MarketPlayer, PlayerMaster } from '../../../types/fantasy';
+import type { MarketPlayer, PlayerMaster } from '../../../types/fantasy';
 import { enrichMarketPlayers } from '../../../lib/fantasy/market-enrich';
+import { getToken } from '../../../lib/fantasy/api-proxy';
 
 const TARGET = getEnv('PROXY_FANTASY_TARGET', 'https://fantasy-api.llt-services.com');
 const X_APP = getEnv('PROXY_DEFAULT_X_APP', '2');
@@ -34,26 +35,6 @@ async function fetchAllPlayersCached(token: string): Promise<PlayerMaster[]> {
 function isMarketPath(path: string): boolean {
   // /v1/competition/1/league/{leagueId}/market (con o sin barra final)
   return /^v1\/competition\/1\/league\/[^\/]+\/market\/?$/.test(path);
-}
-
-async function getToken(
-  cookies: { get: (name: string) => { value?: string } | undefined },
-  session?: AstroSession,
-): Promise<string | undefined> {
-  if (session) {
-    const tokens = await session.get<AuthTokens>('fantasy_tokens');
-    if (tokens?.access_token) return tokens.access_token;
-  }
-  const tokensRaw = cookies.get('fantasy_tokens')?.value;
-  if (tokensRaw) {
-    try {
-      const tokens = JSON.parse(decodeURIComponent(tokensRaw)) as { access_token?: string };
-      if (tokens.access_token) return tokens.access_token;
-    } catch {
-      // ignore invalid cookie
-    }
-  }
-  return getEnvOptional('LALIGA_FANTASY_TOKEN');
 }
 
 async function proxyHandler({ request, params, cookies, session }: Parameters<APIRoute>[0]) {

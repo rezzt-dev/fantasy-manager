@@ -52,8 +52,19 @@ async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
+    let message = `HTTP ${res.status}: ${res.statusText}`;
+    try {
+      const errorJson = await res.json();
+      if (errorJson && typeof errorJson === 'object') {
+        message = errorJson.message || errorJson.error || errorJson.description || message;
+      }
+    } catch {
+      try {
+        const text = await res.clone().text();
+        if (text) message = text;
+      } catch {}
+    }
+    throw new Error(message);
   }
 
   const contentType = res.headers.get('content-type') || '';
@@ -65,6 +76,7 @@ async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
 
 const CMP = '/v1/competition/1';
 
+// Keep existing fantasyAPI for compatibility with read-only callers
 export const fantasyAPI = {
   getLeagues: () => fetchJSON<FantasyLeague[]>(`/api/proxy${CMP}/leagues?x-lang=es`),
 
@@ -133,6 +145,150 @@ export const fantasyAPI = {
 
   getPremiumFormations: () =>
     fetchJSON<string[]>(`/api/proxy/v4/teams/lineup/formations?option=premium&x-lang=es`),
+};
+
+// Centralized client for all LaLiga Fantasy actions (Objective 2)
+export const LaLigaFantasyClient = {
+  // Autenticación
+  login: async (username?: string, password?: string) => {
+    return fetchJSON<{ success: boolean; expires_in?: number }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    });
+  },
+
+  saveToken: async (token: string) => {
+    return fetchJSON<{ success: boolean }>('/api/auth/token', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  closeSession: async () => {
+    return fetchJSON<{ success: boolean }>('/api/auth/logout', {
+      method: 'POST',
+    });
+  },
+
+  logout: async () => {
+    return fetchJSON<{ success: boolean }>('/api/auth/logout', {
+      method: 'POST',
+    });
+  },
+
+  // Refresh token (handled automatically server-side, exported for API contract)
+  refreshToken: async () => {
+    // Calling our proxy triggers the server-side automatic refresh if expired
+    return fetchJSON<WeekInfo>(`/api/proxy${CMP}/week/current?x-lang=es`);
+  },
+
+  // Obtener usuario
+  getCurrentUser: () => fetchJSON<any>(`/api/proxy/v4/user/me?x-lang=es`),
+
+  // Obtener ligas
+  getLeagues: () => fantasyAPI.getLeagues(),
+
+  // Obtener equipo / plantilla
+  getTeamData: (leagueId: string, teamId: number) => fantasyAPI.getTeamData(leagueId, teamId),
+
+  // Obtener dinero
+  getTeamMoney: (teamId: number) => fantasyAPI.getTeamMoney(teamId),
+
+  // Obtener mercado
+  getMarket: (leagueId: string) => fantasyAPI.getMarket(leagueId),
+
+  // Obtener alineación actual
+  getCurrentLineup: (teamId: number) => fantasyAPI.getTeamLineup(teamId),
+
+  // Modificar alineación (Objective 4 - Corrected keys aligned with LineupEditor.js)
+  updateLineup: (
+    teamId: number,
+    lineupData: {
+      tactical_formation: number[];
+      goalkeeper: string | null;
+      defender: string[];
+      midfield: string[];
+      striker: string[];
+    }
+  ) =>
+    fetchJSON<any>(`/api/proxy${CMP}/teams/${teamId}/lineup?x-lang=es`, {
+      method: 'PUT',
+      body: JSON.stringify(lineupData),
+    }),
+
+  // Vender jugador al mercado (Objective 3)
+  sellPlayerToMarket: (leagueId: string, playerId: string, salePrice: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/sell?x-lang=es`, {
+      method: 'POST',
+      body: JSON.stringify({ playerId, salePrice }),
+    }),
+
+  // Retirar jugador del mercado (Objective 3)
+  withdrawPlayerFromMarket: (leagueId: string, marketId: string) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/${marketId}/delete?x-lang=es`, {
+      method: 'DELETE',
+    }),
+
+  // Realizar puja por jugador (Objective 3)
+  makeBid: (leagueId: string, marketId: string, bidAmount: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/${marketId}/bid?x-lang=es`, {
+      method: 'POST',
+      body: JSON.stringify({ money: bidAmount }),
+    }),
+
+  // Modificar puja existente (Objective 3)
+  modifyBid: (leagueId: string, marketId: string, bidId: string, newBidAmount: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/${marketId}/bid/${bidId}?x-lang=es`, {
+      method: 'PUT',
+      body: JSON.stringify({ money: newBidAmount }),
+    }),
+
+  // Cancelar puja (Objective 3)
+  cancelBid: (leagueId: string, marketId: string, bidId: string) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/${marketId}/bid/${bidId}/cancel?x-lang=es`, {
+      method: 'DELETE',
+    }),
+
+  // Aceptar oferta por un jugador (Objective 3)
+  acceptOffer: (leagueId: string, marketId: string, offerId: string, offerMoney: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/${marketId}/offer/${offerId}/accept?x-lang=es`, {
+      method: 'POST',
+      body: JSON.stringify({ offerMoney }),
+    }),
+
+  // Rechazar oferta por un jugador (Objective 3)
+  declineOffer: (leagueId: string, marketId: string, offerId: string) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/${marketId}/offer/${offerId}/reject?x-lang=es`, {
+      method: 'POST',
+    }),
+
+  // Incrementar cláusula (Objective 3)
+  increaseBuyoutClause: (leagueId: string, playerId: string, factor: number, valueToIncrease: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/buyout/player?x-lang=es`, {
+      method: 'PUT',
+      body: JSON.stringify({ factor, playerId, valueToIncrease }),
+    }),
+
+  // Pagar cláusula (clausulazo) (Objective 3)
+  payBuyoutClause: (leagueId: string, playerId: string, buyoutClauseToPay: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/buyout/${playerId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify({ buyoutClauseToPay }),
+    }),
+
+  // Blindar jugador (Objective 3)
+  shieldPlayer: (leagueId: string, playerId: string) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/shield/player?x-lang=es`, {
+      method: 'PUT',
+      body: JSON.stringify({ playerId, rewardedAdType: 'Blindaje', rewardedAd: 1 }),
+    }),
+
+  // Ofertas directas para otros managers
+  makeDirectOffer: (leagueId: string, playerId: string, money: number) =>
+    fetchJSON<any>(`/api/proxy${CMP}/league/${leagueId}/market/direct-offer?x-lang=es`, {
+      method: 'POST',
+      body: JSON.stringify({ playerId, money }),
+    }),
 };
 
 export default fantasyAPI;
