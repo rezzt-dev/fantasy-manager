@@ -1,6 +1,7 @@
 import type { LeagueAnalysis, CaptainCandidate, CaptainRecommendation } from '../../types/analysis';
 import { estimatePoints, type EstimatorContext } from './points-estimator';
 import { combinedSignal } from './external-intelligence';
+import { isSuspended } from '../engine/features/minutes';
 
 /**
  * Recomendación de capitán: el jugador del once con más puntos esperados.
@@ -24,7 +25,7 @@ export function recommendCaptain(analysis: LeagueAnalysis, estimatorContext?: Es
   const candidates: CaptainCandidate[] = lineupEntries.map((entry) => {
     const player = entry.playerMaster;
     const isHome = calendar.some((m) => m.localId === Number(player.teamId) || m.localId === Number(player.team?.id));
-    const isHealthy = player.playerStatus === 'ok';
+    const isHealthy = player.playerStatus === 'ok' && !isSuspended(player, estimatorContext?.injuryReport);
     const expected = estimatePoints(player, calendar, estimatorContext);
     const external = combinedSignal(externalSignals[player.id] || []);
     const hasBadNews = external.signal === 'sell' && external.confidence >= 0.6;
@@ -49,7 +50,7 @@ export function recommendCaptain(analysis: LeagueAnalysis, estimatorContext?: Es
     };
   });
 
-  // Ordenar por puntos esperados. Los sanos primero: un capitán debe jugar.
+  // Ordenar por puntos esperados. Los disponibles primero: un capitán debe jugar.
   candidates.sort((a, b) => b.score - a.score);
 
   const healthyOnes = candidates.filter((c) => c.isHealthy);

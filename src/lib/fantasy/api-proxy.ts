@@ -160,16 +160,59 @@ export function normalizeFormation(lineup: TeamLineup): TeamLineup {
   };
 }
 
+function countFieldPlayers(lineup: TeamLineup): number {
+  const f = lineup?.formation;
+  if (!f) return 0;
+  return (
+    (f.goalkeeper?.length || 0) +
+    (f.defender?.length || 0) +
+    (f.midfielder?.length || 0) +
+    (f.attacker?.length || 0)
+  );
+}
+
 /**
- * Alineación de la jornada actual. El endpoint por semana suele devolver el
- * once completo, mientras que el genérico a veces solo devuelve los jugadores
- * ya confirmados. Si el específico falla, se vuelve al genérico.
+ * Alineación de la jornada actual.
+ *
+ * La app móvil (y el proyecto de referencia LaLigaApp) consulta los endpoints
+ * de equipo. Probamos el genérico y el de jornada y nos quedamos con el que
+ * devuelva más jugadores de campo. Los endpoints bajo
+ * /leagues/{leagueId}/teams/{teamId}/lineup devolvían datos incompletos, por lo
+ * que se han eliminado del orden de intentos. leagueId se mantiene en la firma
+ * por compatibilidad pero no se usa.
  */
-export async function fetchCurrentLineup(token: string, teamId: number, weekNumber: number): Promise<TeamLineup> {
+export async function fetchCurrentLineup(
+  token: string,
+  teamId: number,
+  weekNumber: number,
+  _leagueId?: string,
+): Promise<TeamLineup> {
+  let genericLineup: TeamLineup | null = null;
+  let weekLineup: TeamLineup | null = null;
+
   try {
-    return normalizeFormation(await fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup/week/${weekNumber}`, token));
+    genericLineup = normalizeFormation(await fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token));
   } catch (error) {
-    console.warn('[fetchCurrentLineup] lineup by week failed, falling back:', error instanceof Error ? error.message : error);
-    return normalizeFormation(await fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup`, token));
+    console.warn('[fetchCurrentLineup] generic team lineup failed:', error instanceof Error ? error.message : error);
   }
+
+  try {
+    weekLineup = normalizeFormation(await fetchOfficialAPI<TeamLineup>(`${CMP}/teams/${teamId}/lineup/week/${weekNumber}`, token));
+  } catch (error) {
+    console.warn('[fetchCurrentLineup] lineup by week failed:', error instanceof Error ? error.message : error);
+  }
+
+  const genericCount = genericLineup ? countFieldPlayers(genericLineup) : 0;
+  const weekCount = weekLineup ? countFieldPlayers(weekLineup) : 0;
+
+  if (weekCount > 0 && weekCount >= genericCount) {
+    return weekLineup!;
+  }
+  if (genericCount > 0) {
+    return genericLineup!;
+  }
+
+  if (genericLineup) return genericLineup;
+  if (weekLineup) return weekLineup;
+  throw new Error('No se pudo obtener la alineación desde ningún endpoint de equipo.');
 }

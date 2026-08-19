@@ -12,6 +12,7 @@ import { estimatePointsDetailed } from '../recommendations/points-estimator';
 import { computeOptimalLineup } from './lineup-optimizer';
 import { predictCoachPoints } from '../engine/coach-points';
 import { combinedSignal } from '../recommendations/external-intelligence';
+import { isSuspended } from '../engine/features/minutes';
 
 const BAD_NEWS_CONFIDENCE = 0.6;
 const COACH_POSITION_ID = 5;
@@ -38,6 +39,7 @@ function isFieldPlayer(p: PlayerMaster): boolean {
 
 function isHealthyForLineup(p: PlayerMaster, context?: EstimatorContext): boolean {
   if (p.playerStatus !== 'ok') return false;
+  if (isSuspended(p, context?.injuryReport)) return false;
   const external = combinedSignal(context?.externalSignals?.[p.id] || []);
   return !(external.signal === 'sell' && external.confidence >= BAD_NEWS_CONFIDENCE);
 }

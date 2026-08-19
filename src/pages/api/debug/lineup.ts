@@ -21,10 +21,14 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     const currentWeek = week?.number ?? week?.weekNumber ?? 1;
 
     const endpoints = [
-      { name: 'lineup-generic', path: `${CMP}/teams/${teamId}/lineup` },
+      // Orden que usa la app móvil / LaLigaApp: primero el endpoint de equipo por semana.
       { name: 'lineup-week', path: `${CMP}/teams/${teamId}/lineup/week/${currentWeek}` },
+      { name: 'lineup-week-prev', path: `${CMP}/teams/${teamId}/lineup/week/${currentWeek - 1}` },
       { name: 'lineup-week-next', path: `${CMP}/teams/${teamId}/lineup/week/${currentWeek + 1}` },
+      { name: 'lineup-generic', path: `${CMP}/teams/${teamId}/lineup` },
+      // Fallbacks de liga (a veces devuelven datos distintos/incompletos).
       { name: 'lineup-league', path: `${CMP}/leagues/${leagueId}/teams/${teamId}/lineup` },
+      { name: 'lineup-league-week', path: `${CMP}/leagues/${leagueId}/teams/${teamId}/lineup/week/${currentWeek}` },
     ];
 
     const results: Record<string, { status: number; body: unknown; error?: string }> = {};
@@ -42,21 +46,26 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       }
     }
 
-    // Cruzar conteos de jugadores de cada respuesta tipo TeamLineup
-    const counts: Record<string, number | null> = {};
+    // Cruzar conteos y nombres de jugadores de cada respuesta tipo TeamLineup
+    const counts: Record<string, { field: number; coach: number } | null> = {};
+    const names: Record<string, string[]> = {};
     for (const [name, result] of Object.entries(results)) {
       const body = result.body as any;
       if (body && typeof body === 'object' && 'formation' in body) {
         const normalized = normalizeFormation(body as TeamLineup);
         const f = normalized.formation || {};
-        counts[name] = [
+        const entries = [
           ...(f.goalkeeper || []),
           ...(f.defender || []),
           ...(f.midfielder || []),
           ...(f.attacker || []),
-        ].length;
+        ];
+        const coachEntries = f.coach || [];
+        counts[name] = { field: entries.length, coach: coachEntries.length };
+        names[name] = entries.map((e: any) => e.playerMaster?.nickname || e.playerMaster?.name || 'unknown');
       } else {
         counts[name] = null;
+        names[name] = [];
       }
     }
 
@@ -67,6 +76,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
         currentWeek,
         weekRaw: week,
         counts,
+        names,
         results,
       }, null, 2),
       {

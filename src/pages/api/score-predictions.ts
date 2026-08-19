@@ -71,7 +71,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     const [leagues, teamData, ownLineup, money, standing, allPlayers] = await Promise.all([
       fetchOfficialAPI<FantasyLeague[]>(`${CMP}/leagues`, token),
       fetchOfficialAPI<TeamData>(`${CMP}/leagues/${leagueId}/teams/${teamId}`, token),
-      fetchCurrentLineup(token, teamId, currentWeek),
+      fetchCurrentLineup(token, teamId, currentWeek, leagueId),
       fetchOfficialAPI<TeamMoney>(`${CMP}/teams/${teamId}/money`, token),
       fetchOfficialAPI<StandingEntry[]>(`${CMP}/leagues/${leagueId}/standing`, token),
       fetchOfficialAPI<PlayerMaster[]>(`${CMP}/players`, token),

@@ -78,9 +78,16 @@ function findPlayerIndex(player: PlayerMaster, candidates: { slug?: string; name
   return -1;
 }
 
-function findInjury(player: PlayerMaster, injuries: InjuryReportEntry[]): InjuryReportEntry | undefined {
+export function findInjury(player: PlayerMaster, injuries: InjuryReportEntry[]): InjuryReportEntry | undefined {
   const index = findPlayerIndex(player, injuries);
   return index >= 0 ? injuries[index] : undefined;
+}
+
+/** true si el jugador está suspendido según la API oficial o el injury report externo. */
+export function isSuspended(player: PlayerMaster, injuries?: InjuryReportEntry[]): boolean {
+  if (player.playerStatus === 'suspended') return true;
+  const injury = injuries && injuries.length > 0 ? findInjury(player, injuries) : undefined;
+  return injury?.status === 'suspended';
 }
 
 export function estimateMinutes(input: {

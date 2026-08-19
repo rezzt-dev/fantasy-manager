@@ -24,7 +24,7 @@ import SectionHeader from '../shared/SectionHeader';
 import { StaggerContainer, StaggerItem } from '../ui/motion';
 import { Shield, Users, Swords, AlertTriangle, Sparkles, ArrowRightLeft, Wallet, Save, RefreshCw, Loader2 } from 'lucide-react';
 import { positionShortName } from '../../lib/format';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface LineupTabProps {
   league: FantasyLeague;
@@ -97,14 +97,135 @@ function buildRecommendedRows(optimalLineup: OptimalLineup, teamPlayers: TeamPla
   }));
 }
 
+function hasUnownedEntries(formation: Formation, teamPlayers: TeamPlayer[]): boolean {
+  if (teamPlayers.length === 0) return false;
+  const ownedIds = new Set(teamPlayers.map((tp) => String(tp.playerMaster.id)));
+  const ownedPlayerTeamIds = new Set(teamPlayers.map((tp) => String(tp.playerTeamId)));
+  const allEntries = [
+    ...(formation.goalkeeper || []),
+    ...(formation.defender || []),
+    ...(formation.midfielder || []),
+    ...(formation.attacker || []),
+  ];
+  return allEntries.some(
+    (e) => !ownedIds.has(String(e.playerMaster.id)) && !ownedPlayerTeamIds.has(String(e.playerTeamId)),
+  );
+}
+
+/**
+ * Construye una alineación válida a partir de la oficial,
+ * descartando cualquier jugador que no esté realmente en la plantilla del usuario.
+ *
+ * IMPORTANTE: no rellenamos huecos con la alineación recomendada. Si la API
+ * oficial no devuelve 11 jugadores, mostramos lo que hay y avisamos de que está
+ * incompleta. El usuario puede decidir activar "Mejor once" para ver una
+ * propuesta completa calculada con sus jugadores.
+ */
+interface SanitizedFormation {
+  formation: Formation;
+  discarded: number;
+}
+
+function sanitizeFormation(
+  formation: Formation,
+  teamPlayers: TeamPlayer[],
+): SanitizedFormation {
+  // Si aún no tenemos plantilla, conservamos la formación tal cual para no
+  // descartar jugadores por un falso "no está en mi plantilla".
+  if (teamPlayers.length === 0) {
+    return {
+      formation: {
+        goalkeeper: [...(formation.goalkeeper || [])],
+        defender: [...(formation.defender || [])],
+        midfielder: [...(formation.midfielder || [])],
+        attacker: [...(formation.attacker || [])],
+        coach: [...(formation.coach || [])],
+      },
+      discarded: 0,
+    };
+  }
+
+  const ownedById = new Map(teamPlayers.map((tp) => [String(tp.playerMaster.id), tp]));
+  const ownedByPlayerTeamId = new Map(teamPlayers.map((tp) => [String(tp.playerTeamId), tp]));
+
+  const gk: FormationEntry[] = [];
+  const df: FormationEntry[] = [];
+  const mf: FormationEntry[] = [];
+  const at: FormationEntry[] = [];
+  const coach: FormationEntry[] = [];
+  const seenIds = new Set<string>();
+  let discarded = 0;
+
+  const addIfOwned = (entry: FormationEntry, target: FormationEntry[]) => {
+    const playerId = String(entry.playerMaster.id);
+    const playerTeamId = String(entry.playerTeamId);
+    const tp = ownedById.get(playerId) || ownedByPlayerTeamId.get(playerTeamId);
+    if (!tp) {
+      discarded++;
+      return;
+    }
+    if (seenIds.has(String(tp.playerMaster.id))) return;
+    seenIds.add(String(tp.playerMaster.id));
+    target.push({
+      playerMaster: tp.playerMaster,
+      buyoutClause: tp.buyoutClause,
+      playerTeamId: tp.playerTeamId,
+    });
+  };
+
+  for (const entry of formation.goalkeeper || []) addIfOwned(entry, gk);
+  for (const entry of formation.defender || []) addIfOwned(entry, df);
+  for (const entry of formation.midfielder || []) addIfOwned(entry, mf);
+  for (const entry of formation.attacker || []) addIfOwned(entry, at);
+  for (const entry of formation.coach || []) addIfOwned(entry, coach);
+
+  // Entrenador por defecto: si la API no lo trae, tomamos el jugador de la
+  // plantilla con positionId === 5 (así lo hace la app móvil).
+  if (coach.length === 0) {
+    const coachPlayer = teamPlayers.find((tp) => tp.playerMaster.positionId === 5);
+    if (coachPlayer) {
+      coach.push({
+        playerMaster: coachPlayer.playerMaster,
+        buyoutClause: coachPlayer.buyoutClause,
+        playerTeamId: coachPlayer.playerTeamId,
+      });
+    }
+  }
+
+  const fieldCount = gk.length + df.length + mf.length + at.length;
+  const originalFieldCount =
+    (formation.goalkeeper?.length || 0) +
+    (formation.defender?.length || 0) +
+    (formation.midfielder?.length || 0) +
+    (formation.attacker?.length || 0);
+
+  // Si el filtro nos deja sin ningún jugador de campo, asumimos que los IDs no
+  // cruzan correctamente y devolvemos la formación original sin filtrar, para
+  // que el usuario al menos vea lo que devuelve LaLiga.
+  if (discarded > 0 && fieldCount === 0 && originalFieldCount > 0) {
+    return {
+      formation: {
+        goalkeeper: [...(formation.goalkeeper || [])],
+        defender: [...(formation.defender || [])],
+        midfielder: [...(formation.midfielder || [])],
+        attacker: [...(formation.attacker || [])],
+        coach,
+      },
+      discarded,
+    };
+  }
+
+  return { formation: { goalkeeper: gk, defender: df, midfielder: mf, attacker: at, coach }, discarded };
+}
+
 export default function LineupTab({ league }: LineupTabProps) {
   const teamId = league.team.id;
   const leagueId = league.id;
   const queryClient = useQueryClient();
 
   const lineupQuery = useQuery({
-    queryKey: ['lineup', teamId],
-    queryFn: () => LaLigaFantasyClient.getCurrentLineup(teamId),
+    queryKey: ['lineup', leagueId, teamId],
+    queryFn: () => LaLigaFantasyClient.getCurrentLineup(teamId, leagueId),
     enabled: !!teamId,
   });
 
@@ -151,17 +272,66 @@ export default function LineupTab({ league }: LineupTabProps) {
 
   const formation = lineupQuery.data?.formation;
   const teamPlayers = teamQuery.data?.players || [];
+  const needsSanitization = formation ? hasUnownedEntries(formation, teamPlayers) : false;
+  const hadTeamPlayersRef = useRef(false);
 
-  if (formation && !isInitialized) {
+  useEffect(() => {
+    if (!formation) return;
+    const teamPlayersLoaded = teamPlayers.length > 0;
+    const teamPlayersJustLoaded = teamPlayersLoaded && !hadTeamPlayersRef.current;
+
+    // Inicializamos la primera vez, o re-sanitizamos si la plantilla acaba de
+    // llegar (para poder cruzar jugadores y añadir el entrenador fallback).
+    if (isInitialized && !teamPlayersJustLoaded) return;
+
+    // Si el usuario ya ha hecho cambios manuales, no machacamos su trabajo.
+    const officialIds = new Set([
+      ...(formation.goalkeeper || []),
+      ...(formation.defender || []),
+      ...(formation.midfielder || []),
+      ...(formation.attacker || []),
+    ].map((e) => e.playerTeamId));
+    const localIds = new Set([
+      ...(localFormation?.goalkeeper || []),
+      ...(localFormation?.defender || []),
+      ...(localFormation?.midfielder || []),
+      ...(localFormation?.attacker || []),
+    ].map((e) => e.playerTeamId));
+    const userModified = isInitialized && [...localIds].some((id) => !officialIds.has(id));
+    if (userModified) return;
+
+    // Siempre pasamos por sanitizeFormation: asegura que el entrenador aparezca
+    // (la API de alineación por equipo no siempre lo devuelve) y descarta
+    // cualquier jugador ajeno sin rellenar con la recomendación.
+    const { formation: initialFormation, discarded } = sanitizeFormation(formation, teamPlayers);
+
     setLocalFormation({
-      goalkeeper: [...(formation.goalkeeper || [])],
-      defender: [...(formation.defender || [])],
-      midfielder: [...(formation.midfielder || [])],
-      attacker: [...(formation.attacker || [])],
-      coach: [...(formation.coach || [])],
+      goalkeeper: [...(initialFormation.goalkeeper || [])],
+      defender: [...(initialFormation.defender || [])],
+      midfielder: [...(initialFormation.midfielder || [])],
+      attacker: [...(initialFormation.attacker || [])],
+      coach: [...(initialFormation.coach || [])],
     });
     setIsInitialized(true);
-  }
+    hadTeamPlayersRef.current = teamPlayersLoaded;
+
+    if (discarded > 0 && teamPlayersLoaded) {
+      const fieldCount =
+        (initialFormation.goalkeeper?.length || 0) +
+        (initialFormation.defender?.length || 0) +
+        (initialFormation.midfielder?.length || 0) +
+        (initialFormation.attacker?.length || 0);
+      if (fieldCount === 0) {
+        toast.warning(
+          `No se pudieron cruzar ${discarded} jugador${discarded > 1 ? 'es' : ''} de la alineación con tu plantilla. Se muestra la alineación tal cual LaLiga la devuelve para que puedas comprobarla.`,
+        );
+      } else {
+        toast.warning(
+          `La alineación oficial contenía ${discarded} jugador${discarded > 1 ? 'es' : ''} que no se pudo${discarded > 1 ? 'n' : ''} cruzar con tu plantilla. Se ${discarded > 1 ? 'han' : 'ha'} descartado; el resto se muestra tal cual.`,
+        );
+      }
+    }
+  }, [formation, teamPlayers, isInitialized, needsSanitization, localFormation]);
 
   if (isLoading) return <LineupSkeleton />;
   if (hasError)
@@ -231,12 +401,13 @@ export default function LineupTab({ league }: LineupTabProps) {
 
   // Re-initialize / Reset lineup changes
   const resetChanges = () => {
+    const { formation: reset } = sanitizeFormation(formation, teamPlayers);
     setLocalFormation({
-      goalkeeper: [...(formation.goalkeeper || [])],
-      defender: [...(formation.defender || [])],
-      midfielder: [...(formation.midfielder || [])],
-      attacker: [...(formation.attacker || [])],
-      coach: [...(formation.coach || [])],
+      goalkeeper: [...(reset.goalkeeper || [])],
+      defender: [...(reset.defender || [])],
+      midfielder: [...(reset.midfielder || [])],
+      attacker: [...(reset.attacker || [])],
+      coach: [...(reset.coach || [])],
     });
     toast.info('🔄 Cambios de alineación descartados.');
   };
@@ -437,6 +608,20 @@ export default function LineupTab({ league }: LineupTabProps) {
               <Swords className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
               {displayCount} titulares
             </Badge>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                setIsInitialized(false);
+                lineupQuery.refetch();
+                teamQuery.refetch();
+              }}
+              disabled={lineupQuery.isFetching || teamQuery.isFetching}
+              title="Recargar alineación y plantilla"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${lineupQuery.isFetching || teamQuery.isFetching ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         }
       />
@@ -472,20 +657,30 @@ export default function LineupTab({ league }: LineupTabProps) {
           <div className="flex items-start gap-3">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
             <div className="text-sm">
-              <span className="font-semibold text-foreground">Tu alineación oficial está incompleta ({totalLineup} de 11 jugadores).</span>
+              <span className="font-semibold text-foreground">LaLiga aún no ha devuelto tu 11 completo ({totalLineup} de 11 jugadores).</span>
               <span className="text-muted-foreground">
-                {' '}Activa "Mejor once" para ver la propuesta completa con tus jugadores, o confirma el once en la app oficial.
+                {' '}Esto es normal si acabas de hacer cambios o la jornada aún no está abierta. Activa "Mejor once" para ver una propuesta completa calculada con tus jugadores.
               </span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="xs"
-            className="shrink-0 text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
-            onClick={() => window.open(`/api/debug/lineup?leagueId=${encodeURIComponent(leagueId)}&teamId=${teamId}`, '_blank')}
-          >
-            Diagnosticar alineación
-          </Button>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
+              onClick={() => setViewMode('recommended')}
+            >
+              Ver mejor once
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              className="text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
+              onClick={() => window.open(`/api/debug/lineup?leagueId=${encodeURIComponent(leagueId)}&teamId=${teamId}`, '_blank')}
+            >
+              Diagnosticar
+            </Button>
+          </div>
         </div>
       )}
 
@@ -826,9 +1021,17 @@ function RecommendedLineupCard({
             <div className="flex flex-wrap gap-2">
               {optimalLineup.changes.map((change, idx) => (
                 <span key={idx} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs">
-                  <span className="text-rose-400 line-through">{change.out.nickname}</span>
-                  <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                  <span className="font-semibold text-emerald-400">{change.in.nickname}</span>
+                  {change.out && change.in ? (
+                    <>
+                      <span className="text-rose-400 line-through">{change.out.nickname}</span>
+                      <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                      <span className="font-semibold text-emerald-400">{change.in.nickname}</span>
+                    </>
+                  ) : change.in ? (
+                    <span className="font-semibold text-emerald-400">+ {change.in.nickname}</span>
+                  ) : (
+                    <span className="text-rose-400">- {change.out?.nickname}</span>
+                  )}
                 </span>
               ))}
             </div>

@@ -21,8 +21,8 @@ export default function LeagueSummary({ league }: { league: FantasyLeague }) {
   });
 
   const lineupQuery = useQuery({
-    queryKey: ['lineup', teamId],
-    queryFn: () => LaLigaFantasyClient.getCurrentLineup(teamId),
+    queryKey: ['lineup', leagueId, teamId],
+    queryFn: () => LaLigaFantasyClient.getCurrentLineup(teamId, leagueId),
     enabled: !!teamId,
   });
 

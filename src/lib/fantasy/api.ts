@@ -94,6 +94,17 @@ function normalizeFormation(lineup: TeamLineup): TeamLineup {
   };
 }
 
+function countFieldPlayers(lineup: TeamLineup): number {
+  const f = lineup?.formation;
+  if (!f) return 0;
+  return (
+    (f.goalkeeper?.length || 0) +
+    (f.defender?.length || 0) +
+    (f.midfielder?.length || 0) +
+    (f.attacker?.length || 0)
+  );
+}
+
 // Keep existing fantasyAPI for compatibility with read-only callers
 export const fantasyAPI = {
   getLeagues: () => fetchJSON<FantasyLeague[]>(`/api/proxy${CMP}/leagues?x-lang=es`),
@@ -106,6 +117,12 @@ export const fantasyAPI = {
 
   getTeamLineupByWeek: (teamId: number, week: number) =>
     fetchJSON<TeamLineup>(`/api/proxy${CMP}/teams/${teamId}/lineup/week/${week}?x-lang=es`).then(normalizeFormation),
+
+  getTeamLineupByLeague: (leagueId: string, teamId: number) =>
+    fetchJSON<TeamLineup>(`/api/proxy${CMP}/leagues/${leagueId}/teams/${teamId}/lineup?x-lang=es`).then(normalizeFormation),
+
+  getTeamLineupByLeagueAndWeek: (leagueId: string, teamId: number, week: number) =>
+    fetchJSON<TeamLineup>(`/api/proxy${CMP}/leagues/${leagueId}/teams/${teamId}/lineup/week/${week}?x-lang=es`).then(normalizeFormation),
 
   getTeamMoney: (teamId: number) =>
     fetchJSON<TeamMoney>(`/api/proxy${CMP}/teams/${teamId}/money?x-lang=es`),
@@ -215,20 +232,45 @@ export const LaLigaFantasyClient = {
   // Obtener mercado
   getMarket: (leagueId: string) => fantasyAPI.getMarket(leagueId),
 
-  // Obtener alineación actual: la API suele devolver el once completo en el
-  // endpoint por jornada; si falla, volvemos al genérico.
-  getCurrentLineup: async (teamId: number) => {
+  // Obtener alineación actual. Se usan exclusivamente los endpoints de
+  // equipo, que es lo que hace la app móvil y el proyecto de referencia
+  // LaLigaApp. Probamos el endpoint genérico y el de jornada actual, y nos
+  // quedamos con el que devuelva más jugadores de campo. Los endpoints bajo
+  // /leagues/{leagueId}/teams/{teamId}/lineup devolvían datos incompletos, por
+  // lo que se han eliminado. leagueId se mantiene en la firma por compatibilidad.
+  getCurrentLineup: async (teamId: number, _leagueId?: string) => {
+    let genericLineup: TeamLineup | null = null;
+    let weekLineup: TeamLineup | null = null;
+
+    try {
+      genericLineup = await fantasyAPI.getTeamLineup(teamId);
+    } catch (error) {
+      console.warn('[getCurrentLineup] generic team lineup failed:', error instanceof Error ? error.message : error);
+    }
+
     try {
       const week = await fantasyAPI.getCurrentWeek();
       const weekNumber = week?.number ?? week?.weekNumber ?? 1;
-      try {
-        return await fantasyAPI.getTeamLineupByWeek(teamId, weekNumber);
-      } catch {
-        return await fantasyAPI.getTeamLineup(teamId);
-      }
-    } catch {
-      return await fantasyAPI.getTeamLineup(teamId);
+      weekLineup = await fantasyAPI.getTeamLineupByWeek(teamId, weekNumber);
+    } catch (error) {
+      console.warn('[getCurrentLineup] weekly team lineup failed:', error instanceof Error ? error.message : error);
     }
+
+    const genericCount = genericLineup ? countFieldPlayers(genericLineup) : 0;
+    const weekCount = weekLineup ? countFieldPlayers(weekLineup) : 0;
+
+    // Priorizamos la respuesta más completa; si hay empate, preferimos la de jornada.
+    if (weekCount > 0 && weekCount >= genericCount) {
+      return weekLineup!;
+    }
+    if (genericCount > 0) {
+      return genericLineup!;
+    }
+
+    // Si ambos fallaron, relanzamos el error del endpoint genérico (más estable).
+    if (genericLineup) return genericLineup;
+    if (weekLineup) return weekLineup;
+    throw new Error('No se pudo obtener la alineación desde ningún endpoint de equipo.');
   },
 
   // Modificar alineación (Objective 4 - Corrected keys aligned with LineupEditor.js)

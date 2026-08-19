@@ -2,6 +2,7 @@ import type { Match, PlayerMaster, TeamLineup, TeamPlayer } from '../../types/fa
 import type { OptimalLineup, OptimalLineupEntry } from '../../types/analysis';
 import { estimatePointsDetailed, type EstimatorContext } from '../recommendations/points-estimator';
 import { combinedSignal } from '../recommendations/external-intelligence';
+import { isSuspended } from '../engine/features/minutes';
 
 const BAD_NEWS_CONFIDENCE = 0.6;
 const BENCH_SIZE = 5;
@@ -43,21 +44,21 @@ export function computeOptimalLineup(input: OptimizerInput): OptimalLineup | und
     .map((tp) => tp.playerMaster)
     .filter((p) => p.positionId !== COACH_POSITION_ID);
 
-  // Pasada estricta: solo sanos y sin noticias muy negativas.
+  // Pasada estricta: solo sanos (incluye suspensión), sin noticias muy negativas.
   const strict = fieldPlayers
-    .filter((p) => p.playerStatus === 'ok')
+    .filter((p) => p.playerStatus === 'ok' && !isSuspended(p, context?.injuryReport))
     .filter((p) => {
       const external = combinedSignal(context?.externalSignals?.[p.id] || []);
       return !(external.signal === 'sell' && external.confidence >= BAD_NEWS_CONFIDENCE);
     });
 
-  // Si con los elegibles no se cubre ninguna formación, se relaja el filtro:
-  // entran todos y el estimador ya penaliza lesiones y malas noticias.
+  // Si con los elegibles no se cubre ninguna formación, se relaja el filtro
+  // para lesionados/dudosos, pero NUNCA para suspendidos, que no pueden jugar.
   let eligible = strict;
   let degraded = false;
   let best = pickBestFormation(eligible, calendar, formations, context, captainEnabled);
   if (!best) {
-    eligible = fieldPlayers;
+    eligible = fieldPlayers.filter((p) => !isSuspended(p, context?.injuryReport));
     degraded = true;
     best = pickBestFormation(eligible, calendar, formations, context, captainEnabled);
   }
@@ -86,24 +87,50 @@ export function computeOptimalLineup(input: OptimizerInput): OptimalLineup | und
   const captainBonusOf = (points: number[]) => (captainEnabled && points.length > 0 ? Math.max(...points) : 0);
   const currentExpected = currentPoints.reduce((sum, v) => sum + v, 0) + captainBonusOf(currentPoints);
 
-  // Cambios: titulares actuales que salen vs nuevos titulares (mismo número,
-  // emparejados por posición lo mejor posible). Si no hay alineación actual
-  // (inferencia de rival) no hay cambios que mostrar.
+  // Cambios: titulares actuales que salen vs nuevos titulares, emparejados
+  // por posición. Cuando la alineación actual está incompleta puede haber más
+  // entradas que salidas; cuando sobran jugadores para la formación elegida
+  // puede haber más salidas que entradas. En ambos casos se muestra el lado
+  // que aplica.
   const hasCurrentLineup = currentEntries.length > 0;
-  const changes: OptimalLineup['changes'] = hasCurrentLineup
-    ? currentEntries
-        .map((e) => e.playerMaster)
-        .filter((p) => !starterIds.has(p.id) && p.positionId !== COACH_POSITION_ID)
-        .sort((a, b) => a.positionId - b.positionId)
-        .map((out, i) => ({
-          out,
-          in:
-            best.starters
-              .map((e) => e.player)
-              .filter((p) => !currentIds.has(p.id))
-              .sort((a, b) => a.positionId - b.positionId)[i] || out,
-        }))
-    : [];
+  let changes: OptimalLineup['changes'] = [];
+  if (hasCurrentLineup) {
+    const currentFieldByPosition = new Map<number, PlayerMaster[]>();
+    const recommendedByPosition = new Map<number, PlayerMaster[]>();
+
+    for (const p of currentEntries.map((e) => e.playerMaster).filter((p) => p.positionId !== COACH_POSITION_ID)) {
+      const list = currentFieldByPosition.get(p.positionId) || [];
+      list.push(p);
+      currentFieldByPosition.set(p.positionId, list);
+    }
+    for (const e of best.starters) {
+      const list = recommendedByPosition.get(e.player.positionId) || [];
+      list.push(e.player);
+      recommendedByPosition.set(e.player.positionId, list);
+    }
+
+    for (const positionId of [1, 2, 3, 4]) {
+      const currentPos = currentFieldByPosition.get(positionId) || [];
+      const recommendedPos = recommendedByPosition.get(positionId) || [];
+      const currentIdsPos = new Set(currentPos.map((p) => p.id));
+      const recommendedIdsPos = new Set(recommendedPos.map((p) => p.id));
+
+      const outs = currentPos.filter((p) => !recommendedIdsPos.has(p.id));
+      const ins = recommendedPos.filter((p) => !currentIdsPos.has(p.id));
+
+      const n = Math.max(outs.length, ins.length);
+      for (let i = 0; i < n; i++) {
+        changes.push({ out: outs[i], in: ins[i] });
+      }
+    }
+
+    // Ordenar cambios para que los completos (sale + entra) aparezcan primero,
+    // luego entradas netas (alineación incompleta) y finalmente salidas netas.
+    changes = changes.sort((a, b) => {
+      const weight = (c: typeof a) => (c.out && c.in ? 0 : c.in ? 1 : 2);
+      return weight(a) - weight(b);
+    });
+  }
 
   // Titulares ordenados por posición para presentarlos.
   const starters = [...best.starters].sort(

@@ -108,8 +108,10 @@ export interface OptimalLineup {
   totalExpected: number;
   currentExpected: number;
   improvement: number;
-  /** Cambios sugeridos respecto a la alineación actual. */
-  changes: { out: PlayerMaster; in: PlayerMaster }[];
+  /** Cambios sugeridos respecto a la alineación actual. Cada lado puede
+   *  estar ausente cuando la alineación actual está incompleta (solo entrada)
+   *  o sobran jugadores para la formación elegida (solo salida). */
+  changes: { out?: PlayerMaster; in?: PlayerMaster }[];
   /** true si no había suficientes jugadores sanos y se han incluido jugadores con dudas. */
   degraded?: boolean;
 }

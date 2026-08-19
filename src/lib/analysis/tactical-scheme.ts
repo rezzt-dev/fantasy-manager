@@ -8,6 +8,7 @@ import type {
 } from '../../types/analysis';
 import { estimatePoints, estimatePointsDetailed, type EstimatorContext } from '../recommendations/points-estimator';
 import { combinedSignal } from '../recommendations/external-intelligence';
+import { isSuspended } from '../engine/features/minutes';
 
 const BAD_NEWS_CONFIDENCE = 0.6;
 const COACH_POSITION_ID = 5;
@@ -131,15 +132,14 @@ export function buildCandidates(
     }
   }
 
-  // Filtro de salud: solo sanos y sin noticias muy negativas (mismo criterio
-  // que lineup-optimizer). Si con los sanos no se cubre ninguna formación, se
-  // relaja: entran todos los propios (el estimador ya penaliza lesiones) y
-  // los externos se mantienen sanos (nunca se recomienda fichar lesionados).
+  // Filtro de salud: sanos (no suspendidos), sin noticias muy negativas. Si
+  // con los sanos no se cubre ninguna formación, se relaja para lesionados/
+  // dudosos, pero los suspendidos nunca entran en el pool.
   const all = [...byId.values()];
   const healthy = all.filter((c) => isHealthy(c.player, context));
   const pool = canFillAnyFormation(healthy, formations)
     ? healthy
-    : all.filter((c) => c.source === 'squad' || isHealthy(c.player, context));
+    : all.filter((c) => !isSuspended(c.player, context?.injuryReport) && (c.source === 'squad' || isHealthy(c.player, context)));
 
   // Estimación y confianza por jugador. El modelo ya aplica shrinkage
   // jerárquico con priors posición×tier (§4.5): no hay segundo encogimiento
@@ -256,6 +256,7 @@ export function computeTacticalScheme(input: TacticalSchemeInput): TacticalSchem
 
 function isHealthy(player: PlayerMaster, context?: EstimatorContext): boolean {
   if (player.playerStatus !== 'ok') return false;
+  if (isSuspended(player, context?.injuryReport)) return false;
   const external = combinedSignal(context?.externalSignals?.[player.id] || []);
   return !(external.signal === 'sell' && external.confidence >= BAD_NEWS_CONFIDENCE);
 }
