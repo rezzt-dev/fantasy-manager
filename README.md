@@ -98,6 +98,24 @@ Gráficos y tablas avanzadas para comparar el valor de los equipos, distribució
 Inicia sesión con email y contraseña de LALIGA FANTASY (flujo ROPC de Azure B2C) o con tu <i>access token</i> JWT para cuentas vinculadas con Google. Los tokens se almacenan de forma segura en sesiones de servidor Astro; al cliente solo se envía un ID de sesión.
 </details>
 
+<details open>
+<summary><b><img src="https://api.iconify.design/lucide/bell.svg?color=white" width="18" height="18" align="absbottom" /> Notificaciones Persistentes</b></summary>
+<br/>
+La campana de notificaciones del header agrupa las alertas de la liga (lesiones, dudas, cláusulas en riesgo, oportunidades de mercado). El hook <code>useNotifications</code> persiste el estado de lectura en <code>localStorage</code> con sincronización entre pestañas del navegador: marcar todo como leído o descartar una alerta individual oculta esa alerta en el badge del header, en <strong>Overview</strong> y en el propio panel, incluso tras recargar la página.
+</details>
+
+<details open>
+<summary><b><img src="https://api.iconify.design/lucide/list-checks.svg?color=white" width="18" height="18" align="absbottom" /> Alineación Real vs. Recomendada</b></summary>
+<br/>
+La pestaña <strong>Alineación</strong> separa dos vistas: la alineación <em>actual</em> que declaraste en LALIGA FANTASY (saneada automáticamente: se descartan jugadores que ya no están en tu plantilla, se infiere el entrenador cuando falta y se avisa si el once está incompleto o hay descartes) y la alineación <em>recomendada</em> por el motor, con puntos esperados y banquillo sugerido. Los jugadores sancionados o expulsados (<code>isSuspended</code>) quedan excluidos de cualquier alineación óptima, capitanía o predicción de puntuación.
+</details>
+
+<details open>
+<summary><b><img src="https://api.iconify.design/lucide/shield.svg?color=white" width="18" height="18" align="absbottom" /> Robustez Frente a la API Oficial</b></summary>
+<br/>
+El cliente hacia la API oficial (<code>src/lib/fantasy/</code>) prueba varios endpoints en cascada para obtener la alineación de la jornada actual (equipo genérico y por jornada) y se queda con la respuesta con más jugadores de campo válidos. La persistencia en disco (track record, predicciones de puntuación, snapshots) usa <strong>escritura atómica</strong> y <strong>file locks</strong> (<code>engine/jsonl.ts</code>, <code>engine/file-lock.ts</code>) para evitar corrupción por escrituras concurrentes.
+</details>
+
 ---
 
 ## <img src="https://api.iconify.design/lucide/layout-dashboard.svg?color=white" width="24" height="24" align="absbottom" /> El Dashboard
@@ -108,7 +126,7 @@ El dashboard está organizado en pestañas accesibles desde la sidebar, la naveg
 |---------|-------|-------------|
 | **Overview** | `Cmd/Ctrl + 1` | Resumen ejecutivo de la liga: dinero, valor de plantilla, próximo partido, alertas y actividad. |
 | **Mi Equipo** | `Cmd/Ctrl + 2` | Plantilla completa con estado, cláusulas, valores y puntos de cada jugador. |
-| **Alineación** | `Cmd/Ctrl + 3` | Alineación actual y simulador del XI que maximiza xP con capitán incluido. |
+| **Alineación** | `Cmd/Ctrl + 3` | Vista dual: alineación real declarada (saneada) y alineación recomendada que maximiza xP, con capitán y banquillo incluidos. |
 | **Mercado** | `Cmd/Ctrl + 4` | Jugadores en venta, ofertas y oportunidades de compra recomendadas. |
 | **Rivales** | `Cmd/Ctrl + 5` | Plantillas de los managers rivales, cláusulas y riesgos. |
 | **Clasificación** | `Cmd/Ctrl + 6` | Tabla de clasificación y gráficos de evolución. |
@@ -162,30 +180,35 @@ fantasy-manager/
 ├── src/
 │   ├── components/
 │   │   ├── auth/                 # Formularios de autenticación
-│   │   ├── dashboard/            # Pestañas del dashboard
-│   │   ├── layout/               # AppLayout, Sidebar, Header, MobileNav, CommandPalette
+│   │   ├── dashboard/            # Pestañas del dashboard (Overview, Team, Lineup, Market, Rivals, Standings, Statistics, Score Predictions, Matches, Track Record)
+│   │   ├── layout/               # AppLayout, Sidebar, Header, MobileNav, CommandPalette, NotificationBell
 │   │   ├── league/               # Resumen de liga y equipo
+│   │   ├── market/               # Componentes específicos de la pestaña Mercado
 │   │   ├── recommendations/      # Panel de recomendaciones
 │   │   ├── shared/               # Componentes reutilizables (KpiCard, DataTable, PlayerCard, etc.)
 │   │   ├── statistics/           # Gráficos y tablas analíticas
+│   │   ├── team/                 # Componentes específicos de la pestaña Mi Equipo
 │   │   └── ui/                   # Primitivos UI estilo shadcn (Radix + Tailwind)
-│   ├── hooks/                    # Hooks de interacción (useDashboardTab, useDensity, useSidebarCollapsed)
+│   ├── hooks/                    # useDashboardTab, useDensity, useSidebarCollapsed, useNotifications
 │   ├── lib/
-│   │   ├── analysis/             # Análisis de liga, alineación óptima, predictor de puntuación por equipo
-│   │   ├── engine/               # Motor predictivo, fuentes externas, track record y calibración
-│   │   ├── fantasy/              # Cliente hacia API oficial, proxy, formaciones, calendario
-│   │   └── recommendations/      # Helpers de recomendaciones y riesgo de cláusulas
+│   │   ├── analysis/             # Análisis de liga, alineación óptima, estado de titulares, predictor de puntuación por equipo
+│   │   ├── engine/               # Motor predictivo, fuentes externas, partidos, track record, calibración y persistencia atómica
+│   │   ├── fantasy/              # Cliente hacia API oficial, proxy, formaciones, mercado, calendario, actividad de liga
+│   │   ├── news/                 # Ingesta RSS, clasificador y matcher de noticias
+│   │   ├── recommendations/      # Motor de recomendaciones, capitán, riesgo de cláusulas, inteligencia externa
+│   │   └── utils/                # Utilidades compartidas
 │   ├── pages/
-│   │   ├── api/                  # Endpoints propios (auth, proxy, recommendations, matches, score-predictions, track-record)
+│   │   ├── api/                  # Endpoints propios (auth, proxy, recommendations, league-analysis, matches, score-predictions, track-record, debug)
 │   │   ├── dashboard.astro
 │   │   ├── login.astro
 │   │   └── index.astro
-│   ├── stores/                   # Estado global con Zustand
+│   ├── stores/                   # Estado global con Zustand (authStore)
 │   ├── styles/                   # Estilos globales y tema oscuro
 │   └── types/                    # Modelos de datos TypeScript
 ├── data/                         # Datos de runtime (cachés, snapshots, track record, score predictions)
+├── e2e/                          # Tests End-to-End con Playwright (login, densidad, responsive)
 └── agent-docs/
-    └── useful-docs/                # Documentación técnica detallada
+    └── useful-docs/              # Documentación técnica detallada
 ```
 
 ---
@@ -327,6 +350,9 @@ Los endpoints propios actúan como proxy seguro hacia la API oficial y orquestan
 | `/api/score-predictions?leagueId=&teamId=` | GET | Predicción de puntos esperados por equipo para la jornada actual. |
 | `/api/matches?leagueId=&teamId=` | GET | Partidos en vivo de la jornada con marcador, eventos e importancia. |
 | `/api/track-record?leagueId=` | GET | Métricas de calidad del modelo y calibración actual. |
+| `/api/debug/lineup?leagueId=&teamId=` | GET | Endpoint de diagnóstico: prueba en cascada los distintos endpoints oficiales de alineación y lista sus respuestas. |
+
+> <img src="https://api.iconify.design/lucide/lock.svg?color=white" width="14" height="14" align="absbottom" /> Toda la persistencia en disco (track record, predicciones de puntuación, snapshots) usa escritura atómica y file locks para tolerar escrituras concurrentes sin corromper los ficheros JSONL/JSON.
 
 ---
 
