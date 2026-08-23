@@ -244,7 +244,7 @@ fantasy-manager/
    CI=true pnpm build
    pnpm preview
    ```
-   > <img src="https://api.iconify.design/lucide/package.svg?color=white" width="14" height="14" align="absbottom" /> *El build genera un servidor standalone Node en `dist/` gracias a `@astrojs/node`.*
+   > <img src="https://api.iconify.design/lucide/package.svg?color=white" width="14" height="14" align="absbottom" /> *El build genera funciones serverless en `dist/` gracias a `@astrojs/vercel`, listas para desplegar en Vercel.*
 
 ---
 
@@ -295,9 +295,25 @@ APP_ALLOWED_ORIGINS=http://localhost:*,http://127.0.0.1:*
 
 # Puerto del servidor de desarrollo de Astro
 PORT=4321
+
+# Upstash Redis (sesiones + caché de player-stats/calendario en producción/Vercel)
+UPSTASH_REDIS_REST_URL=https://happy-dogfish-99066.upstash.io
+UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAYL6AAIgcDE0MDAyODhmMmUzOGY0N2M0YWFjOTBmNTYwN2NkODMyZQ
 ```
 
 > <img src="https://api.iconify.design/lucide/alert-triangle.svg?color=white" width="16" height="16" align="absbottom" /> **IMPORTANTE:** Nunca incluyas en tus commits los archivos `.env.local`, `.env.credentials`, `.env` o el contenido de la carpeta `.astro/sessions` y `data/`.
+
+### <img src="https://api.iconify.design/lucide/cloud-upload.svg?color=white" width="20" height="20" align="absbottom" /> Despliegue en Vercel
+
+El proyecto usa `output: 'server'` con el adaptador `@astrojs/vercel`, así que Vercel detecta el framework Astro y despliega automáticamente frontend + funciones serverless al importar el repositorio.
+
+1. Crea una base **Upstash Redis** (desde el [Marketplace de integraciones de Vercel](https://vercel.com/marketplace) o directamente en [upstash.com](https://upstash.com)) — sustituye al caché en disco y a las sesiones, que en funciones serverless no persisten entre invocaciones.
+2. En el proyecto de Vercel, define en *Environment Variables* todas las variables de `.env.local` (tokens, `LALIGA_CLIENT_ID`, etc.) más:
+   ```env
+   UPSTASH_REDIS_REST_URL=
+   UPSTASH_REDIS_REST_TOKEN=
+   ```
+3. Despliega (`git push` o `vercel deploy`). No hace falta configurar nada más: `astro.config.mjs` ya usa el adaptador de Vercel y el driver de sesión `upstash`.
 
 ### <img src="https://api.iconify.design/lucide/key.svg?color=white" width="20" height="20" align="absbottom" /> ¿Cómo obtener el Token de Acceso Manualmente?
 

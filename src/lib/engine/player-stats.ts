@@ -1,5 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import path from 'node:path';
+import { kvGet, kvSet } from '../kv-cache';
 import type { PlayerMaster } from '../../types/fantasy';
 
 /**
@@ -9,9 +8,9 @@ import type { PlayerMaster } from '../../types/fantasy';
  *
  * La API oficial solo expone estos datos en el detalle por jugador
  * ({CMP}/player/{playerId}/league/{leagueId}), así que cada consulta cuesta
- * una petición. Se cachea en memoria (vida del proceso) y en disco
- * (data/cache/player-stats, 12 h) para no repetir peticiones entre requests.
- * El disco también preserva el histórico de jornadas entre reinicios.
+ * una petición. Se cachea en memoria (vida del proceso) y en KV (Upstash
+ * Redis, 12 h) para no repetir peticiones entre requests/invocaciones
+ * serverless. El KV también preserva el histórico de jornadas entre despliegues.
  */
 
 export interface PlayerWeekStat {
@@ -29,41 +28,27 @@ export interface PlayerDetail {
 export type FetchPlayerDetail = (playerId: string) => Promise<PlayerDetail>;
 
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000; // 12 horas
-const CACHE_DIR = path.join(process.cwd(), 'data', 'cache', 'player-stats');
+const CACHE_TTL_S = CACHE_TTL_MS / 1000;
+const KV_PREFIX = 'player-stats';
 const CONCURRENCY = 5;
 
 const memCache = new Map<string, { expiresAt: number; stats: PlayerWeekStat[] }>();
-/** Si el FS no es escribible, se desactiva el disco y se sigue solo con memoria. */
-let diskDisabled = false;
 
-interface DiskEntry {
+interface KvEntry {
   fetchedAt: number;
   stats: PlayerWeekStat[];
 }
 
-async function readDiskCache(playerId: string): Promise<PlayerWeekStat[] | null> {
-  if (diskDisabled) return null;
-  try {
-    const raw = await readFile(path.join(CACHE_DIR, `${playerId}.json`), 'utf8');
-    const entry = JSON.parse(raw) as DiskEntry;
-    if (!Array.isArray(entry.stats)) return null;
-    if (Date.now() - entry.fetchedAt > CACHE_TTL_MS) return null;
-    return entry.stats;
-  } catch {
-    return null;
-  }
+async function readKvCache(playerId: string): Promise<PlayerWeekStat[] | null> {
+  const entry = await kvGet<KvEntry>(`${KV_PREFIX}:${playerId}`);
+  if (!entry || !Array.isArray(entry.stats)) return null;
+  if (Date.now() - entry.fetchedAt > CACHE_TTL_MS) return null;
+  return entry.stats;
 }
 
-async function writeDiskCache(playerId: string, stats: PlayerWeekStat[]): Promise<void> {
-  if (diskDisabled) return;
-  try {
-    await mkdir(CACHE_DIR, { recursive: true });
-    const entry: DiskEntry = { fetchedAt: Date.now(), stats };
-    await writeFile(path.join(CACHE_DIR, `${playerId}.json`), JSON.stringify(entry));
-  } catch (error) {
-    diskDisabled = true;
-    console.warn('[player-stats] disk cache disabled:', error instanceof Error ? error.message : error);
-  }
+async function writeKvCache(playerId: string, stats: PlayerWeekStat[]): Promise<void> {
+  const entry: KvEntry = { fetchedAt: Date.now(), stats };
+  await kvSet(`${KV_PREFIX}:${playerId}`, entry, CACHE_TTL_S);
 }
 
 async function withConcurrency<T, R>(items: T[], fn: (item: T) => Promise<R>, concurrency: number): Promise<R[]> {
@@ -104,10 +89,10 @@ export async function fetchPlayerStats(
     }
   }
 
-  // Segunda oportunidad: caché de disco antes de ir a la API.
+  // Segunda oportunidad: caché KV antes de ir a la API.
   const stillPending: { id: string }[] = [];
   for (const player of pending) {
-    const stats = await readDiskCache(player.id);
+    const stats = await readKvCache(player.id);
     if (stats !== null) {
       memCache.set(player.id, { expiresAt: now + CACHE_TTL_MS, stats });
       result[player.id] = stats;
@@ -128,7 +113,7 @@ export async function fetchPlayerStats(
       }
       memCache.set(player.id, { expiresAt: now + CACHE_TTL_MS, stats });
       result[player.id] = stats;
-      await writeDiskCache(player.id, stats);
+      await writeKvCache(player.id, stats);
     },
     CONCURRENCY,
   );

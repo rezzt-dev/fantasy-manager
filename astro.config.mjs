@@ -2,14 +2,12 @@
 import { defineConfig, sessionDrivers } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
   output: 'server',
-  adapter: node({
-    mode: 'standalone',
-  }),
+  adapter: vercel(),
   integrations: [
     react(),
     tailwind({
@@ -20,7 +18,7 @@ export default defineConfig({
     port: parseInt(process.env.PORT || '4321', 10),
   },
   session: {
-    driver: sessionDrivers.fs(),
+    driver: sessionDrivers.upstash(),
   },
   vite: {
     optimizeDeps: {
