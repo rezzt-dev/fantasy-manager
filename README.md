@@ -297,8 +297,8 @@ APP_ALLOWED_ORIGINS=http://localhost:*,http://127.0.0.1:*
 PORT=4321
 
 # Upstash Redis (sesiones + caché de player-stats/calendario en producción/Vercel)
-UPSTASH_REDIS_REST_URL=https://happy-dogfish-99066.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAYL6AAIgcDE0MDAyODhmMmUzOGY0N2M0YWFjOTBmNTYwN2NkODMyZQ
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
 ```
 
 > <img src="https://api.iconify.design/lucide/alert-triangle.svg?color=white" width="16" height="16" align="absbottom" /> **IMPORTANTE:** Nunca incluyas en tus commits los archivos `.env.local`, `.env.credentials`, `.env` o el contenido de la carpeta `.astro/sessions` y `data/`.
