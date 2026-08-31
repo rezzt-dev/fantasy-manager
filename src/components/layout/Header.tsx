@@ -2,20 +2,21 @@
 
 import { useState } from 'react';
 import {
-  Trophy,
   LogOut,
   ChevronDown,
   Shield,
-  Users,
+  Check,
   Menu,
   Search,
   Bell,
   AlertTriangle,
-  CheckCircle2,
+  OctagonAlert,
   Info,
+  CheckCheck,
   RefreshCcw,
   PanelLeftClose,
   PanelLeftOpen,
+  Rows3,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
@@ -29,9 +30,17 @@ import {
 } from '../ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { Separator } from '../ui/separator';
-import { Badge } from '../ui/badge';
 import { Switch } from '../ui/switch';
+import Logo from '../brand/Logo';
+import { cn } from '../../lib/utils';
 import type { FantasyLeague } from '../../types/fantasy';
+
+export interface HeaderAlert {
+  id: string;
+  type: 'warning' | 'danger' | 'info';
+  title: string;
+  description?: string;
+}
 
 interface HeaderProps {
   leagues: FantasyLeague[];
@@ -44,10 +53,19 @@ interface HeaderProps {
   dense?: boolean;
   onToggleDensity?: (dense: boolean) => void;
   alertCount?: number;
-  alerts?: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
+  alerts?: HeaderAlert[];
   onMarkAllNotificationsAsRead?: () => void;
 }
 
+/**
+ * Barra superior.
+ *
+ * Tres zonas con pesos distintos a propósito: a la izquierda la navegación
+ * (ligera), en el centro la búsqueda (es la acción más usada, así que ocupa el
+ * espacio libre), y a la derecha el contexto de liga y la sesión. La única
+ * pieza con borde propio es el selector de liga, porque es lo que cambia todo
+ * lo que hay debajo.
+ */
 export default function Header({
   leagues,
   selectedLeague,
@@ -65,78 +83,79 @@ export default function Header({
   const { collapsed, toggleCollapsed } = useSidebarCollapsed();
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-background/80 backdrop-blur-xl">
-      <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-4 lg:px-6 [.density-dense_&]:h-14">
-        {/* Izquierda: navegación */}
+    <header className="glass sticky top-0 z-header w-full border-b border-white/[0.09]">
+      <div className="flex h-16 items-center gap-2 px-3 sm:px-4 lg:px-6 [.density-dense_&]:h-14">
+        {/* Izquierda */}
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-touch"
             className="lg:hidden"
             onClick={onToggleSidebar}
-            aria-label="Abrir menú"
+            aria-label="Abrir menú de secciones"
           >
-            <Menu className="h-5 w-5" />
+            <Menu />
           </Button>
 
           <Button
             variant="ghost"
             size="icon-sm"
-            className="hidden text-muted-foreground hover:text-foreground lg:inline-flex"
+            className="hidden lg:inline-flex"
             onClick={toggleCollapsed}
-            aria-label={collapsed ? 'Desplegar panel lateral' : 'Ocultar panel lateral'}
-            title={collapsed ? 'Desplegar panel lateral' : 'Ocultar panel lateral'}
+            aria-label={collapsed ? 'Desplegar panel lateral' : 'Plegar panel lateral'}
+            title={`${collapsed ? 'Desplegar' : 'Plegar'} panel lateral (B)`}
           >
-            {collapsed ? <PanelLeftOpen className="h-[18px] w-[18px]" /> : <PanelLeftClose className="h-[18px] w-[18px]" />}
+            {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
           </Button>
 
-          <a
-            href="/dashboard"
-            className="flex items-center gap-2.5 pl-1 text-lg font-semibold tracking-tight text-foreground sm:pl-2 lg:hidden"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.10] bg-surface-2">
-              <Trophy className="h-[18px] w-[18px] text-foreground" />
-            </div>
-            <span className="hidden font-display tracking-tight sm:inline">
-              Fantasy<span className="text-brand-muted">Manager</span>
-            </span>
+          <a href="/dashboard" className="rounded-sm pl-1 lg:hidden" aria-label="Fantasy Manager">
+            <Logo size="sm" markOnly className="sm:hidden" />
+            <Logo size="sm" className="hidden sm:inline-flex" />
           </a>
         </div>
 
-        {/* Centro: búsqueda */}
-        <div className="flex min-w-0 flex-1 justify-center lg:px-2">
+        {/* Centro: búsqueda global */}
+        <div className="flex min-w-0 flex-1 justify-center px-1 lg:px-4">
           <button
+            type="button"
             onClick={onOpenCommand}
-            className="hidden h-9 w-full max-w-md items-center gap-2 rounded-lg border border-white/[0.08] bg-surface-2/60 px-3 text-sm text-muted-foreground backdrop-blur-sm transition-colors hover:border-white/[0.14] hover:bg-surface-3 hover:text-foreground lg:flex"
+            className={cn(
+              'hidden h-9 w-full max-w-lg items-center gap-2 rounded-md border border-ink-600 bg-surface-raised px-3',
+              'text-sm text-content-tertiary transition-colors duration-fast ease-out',
+              'hover:border-ink-700 hover:text-content-secondary lg:flex',
+            )}
           >
-            <Search className="h-4 w-4 shrink-0" />
-            <span className="flex-1 truncate text-left">Buscar jugadores, pestañas, rivales…</span>
-            <kbd className="shrink-0 rounded-md border border-white/[0.08] bg-background px-1.5 py-0.5 text-[10px] font-medium">
+            <Search className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="flex-1 truncate text-left">Buscar jugador, sección o rival…</span>
+            <kbd className="numeral shrink-0 rounded-xs border border-ink-600 bg-canvas px-1.5 py-0.5 text-[10px] font-medium">
               ⌘K
             </kbd>
           </button>
         </div>
 
-        {/* Derecha: vista · acciones · liga · sesión */}
-        <div className="flex items-center gap-2">
+        {/* Derecha */}
+        <div className="flex min-w-0 items-center gap-1 sm:gap-1.5">
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-touch"
             className="lg:hidden"
             onClick={onOpenCommand}
             aria-label="Buscar"
           >
-            <Search className="h-[18px] w-[18px]" />
+            <Search />
           </Button>
 
           {onToggleDensity && (
-            <div className="hidden items-center gap-2 lg:flex" title="Modo compacto (D)">
-              <span className="text-xs text-muted-foreground">Compacto</span>
-              <Switch checked={dense} onCheckedChange={onToggleDensity} aria-label="Densidad compacta" />
-            </div>
+            <label className="hidden cursor-pointer items-center gap-2 pl-1 pr-2 xl:flex">
+              <Rows3 className="h-4 w-4 text-content-tertiary" aria-hidden="true" />
+              <span className="text-xs font-medium text-content-tertiary">Compacto</span>
+              <Switch
+                checked={dense}
+                onCheckedChange={onToggleDensity}
+                aria-label="Activar modo compacto (atajo: D)"
+              />
+            </label>
           )}
-
-          <Separator orientation="vertical" className="hidden h-5 lg:block" />
 
           {onRefresh && (
             <Button
@@ -144,16 +163,20 @@ export default function Header({
               size="icon-sm"
               onClick={onRefresh}
               disabled={isRefreshing}
-              aria-label="Recargar datos"
+              aria-label={isRefreshing ? 'Recargando datos' : 'Recargar datos'}
               title="Recargar datos (R)"
             >
-              <RefreshCcw className={`h-[18px] w-[18px] ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCcw className={cn(isRefreshing && 'motion-essential animate-spin')} />
             </Button>
           )}
 
-          <NotificationBell count={alertCount} alerts={alerts} onMarkAllAsRead={onMarkAllNotificationsAsRead} />
+          <NotificationBell
+            count={alertCount}
+            alerts={alerts}
+            onMarkAllAsRead={onMarkAllNotificationsAsRead}
+          />
 
-          <Separator orientation="vertical" className="h-5" />
+          <Separator orientation="vertical" className="mx-1 hidden h-6 bg-white/[0.09] sm:block" />
 
           {leagues.length > 0 && (
             <LeagueSelector
@@ -164,14 +187,8 @@ export default function Header({
           )}
 
           <form action="/api/auth/logout" method="POST" className="hidden sm:block">
-            <Button
-              type="submit"
-              variant="ghost"
-              size="icon-sm"
-              className="text-muted-foreground hover:text-foreground"
-              aria-label="Cerrar sesión"
-            >
-              <LogOut className="h-[18px] w-[18px]" />
+            <Button type="submit" variant="ghost" size="icon-sm" aria-label="Cerrar sesión">
+              <LogOut />
             </Button>
           </form>
         </div>
@@ -192,42 +209,41 @@ function LeagueSelector({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 gap-2 border-white/[0.10] bg-surface-2/60 px-2.5 backdrop-blur-sm hover:bg-white/[0.05]"
-        >
-          <Shield className="h-4 w-4 text-brand-muted" />
-          <span className="hidden max-w-[160px] truncate sm:inline">
-            {selectedLeague?.name || 'Seleccionar liga'}
-          </span>
-          <span className="hidden max-w-[100px] truncate min-[480px]:inline sm:hidden">
-            {selectedLeague?.name?.slice(0, 10) || 'Liga'}
-          </span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+        <Button variant="outline" size="sm" className="max-w-[132px] gap-1.5 px-2 sm:max-w-[200px] sm:gap-2 sm:px-3">
+          <Shield className="text-content-tertiary" aria-hidden="true" />
+          <span className="truncate">{selectedLeague?.name || 'Elegir liga'}</span>
+          <ChevronDown className="shrink-0 text-content-tertiary" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          Mis ligas
-        </DropdownMenuLabel>
+        <DropdownMenuLabel className="eyebrow px-2 py-1.5">Mis ligas</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {leagues.map((league) => (
-          <DropdownMenuItem
-            key={league.id}
-            onClick={() => onSelectLeague(league)}
-            className="flex items-center justify-between"
-          >
-            <span className="truncate pr-2">{league.name}</span>
-            {league.id === selectedLeague?.id && (
-              <Users className="h-4 w-4 text-foreground" />
-            )}
-          </DropdownMenuItem>
-        ))}
+        {leagues.map((league) => {
+          const active = league.id === selectedLeague?.id;
+          return (
+            <DropdownMenuItem
+              key={league.id}
+              onClick={() => onSelectLeague(league)}
+              className="flex items-center gap-2"
+            >
+              <Check className={cn('h-4 w-4 shrink-0', active ? 'text-accent' : 'opacity-0')} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">{league.name}</span>
+              <span className="numeral shrink-0 text-xs text-content-tertiary">
+                {league.team.position ? `${league.team.position}º` : ''}
+              </span>
+            </DropdownMenuItem>
+          );
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
+
+const ALERT_ICON = {
+  danger: { Icon: OctagonAlert, className: 'text-negative-text' },
+  warning: { Icon: AlertTriangle, className: 'text-caution-text' },
+  info: { Icon: Info, className: 'text-info-text' },
+} as const;
 
 function NotificationBell({
   count,
@@ -235,15 +251,10 @@ function NotificationBell({
   onMarkAllAsRead,
 }: {
   count: number;
-  alerts: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
+  alerts: HeaderAlert[];
   onMarkAllAsRead?: () => void;
 }) {
   const [open, setOpen] = useState(false);
-
-  const handleMarkAllAsRead = () => {
-    onMarkAllAsRead?.();
-    setOpen(false);
-  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -251,55 +262,69 @@ function NotificationBell({
         <Button
           variant="ghost"
           size="icon-sm"
-          className="relative text-muted-foreground hover:text-foreground"
-          aria-label="Notificaciones"
+          className="relative"
+          aria-label={count > 0 ? `Avisos: ${count} sin leer` : 'Avisos: ninguno pendiente'}
         >
-          <Bell className="h-[18px] w-[18px]" />
+          <Bell />
           {count > 0 && (
-            <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-foreground px-1 text-[9px] font-bold text-background">
+            <span
+              className="numeral absolute -right-0.5 -top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold text-accent-fg"
+              aria-hidden="true"
+            >
               {count > 9 ? '9+' : count}
             </span>
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-          <span className="font-semibold text-foreground">Alertas</span>
-          {count > 0 && <Badge variant="secondary">{count} activas</Badge>}
-        </div>
-        <div className="max-h-80 overflow-y-auto py-2">
-          {alerts.length === 0 ? (
-            <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-              No hay alertas activas
-            </div>
-          ) : (
-            alerts.map((alert) => (
-              <div key={alert.id} className="px-4 py-2">
-                <div className="flex items-start gap-3">
-                  {alert.type === 'danger' ? (
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
-                  ) : alert.type === 'warning' ? (
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-                  ) : (
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-indigo-400" />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">{alert.title}</p>
-                    {alert.description && (
-                      <p className="text-xs text-muted-foreground">{alert.description}</p>
-                    )}
-                  </div>
-                </div>
-                <Separator className="mt-2 bg-white/[0.04]" />
-              </div>
-            ))
+
+      <PopoverContent align="end" className="w-[min(22rem,calc(100vw-2rem))] p-0">
+        <div className="flex items-center justify-between border-b border-white/[0.09] px-4 py-3">
+          <h2 className="text-sm font-semibold text-content">Avisos de la jornada</h2>
+          {count > 0 && (
+            <span className="numeral text-xs text-content-tertiary">{count} sin leer</span>
           )}
         </div>
+
+        <div className="scrollbar-thin max-h-[min(24rem,60vh)] overflow-y-auto">
+          {alerts.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-content-tertiary">
+              Nada que revisar. Tu plantilla está disponible al completo.
+            </p>
+          ) : (
+            <ul className="divide-y divide-white/[0.09]">
+              {alerts.map((alert) => {
+                const { Icon, className } = ALERT_ICON[alert.type];
+                return (
+                  <li key={alert.id} className="flex items-start gap-3 px-4 py-3">
+                    <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', className)} aria-hidden="true" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium leading-snug text-content">{alert.title}</p>
+                      {alert.description && (
+                        <p className="mt-0.5 text-xs leading-relaxed text-content-tertiary">
+                          {alert.description}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
         {alerts.length > 0 && (
-          <div className="border-t border-white/[0.06] px-4 py-2">
-            <Button variant="ghost" size="sm" className="h-8 w-full justify-start gap-2 text-xs" onClick={handleMarkAllAsRead}>
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              Marcar como leídas
+          <div className="border-t border-white/[0.09] p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start"
+              onClick={() => {
+                onMarkAllAsRead?.();
+                setOpen(false);
+              }}
+            >
+              <CheckCheck />
+              Marcar todo como leído
             </Button>
           </div>
         )}

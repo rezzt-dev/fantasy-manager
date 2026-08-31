@@ -1,4 +1,16 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap');
+/* ────────────────────────────────────────────────────────────────────────────
+   Fantasy Manager — sistema de diseño
+   Arquitectura de tokens en tres capas: primitivo → semántico → componente.
+   Nunca uses un hex crudo en un componente: referencia siempre la capa
+   semántica (--surface-*, --text-*, --border-*, --action-*).
+
+   Identidad de marca (inmutable, AGENTS.md): lienzo #151515, tinta #ECECEC.
+   Acento funcional: "Verde Campo" (lima), reservado para la voz del motor de
+   recomendaciones, el foco de teclado y la única acción primaria de cada
+   pantalla. No es un color decorativo.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,79 +18,404 @@
 
 @layer base {
   :root {
-    /* Identidad oscura y sobria — fondo exacto #151515, acento #ECECEC */
-    --background: 0 0% 8.24%;
-    --background-solid: #151515;
-    --foreground: 0 0% 92.55%;
-    --foreground-solid: #ececec;
+    /* ══ CAPA 1 · PRIMITIVOS ══════════════════════════════════════════════ */
 
-    --card: 0 0% 10.98%;
-    --card-solid: #1c1c1c;
-    --card-foreground: 0 0% 92.55%;
+    /* Rampa neutra. Cada peldaño es un nivel de elevación, no un tono al azar.
+       En una UI oscura la profundidad la da la superficie más clara, no la
+       sombra: por eso la rampa sube en pasos perceptibles y no en 1%. */
+    --ink-000: 0 0% 6.7%;   /* #111111 — sima: telón de modales, pozos */
+    --ink-050: 0 0% 8.2%;   /* #151515 — lienzo (MARCA) */
+    --ink-100: 0 0% 10.6%;  /* #1B1B1B — tarjeta */
+    --ink-200: 0 0% 12.9%;  /* #212121 — control, cabecera de tabla */
+    --ink-300: 0 0% 15.7%;  /* #282828 — hover, popover */
+    --ink-400: 0 0% 19.6%;  /* #323232 — hover de control, filete fuerte */
+    --ink-500: 0 0% 27.5%;  /* #464646 — texto deshabilitado (exento AA) */
+    /* Los tres valores siguientes están fijados por medición, no a ojo. Se
+       comprobaron con un barrido de contraste sobre el DOM real contra la
+       superficie MÁS CLARA en la que aparecen (--ink-300, #282828), no solo
+       contra el lienzo: un gris que cumple sobre #151515 puede quedarse en
+       4,1:1 dentro de una tarjeta elevada. */
+    --ink-600: 0 0% 46%;    /* #757575 — borde de control (3,2:1 ✓ WCAG 1.4.11) */
+    --ink-700: 0 0% 58%;    /* #949494 — texto terciario (4,9:1 ✓ AA) */
+    --ink-800: 0 0% 72%;    /* #B8B8B8 — texto secundario (7,6:1 ✓)
+                               Separado del terciario lo suficiente para que los
+                               tres niveles de texto sigan leyéndose como tres. */
+    --ink-900: 0 0% 92.5%;  /* #ECECEC — texto primario (MARCA, 15.9:1 ✓) */
 
-    --popover: 0 0% 10.98%;
-    --popover-foreground: 0 0% 92.55%;
+    /* Acento "Verde Campo". La rampa rota hacia el verde al oscurecer para
+       que no se apague en los peldaños bajos. */
+    --lime-100: 74 80% 88%;
+    --lime-200: 74 80% 78%;
+    --lime-300: 74 82% 70%;
+    --lime-400: 74 84% 62%;
+    --lime-500: 74 84% 55%;  /* #B7E62F — base: fondo de botón, foco */
+    --lime-600: 75 78% 46%;
+    --lime-700: 77 74% 34%;
+    --lime-800: 79 70% 22%;
+    --lime-900: 80 38% 10%;  /* tinte de fondo: saturación baja, porque una
+                                superficie grande de acento satura la vista y
+                                deja de leerse como acento */
 
-    --primary: 0 0% 92.55%;
-    --primary-foreground: 0 0% 8.24%;
+    /* Acentos semánticos. Separados ≥40° del acento y entre sí para que las
+       series de gráfico se distingan; aun así NUNCA van solos (regla
+       color-not-only): siempre acompañados de icono o signo. */
+    --pos-400: 158 68% 55%;
+    --pos-500: 158 76% 42%;  /* positivo / sube / disponible */
+    --pos-900: 158 60% 11%;
+    --neg-400: 354 84% 70%;
+    --neg-500: 354 78% 58%;  /* negativo / baja / lesión */
+    --neg-900: 354 55% 13%;
+    --cau-400: 32 96% 64%;
+    --cau-500: 32 94% 53%;   /* atención / duda / riesgo */
+    --cau-900: 32 70% 12%;
+    --inf-400: 199 89% 66%;
+    --inf-500: 199 85% 52%;  /* informativo / dato neutro */
+    --inf-900: 199 60% 12%;
 
-    --secondary: 0 0% 12.55%;
-    --secondary-foreground: 0 0% 92.55%;
+    /* Colores de posición: distinguidos por TONO y por LUMINOSIDAD, para que
+       sigan leyéndose en escala de grises y con daltonismo. */
+    --pos-gk: 32 94% 58%;    /* portero   — ámbar */
+    --pos-df: 199 89% 60%;   /* defensa   — cian */
+    --pos-mf: 158 70% 48%;   /* medio     — verde */
+    --pos-fw: 354 82% 64%;   /* delantero — rojo */
+    --pos-co: 0 0% 62%;      /* entrenador— neutro */
 
-    --muted: 0 0% 14.51%;
-    --muted-foreground: 0 0% 60.39%;
+    /* Escala de opacidad fija. Decidida una vez; prohibido improvisar un
+       white/[0.037] en un componente. */
+    --o-05: 0.05;
+    --o-10: 0.1;
+    --o-20: 0.2;
+    --o-40: 0.4;
+    --o-60: 0.6;
+    --o-80: 0.8;
 
-    --accent: 0 0% 15.29%;
-    --accent-foreground: 0 0% 92.55%;
+    /* Radios. Un solo lenguaje de esquina en todo el producto. */
+    --r-xs: 4px;
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 20px;
 
-    --destructive: 0 65% 55%;
-    --destructive-foreground: 0 0% 98%;
+    /* Cinco elevaciones. Se elige por «¿dónde está esto en el eje Z?», no por
+       «¿qué sombra queda bonita?». */
+    --elev-1: 0 1px 2px hsl(0 0% 0% / 0.4);
+    --elev-2: 0 4px 8px -2px hsl(0 0% 0% / 0.45);
+    --elev-3: 0 10px 24px -6px hsl(0 0% 0% / 0.55);
+    --elev-4: 0 16px 36px -10px hsl(0 0% 0% / 0.62);
+    --elev-5: 0 28px 64px -14px hsl(0 0% 0% / 0.7);
 
-    --border: 0 0% 18.04%;
-    --input: 0 0% 13.33%;
-    --ring: 0 0% 92.55%;
+    /* ── Movimiento ──────────────────────────────────────────────────────
+       Un solo ritmo para todo el producto. Esta declaración es la ÚNICA
+       fuente de verdad: `src/lib/motion.ts` lee estas mismas variables en
+       tiempo de ejecución y se las pasa a Motion, GSAP y Anime.js, de forma
+       que las cuatro capas de animación comparten números. Si un valor
+       cambia aquí, cambia en todas.
 
-    --radius: 0.75rem;
+       La personalidad es la del producto: una herramienta de decisión, no un
+       juguete. Movimiento CORTO, RÁPIDO y de POCO RECORRIDO. El movimiento
+       sirve para explicar de dónde viene algo o para confirmar que se ha
+       registrado una acción; nunca para lucirse. */
+
+    /* Duraciones. Cada peldaño tiene un uso asignado; no se elige «la que
+       queda bien». */
+    --dur-instant: 90ms; /* cambio de estado de un control (color, opacidad) */
+    --dur-fast: 130ms;   /* hover, pulsación, tooltip */
+    --dur-base: 190ms;   /* entrada de un componente, cambio de pestaña */
+    --dur-slow: 280ms;   /* panel lateral, hoja, recolocación de layout */
+    --dur-page: 420ms;   /* compás narrativo ligado al scroll (solo portada) */
+
+    /* Tres curvas propias. Ninguna es la de fábrica del framework: `ease`,
+       `ease-in-out` y los `power*` por defecto están prohibidos en este
+       producto porque suenan a plantilla.
+         out    → todo lo que ENTRA o responde al usuario. Arranca rápido y
+                  frena largo: la interfaz parece que ya estaba allí.
+         in     → todo lo que SALE. Se va deprisa; nadie mira lo que se va.
+         spring → un único rebote muy contenido (1,35), reservado a
+                  CONFIRMACIONES (un valor que se guarda, un objetivo que
+                  entra en la lista). Si se usa para entradas normales, el
+                  producto pasa de preciso a blandengue. */
+    --ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+    --ease-in: cubic-bezier(0.5, 0, 0.9, 0.4);
+    --ease-spring: cubic-bezier(0.34, 1.35, 0.5, 1);
+
+    /* Distancias. El recorrido es corto a propósito: por encima de ~24 px el
+       ojo persigue el objeto en vez de leerlo. Todas se aplican con
+       `transform`, nunca con `top`/`left`. */
+    --move-xs: 4px;  /* empujón de respuesta (pulsación, foco) */
+    --move-sm: 8px;  /* cambio de vista dentro del panel */
+    --move-md: 12px; /* entrada de tarjeta o de fila */
+    --move-lg: 20px; /* algo que llega desde un borde de la pantalla */
+
+    /* Escalas de respuesta. Dos valores, y ninguno es 1.05: una tarjeta de
+       datos no crece al pasar por encima, se ELEVA (sombra + 2 px). */
+    --scale-press: 0.985; /* botón pulsado */
+    --scale-in: 0.97;     /* algo que aparece anclado a su origen (menú) */
+
+    /* Cascada. Solo se escalona lo que llega JUNTO y por primera vez, y solo
+       cuando el orden significa algo (ranking, prioridad del motor). Nunca en
+       una rejilla que el usuario ya tenía delante: al reordenar o filtrar, los
+       elementos se recolocan, no vuelven a nacer.
+       Techo duro: 6 elementos escalonados (~240 ms). El séptimo y siguientes
+       entran a la vez que el sexto, para que la última fila no llegue medio
+       segundo tarde. */
+    --stagger-tight: 24ms; /* filas de una tabla o lista densa */
+    --stagger-base: 40ms;  /* tarjetas de una rejilla */
+    --stagger-loose: 70ms; /* 3-4 piezas grandes con orden narrativo */
+
+    /* Capas. Definidas una vez para que nadie invente un z-[9999]. */
+    --z-raised: 10;
+    --z-sticky: 20;
+    --z-nav: 30;
+    --z-header: 40;
+    --z-overlay: 50;
+    --z-modal: 60;
+    --z-toast: 70;
+
+    /* ══ CAPA 2 · SEMÁNTICOS ══════════════════════════════════════════════ */
+
+    /* Superficies, por elevación */
+    --canvas: var(--ink-050);
+    --surface-sunken: var(--ink-000);
+    --surface: var(--ink-100);
+    --surface-raised: var(--ink-200);
+    --surface-overlay: var(--ink-300);
+    --surface-hover: var(--ink-300);
+
+    /* Texto: exactamente tres niveles (+ el deshabilitado). Más de tres y la
+       jerarquía deja de leerse. */
+    --text-primary: var(--ink-900);
+    --text-secondary: var(--ink-800);
+    --text-tertiary: var(--ink-700);
+    --text-disabled: var(--ink-500);
+    --text-on-accent: var(--ink-050);
+
+    /* Bordes: dos tokens distintos porque son dos requisitos distintos.
+       `hairline` solo separa contenido (exento de 3:1);
+       `control` identifica un control y por eso cumple WCAG 1.4.11. */
+    --border-hairline: 0 0% 100% / 0.09;
+    --border-hairline-strong: 0 0% 100% / 0.14;
+    --border-control: var(--ink-600);
+    --border-accent: var(--lime-500);
+
+    /* Acción */
+    --action: var(--ink-900);
+    --action-fg: var(--ink-050);
+    --action-hover: 0 0% 100%;
+    --accent: var(--lime-500);
+    --accent-fg: var(--ink-000);
+    --accent-hover: var(--lime-400);
+    --accent-quiet: var(--lime-900);
+    --focus-ring: var(--lime-500);
+
+    /* Estado */
+    --positive: var(--pos-500);
+    --positive-text: var(--pos-400);
+    --positive-quiet: var(--pos-900);
+    --negative: var(--neg-500);
+    --negative-text: var(--neg-400);
+    --negative-quiet: var(--neg-900);
+    --caution: var(--cau-500);
+    --caution-text: var(--cau-400);
+    --caution-quiet: var(--cau-900);
+    --info: var(--inf-500);
+    --info-text: var(--inf-400);
+    --info-quiet: var(--inf-900);
+
+    /* ══ Puente shadcn/Radix ══════════════════════════════════════════════
+       Los primitivos de shadcn esperan estos nombres. Aquí solo son alias de
+       la capa semántica: no se les asigna un valor propio. */
+    --background: var(--canvas);
+    --foreground: var(--text-primary);
+    --card: var(--surface);
+    --card-foreground: var(--text-primary);
+    --popover: var(--surface-overlay);
+    --popover-foreground: var(--text-primary);
+    --primary: var(--action);
+    --primary-foreground: var(--action-fg);
+    --secondary: var(--surface-raised);
+    --secondary-foreground: var(--text-primary);
+    --muted: var(--surface-raised);
+    --muted-foreground: var(--text-tertiary);
+    --accent-bg: var(--surface-overlay);
+    --accent-foreground: var(--text-primary);
+    --destructive: var(--negative);
+    --destructive-foreground: var(--ink-050);
+    --border: var(--ink-400);
+    --input: var(--border-control);
+    --ring: var(--focus-ring);
+    --radius: var(--r-md);
   }
 
-  * {
-    @apply border-border;
-  }
-
+  /* Una única declaración de tipografía. El resto del producto hereda. */
   html {
-    @apply scroll-smooth;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
   }
 
-  /* Red de seguridad: ningún contenido debe provocar scroll horizontal de página.
-     `clip` (a diferencia de `hidden`) no crea contenedor de scroll y no rompe position: sticky. */
+  /* Cuando Lenis toma el control del scroll (solo en las páginas de
+     presentación) se marca a sí mismo con la clase `.lenis` en <html>. El
+     desplazamiento suave NATIVO tiene que apagarse ahí: si no, el navegador y
+     Lenis animan el mismo salto a la vez con dos curvas distintas y el
+     resultado es un rebote al final de cada enlace interno. */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+    scroll-behavior: auto;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  /* Durante un `scrollTo` programado se ignoran los eventos de puntero sobre el
+     contenido: evita que un clic accidental a mitad de recorrido active un
+     enlace que estaba pasando por debajo del cursor. */
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  /* Ninguna sección debe provocar scroll horizontal de página. `clip` no crea
+     contenedor de scroll y por tanto no rompe position: sticky. */
   html,
   body {
     overflow-x: clip;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    background-color: hsl(var(--canvas));
+    color: hsl(var(--text-primary));
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* ss03: comillas rectas; cv05: la ele con cola, para no confundirla con
+       la I mayúscula en nombres de jugador. */
+    font-feature-settings: 'liga' 1, 'calt' 1, 'ss03' 1, 'cv05' 1;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+  /* Titulares en Archivo: mayor contraste de trazo y una 'a' y una 'R' con
+     carácter propio, así que el par con Inter se lee como par y no como
+     «Inter en otro peso». El tracking se cierra a medida que crece el cuerpo. */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Archivo', 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-weight: 600;
+    color: hsl(var(--text-primary));
+    text-wrap: balance;
+  }
+
+  h1 {
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+  h2 {
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+  h3 {
+    letter-spacing: -0.018em;
+    line-height: 1.25;
+  }
+  h4 {
+    letter-spacing: -0.012em;
+    line-height: 1.3;
+  }
+
+  /* Toda cifra que se compare en columna va en cifras tabulares: sin esto las
+     tablas de valor de mercado bailan al ordenar. */
+  table,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  * {
+    border-color: hsl(var(--border-hairline));
+  }
+
+  /* Un único anillo de foco en todo el producto, siempre visible, siempre del
+     color de acento (3:1 sobre cualquier superficie de la rampa). */
+  :focus-visible {
+    outline: 2px solid hsl(var(--focus-ring));
+    outline-offset: 2px;
+    border-radius: var(--r-xs);
+  }
+
+  ::selection {
+    background-color: hsl(var(--lime-500) / 0.25);
+    color: hsl(var(--text-primary));
+  }
+
+  /* Los desplegables nativos y el autorrelleno de Chrome no heredan el tema. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: hsl(var(--text-primary));
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--surface-raised)) inset;
+    caret-color: hsl(var(--text-primary));
+  }
+}
+
+@layer components {
+  /* Enlace de salto: el primer tabulador de la página lleva al contenido. */
+  .skip-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: var(--z-toast);
+    transform: translateY(-200%);
+    border-radius: var(--r-md);
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-fg));
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
   }
 }
 
 @layer utilities {
+  /* Cifra: cualquier dato numérico que el usuario compara o escanea. */
+  .numeral {
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'zero' 1;
+    letter-spacing: -0.02em;
+  }
+
+  /* Etiqueta de sección: versalita ancha, el único sitio donde abrimos el
+     tracking en lugar de cerrarlo. */
+  .eyebrow {
+    font-family: 'Archivo', 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(var(--text-tertiary));
+  }
+
   .text-balance {
     text-wrap: balance;
   }
 
+  /* Medida de lectura: 45–75 caracteres, aunque el contenedor sea más ancho. */
+  .measure {
+    max-width: 34em;
+  }
+
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--border)) transparent;
+    scrollbar-color: hsl(var(--ink-400)) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -86,82 +423,16 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: hsl(var(--border));
-    border-radius: 9999px;
+    background-color: hsl(var(--ink-400));
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
   }
 
-  /* Texto suave para cuerpo y datos secundarios */
-  .text-muted {
-    color: hsl(var(--muted-foreground));
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--ink-500));
   }
 
-  /* Bordes muy tenues para separaciones */
-  .border-subtle {
-    border-color: hsl(0 0% 93% / 0.08);
-  }
-
-  /* Superficies fijas de la identidad */
-  .bg-surface {
-    background-color: #1C1C1C;
-  }
-
-  .bg-surface-2 {
-    background-color: #202020;
-  }
-
-  .bg-surface-3 {
-    background-color: #252525;
-  }
-
-  /* Superficie translúcida con blur para paneles flotantes */
-  .glass {
-    background-color: rgba(28, 28, 28, 0.65);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(236, 236, 236, 0.08);
-  }
-
-  .glass-strong {
-    background-color: rgba(21, 21, 21, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(236, 236, 236, 0.1);
-  }
-
-  /* Resplandor sutil con el color de acento */
-  .glow {
-    box-shadow: 0 0 24px -6px rgba(236, 236, 236, 0.15);
-  }
-
-  .glow-sm {
-    box-shadow: 0 0 12px -4px rgba(236, 236, 236, 0.12);
-  }
-
-  /* Gradiente de texto sobre el acento */
-  .text-gradient {
-    background: linear-gradient(135deg, #ececec 0%, #9a9a9a 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* Shimmer para skeletons */
-  .shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0.04) 100%
-    );
-    background-size: 200% 100%;
-  }
-
-  /* Anillo pulsante para alertas prioritarias */
-  .pulse-ring {
-    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
-  /* Utilidad para ocultar scrollbars manteniendo funcionalidad */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -169,8 +440,142 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Panel translúcido. Se reserva a lo que flota sobre contenido en
+     movimiento (cabecera pegajosa, raíl lateral): el desenfoque comunica
+     «hay algo debajo», no es decoración. */
+  .glass {
+    background-color: hsl(var(--ink-100) / 0.72);
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  }
+
+  /* Textura de campo: rayas diagonales muy tenues para las zonas de terreno
+     de juego. Ligada al dominio, no un patrón genérico de puntos. */
+  .pitch-weave {
+    background-image: repeating-linear-gradient(
+      115deg,
+      hsl(0 0% 100% / 0.022) 0px,
+      hsl(0 0% 100% / 0.022) 1px,
+      transparent 1px,
+      transparent 9px
+    );
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(0 0% 100% / 0.07) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+  }
+
+  /* ── Movimiento sin JavaScript ────────────────────────────────────────────
+     Regla dura del proyecto: si una animación se resuelve con CSS, NO se carga
+     JavaScript para ella. Estas utilidades cubren el 80 % de los casos —hover,
+     pulsación, foco, aparición de un elemento— y son la razón por la que
+     Motion, GSAP y Anime.js solo aparecen donde de verdad hacen falta
+     (secuenciación, scroll, estado de React, gestos).
+
+     Todas animan exclusivamente `transform`, `opacity` y `box-shadow`: nada
+     que dispare layout. */
+
+  /* Respuesta a la pulsación. La superficie se hunde 1,5 % —lo justo para
+     sentirse, no para verse— y vuelve con la curva de entrada. */
+  .press {
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .press:active {
+    transform: scale(var(--scale-press));
+  }
+
+  /* Elevación al pasar por encima. Una tarjeta de datos NO crece (scale 1.05
+     desenfoca el texto y desplaza a sus vecinas): sube 2 px y gana sombra, que
+     es lo que comunica «esto se puede pulsar». */
+  .lift {
+    transition:
+      transform var(--dur-base) var(--ease-out),
+      box-shadow var(--dur-base) var(--ease-out),
+      border-color var(--dur-fast) var(--ease-out);
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-3);
+  }
+  .lift:active {
+    transform: translateY(0);
+    box-shadow: var(--elev-1);
+  }
+
+  /* Icono que acompaña a una acción de avance: se adelanta 3 px cuando se
+     apunta al control padre. Comunica dirección, no adorno. `nudge-back` es el
+     mismo gesto al revés, para «volver». Tres píxeles y no diez: es una pista,
+     no un salto. */
+  .nudge-x,
+  .nudge-back {
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .group:hover .nudge-x {
+    transform: translateX(3px);
+  }
+  .group:hover .nudge-back {
+    transform: translateX(-3px);
+  }
+
+  /* Subrayado que crece desde el borde de ataque en lugar de encenderse de
+     golpe: el ojo sigue el trazo hasta la palabra. */
+  .underline-grow {
+    background-image: linear-gradient(hsl(var(--accent)), hsl(var(--accent)));
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    background-size: 0% 1.5px;
+    transition: background-size var(--dur-base) var(--ease-out);
+  }
+  .underline-grow:hover,
+  .underline-grow:focus-visible {
+    background-size: 100% 1.5px;
+  }
+
+  /* Aparición gobernada por el scroll, sin JavaScript y sin observador: el
+     navegador reproduce la entrada cuando el elemento cruza el viewport.
+     Se degrada a «visible» en los navegadores que no lo soportan, así que
+     nunca deja contenido invisible. Reservada a piezas de la PORTADA; dentro
+     del panel el contenido no se revela, se muestra. */
+  @supports (animation-timeline: view()) {
+    .reveal-on-scroll {
+      animation: fade-up var(--dur-slow) var(--ease-out) both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 26%;
+    }
+  }
+
+  /* Indicador de proceso en curso. Marcado como esencial: sobrevive a
+     `prefers-reduced-motion` porque su desaparición dejaría al usuario sin
+     saber si la aplicación sigue trabajando. Bajo esa preferencia se
+     convierte en una pulsación de opacidad, sin desplazamiento ni giro. */
+  .motion-essential {
+    /* marcador semántico; el comportamiento vive en el bloque de más abajo */
+  }
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+   prefers-reduced-motion — red de seguridad global
+   ────────────────────────────────────────────────────────────────────────────
+   Corta de raíz TODA animación y transición declarativa del producto, sin
+   excepción y sin dejar nada a medio camino. Las capas de JavaScript (Motion,
+   GSAP + Lenis, Anime.js, Lottie) NO se enteran de esto por CSS: cada una
+   consulta la misma preferencia a través de `prefersReducedMotion()` en
+   `src/lib/motion.ts` y se desactiva o se reduce por su cuenta.
+
+   Con una excepción deliberada: los indicadores de proceso en curso. Congelar
+   un esqueleto o una ruleta deja al usuario sin saber si la aplicación sigue
+   viva, que es peor que el propio movimiento. Esos elementos —marcados con
+   `.motion-essential`— conservan una pulsación LENTA de opacidad: cambia el
+   brillo, no la posición, que es justo lo que molesta a quien activa esta
+   preferencia (WCAG 2.3.3 habla de movimiento, no de opacidad).
+   ──────────────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -179,5 +584,47 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
+
+  /* La entrada ligada al viewport desaparece por completo: el contenido ya
+     está donde tiene que estar. */
+  .reveal-on-scroll {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* Nada crece, se hunde ni se desplaza al interactuar. El estado sigue
+     comunicándose con color, sombra y borde, que no se tocan. */
+  .press:active,
+  .lift:hover,
+  .lift:active {
+    transform: none !important;
+  }
+  .group:hover .nudge-x,
+  .group:hover .nudge-back {
+    transform: none !important;
+  }
+
+  /* Indicadores esenciales: pulsación de opacidad, sin transformar. */
+  .motion-essential,
+  .motion-essential * {
+    animation: reduced-pulse 2.4s ease-in-out infinite !important;
+    animation-iteration-count: infinite !important;
+    transform: none !important;
+  }
+}
+
+@keyframes reduced-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }

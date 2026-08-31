@@ -37,7 +37,7 @@ function TeamBadge({ team, fallbackId, className }: { team?: TeamCatalogEntry; f
   if (failed || !team?.badgeColor) {
     return (
       <span
-        className={cn('flex shrink-0 items-center justify-center text-[10px] font-bold text-muted-foreground', className)}
+        className={cn('flex shrink-0 items-center justify-center text-[10px] font-bold text-content-tertiary', className)}
         title={name}
       >
         {team ? teamInitials(name) : '?'}
@@ -109,7 +109,7 @@ export default function NextMatchdayCard({ week, matches = [], leagueName }: Nex
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <Trophy className="h-4 w-4 text-content-tertiary" />
               Jornada {week.number ?? week.weekNumber ?? '—'}
             </CardTitle>
             <CardDescription>{leagueName}</CardDescription>
@@ -124,13 +124,13 @@ export default function NextMatchdayCard({ week, matches = [], leagueName }: Nex
       </CardHeader>
       <CardContent className="space-y-3">
         {opening && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-content-tertiary">
             <Calendar className="h-3.5 w-3.5" />
             Abre: {new Date(opening).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
           </div>
         )}
         {closing && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-content-tertiary">
             <Calendar className="h-3.5 w-3.5" />
             Cierra: {new Date(closing).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
           </div>
@@ -138,7 +138,7 @@ export default function NextMatchdayCard({ week, matches = [], leagueName }: Nex
 
         {sortedMatches.length > 0 && (
           <div className="space-y-2 pt-2">
-            <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Partidos destacados</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-content-tertiary">Partidos destacados</div>
             {sortedMatches.slice(0, 3).map((match) => {
               const local = teamsById.get(match.localId);
               const visitor = teamsById.get(match.visitorId);
@@ -147,18 +147,18 @@ export default function NextMatchdayCard({ week, matches = [], leagueName }: Nex
               return (
                 <div
                   key={match.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-surface-2/50 px-3 py-2 text-xs"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.09] bg-surface-raised/50 px-3 py-2 text-xs"
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2">
                     <TeamBadge team={local} fallbackId={match.localId} className="h-5 w-5" />
                     <TeamLabel team={local} fallbackId={match.localId} />
-                    <span className="shrink-0 text-muted-foreground">
+                    <span className="shrink-0 text-content-tertiary">
                       {hasScore ? `${match.localScore}-${match.visitorScore}` : 'vs'}
                     </span>
                     <TeamLabel team={visitor} fallbackId={match.visitorId} />
                     <TeamBadge team={visitor} fallbackId={match.visitorId} className="h-5 w-5" />
                   </div>
-                  <span className="shrink-0 text-muted-foreground">
+                  <span className="shrink-0 text-content-tertiary">
                     {new Date(match.matchDate || match.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                   </span>
                 </div>

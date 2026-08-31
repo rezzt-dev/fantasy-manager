@@ -1,238 +1,435 @@
 ---
 import '../styles/global.css';
-import BenefitCard from '../components/BenefitCard.astro';
-import StepCard from '../components/StepCard.astro';
+import Logo from '../components/brand/Logo';
+import CapabilityCard from '../components/marketing/CapabilityCard.astro';
+import HeroPreview from '../components/marketing/HeroPreview.astro';
 import { Button } from '../components/ui/button';
 import {
-  Trophy,
-  ArrowRight,
-  Users,
-  BarChart3,
-  Zap,
-  Target,
-  ShieldCheck,
-  TrendingUp,
-  Eye,
-  Lock,
-  LineChart,
-  Goal,
+	ArrowRight,
+	ClipboardList,
+	Gavel,
+	Radar,
+	Store,
+	Target,
+	Lock,
+	Swords,
 } from 'lucide-react';
+
+/**
+ * Portada.
+ *
+ * Composición asimétrica a propósito: el texto ocupa 7 columnas y el producto
+ * 5, y el bloque de producto sobresale por debajo del pliegue. Un héroe
+ * centrado y simétrico no dice nada sobre lo que hay dentro; enseñar la
+ * pantalla real, sí.
+ */
+
+const proofPoints = [
+	{ figure: '12', unit: 'secciones', label: 'del panel, todas con datos de tu liga' },
+	{ figure: '5', unit: 'fuentes', label: 'cruzadas: Elo, onces probables, bajas, noticias y valor' },
+	{ figure: '0', unit: 'credenciales', label: 'guardadas: la sesión vive en tu navegador' },
+];
+
+const steps = [
+	{
+		n: '01',
+		title: 'Conecta tu cuenta',
+		body: 'Inicias sesión con tu cuenta de LALIGA FANTASY. El acceso queda en tu sesión del navegador; no se guarda ninguna contraseña en el servidor.',
+	},
+	{
+		n: '02',
+		title: 'El motor lee tu jornada',
+		body: 'Cruza tu plantilla con el Elo de cada rival, los onces probables, las bajas confirmadas, las noticias del día y la tendencia de valor de cada jugador.',
+	},
+	{
+		n: '03',
+		title: 'Decides con el número delante',
+		body: 'Cada consejo llega con su ganancia en puntos esperados sobre tu once actual, no con un «este está en forma». Si el motor falla, lo verás en Acierto del motor.',
+	},
+];
 ---
 
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
-		<meta name="description" content="Centro de comando para managers de LALIGA FANTASY. Recomendaciones, alineación, mercado y clasificación en un solo lugar." />
-		<title>Fantasy Manager — LALIGA FANTASY</title>
+		<meta
+			name="description"
+			content="Panel de gestión para managers de LALIGA FANTASY: alineación óptima, capitán, mercado, clausulazos y predicción de puntos con el número delante."
+		/>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<title>Fantasy Manager — decide tu jornada con datos</title>
 	</head>
-	<body>
-		<div class="relative flex min-h-screen flex-col bg-background text-foreground">
-			<header class="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-background/95 backdrop-blur-md">
-				<div class="container flex h-16 items-center justify-between">
-					<a href="/" class="group flex items-center gap-2.5 text-lg font-semibold tracking-tight text-foreground">
-						<div class="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-2 border border-white/[0.08]">
-							<Trophy className="h-[18px] w-[18px] text-foreground" />
-						</div>
-						<span class="font-display tracking-tight">Fantasy<span class="text-brand-muted">Manager</span></span>
+
+	<body class="bg-canvas text-content">
+		<a href="#contenido" class="skip-link">Saltar al contenido</a>
+
+		<div class="flex min-h-dvh flex-col">
+			<header class="glass sticky top-0 z-header w-full border-b border-white/[0.09]">
+				<div class="container flex h-16 items-center justify-between gap-4">
+					<a href="/" class="rounded-sm" aria-label="Fantasy Manager — inicio">
+						<!-- El símbolo se traza al cargar: es la primera impresión de la
+							marca y ocurre una vez. En el panel el mismo logo NO se anima. -->
+						<Logo size="md" draw />
 					</a>
+
+					<nav aria-label="Secciones" class="hidden items-center gap-1 md:flex">
+						<a
+							href="#capacidades"
+							class="rounded-md px-3 py-2 text-sm font-medium text-content-tertiary transition-colors duration-fast hover:text-content"
+							>Qué hace</a
+						>
+						<a
+							href="#como-funciona"
+							class="rounded-md px-3 py-2 text-sm font-medium text-content-tertiary transition-colors duration-fast hover:text-content"
+							>Cómo funciona</a
+						>
+						<a
+							href="#limites"
+							class="rounded-md px-3 py-2 text-sm font-medium text-content-tertiary transition-colors duration-fast hover:text-content"
+							>Límites</a
+						>
+					</nav>
+
 					<div class="flex items-center gap-2">
-						<a href="/login">
-							<Button variant="ghost" size="sm" className="hidden text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] sm:inline-flex">
-								Entrar
-							</Button>
+						<a href="/login" class="hidden sm:inline-flex">
+							<Button variant="ghost" size="sm">Entrar</Button>
 						</a>
 						<a href="/login">
-							<Button size="sm" className="gap-2 text-sm font-medium">
-								Empezar
-								<ArrowRight className="h-4 w-4" />
-							</Button>
+							<Button variant="accent" size="sm">Conectar cuenta</Button>
 						</a>
 					</div>
 				</div>
 			</header>
 
-			<main class="flex-1">
-				<!-- Hero -->
-				<section class="relative flex min-h-screen flex-col items-center justify-center px-4 pt-24 pb-16 sm:pb-24">
-					<div class="container max-w-4xl text-center">
-						<div class="mb-6 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-surface-2 px-4 py-1.5 text-xs font-medium text-muted-foreground animate-fade-up">
-							<span class="h-1.5 w-1.5 rounded-full bg-brand" />
-							Centro de comando para managers competitivos
-						</div>
+			<main id="contenido" tabindex="-1" class="flex-1">
+				<!-- ── Hero ─────────────────────────────────────────────────────── -->
+				<section class="pitch-weave relative overflow-hidden border-b border-white/[0.09]">
+					<div class="container py-16 sm:py-24 lg:py-32">
+						<div class="grid items-center gap-12 lg:grid-cols-12 lg:gap-16">
+							<!-- Columna de texto: 7 de 12 -->
+							<!--
+								Dos gestos en toda la portada, no seis.
 
-						<h1 class="font-display text-4xl font-semibold tracking-tight text-foreground sm:text-5xl md:text-6xl lg:text-7xl animate-fade-up" style="animation-delay: 0.1s;">
-							Deja de perder puntos por decidir a ciegas
-						</h1>
+								Antes cada pieza del héroe llevaba su propio `animate-fade-up`
+								con un `animation-delay` a mano: el titular, el párrafo, los
+								botones, la tira de datos y el panel, todos con la misma
+								distancia y la misma curva. Eso es la cascada genérica de
+								siempre, y además retrasa medio segundo la aparición del botón
+								principal.
 
-						<p class="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg animate-fade-up" style="animation-delay: 0.2s;">
-							Conecta tu cuenta de LALIGA FANTASY y accede a recomendaciones claras de compra, venta, capitán y cláusulas antes de cada jornada. Todo tu equipo, tu mercado y tus rivales en un único dashboard.
-						</p>
+								Ahora la columna de texto entra como UN bloque —que es como se
+								lee, de arriba abajo y de una vez— y el panel de producto entra
+								aparte y algo después, porque es otra cosa: la prueba de lo que
+								se acaba de prometer. Dos elementos, dos tiempos, ninguna
+								cascada.
+							-->
+							<div class="animate-fade-up lg:col-span-7">
+								<p class="eyebrow">Para managers de LALIGA FANTASY</p>
 
-						<div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row animate-fade-up" style="animation-delay: 0.3s;">
-							<a href="/login">
-								<Button size="lg" className="h-12 gap-2 px-8 text-base font-medium">
-									Conectar mi cuenta
-									<ArrowRight className="h-5 w-5" />
-								</Button>
-							</a>
-							<a href="#beneficios">
-								<Button size="lg" variant="outline" className="h-12 px-8 text-base">
-									Ver qué puedes hacer
-								</Button>
-							</a>
-						</div>
+								<h1
+									class="mt-4 font-display text-4xl font-bold tracking-[-0.04em] text-content sm:text-5xl lg:text-6xl"
+								>
+									Tu jornada, decidida{' '}
+									<span class="text-content-tertiary">antes</span>{' '}
+									del pitido inicial
+								</h1>
 
-						<div class="mx-auto mt-14 flex max-w-xl flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground animate-fade-up" style="animation-delay: 0.4s;">
-							<div class="flex items-center gap-2">
-								<ShieldCheck className="h-4 w-4" />
-								<span>Sesión privada, no compartes credenciales</span>
-							</div>
-							<div class="flex items-center gap-2">
-								<LineChart className="h-4 w-4" />
-								<span>Datos de tu liga en tiempo real</span>
-							</div>
-							<div class="flex items-center gap-2">
-								<Zap className="h-4 w-4" />
-								<span>Recomendaciones antes de cada jornada</span>
-							</div>
-						</div>
-					</div>
-				</section>
-
-				<!-- Problem / agnostic -->
-				<section class="border-y border-white/[0.04] bg-surface px-4 py-16 sm:py-20">
-					<div class="container max-w-4xl text-center">
-						<h2 class="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-							Ganar una liga no es solo instinto
-						</h2>
-						<p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-							Cada jornada tomas decisiones que suman o restan puntos. Sin los datos organizados, es fácil dejar titulares en el banquillo, perder cláusulas clave o llegar tarde a las gangas del mercado.
-						</p>
-					</div>
-				</section>
-
-				<!-- Benefits -->
-				<section id="beneficios" class="relative overflow-hidden px-4 py-16 sm:py-20">
-					<div class="absolute inset-0 pointer-events-none opacity-[0.02]" style="background-image: radial-gradient(#ECECEC 1px, transparent 1px); background-size: 28px 28px;" />
-					<div class="container relative z-10 max-w-5xl">
-						<div class="mb-10 text-center sm:mb-14">
-							<h2 class="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-								Todo lo que necesitas para liderar tu liga
-							</h2>
-							<p class="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-								Una herramienta simple, sin ruido, pensada para tomar mejores decisiones cada semana.
-							</p>
-						</div>
-
-						<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							<BenefitCard
-								icon={BarChart3}
-								title="Dashboard unificado"
-								description="Tu plantilla, alineación, mercado, clasificación y estadísticas en un solo lugar. Sin saltar entre pantallas."
-							/>
-							<BenefitCard
-								icon={Target}
-								title="Recomendaciones de acción"
-								description="Sabe qué jugadores comprar, vender, blindar o cambiar en cada jornada, con el contexto de tu equipo."
-							/>
-							<BenefitCard
-								icon={Goal}
-								title="Alineación visual"
-								description="Ve tu once titular sobre el campo, detecta lesionados y dudosos, y encuentra el mejor sustituto en el banquillo."
-							/>
-							<BenefitCard
-								icon={Eye}
-								title="Control del mercado"
-								description="Descubre oportunidades de precio, jugadores en venta y pujas activas antes de que lo haga tu rival."
-							/>
-							<BenefitCard
-								icon={TrendingUp}
-								title="Comparación con rivales"
-								description="Analiza el valor de plantilla, distribución por posiciones y rendimiento de cada manager de tu liga."
-							/>
-							<BenefitCard
-								icon={Lock}
-								title="Privacidad total"
-								description="Tus datos se mantienen en tu sesión local. No almacenamos ni vendemos información de tu cuenta."
-							/>
-						</div>
-					</div>
-				</section>
-
-				<!-- How it works -->
-				<section id="como-funciona" class="border-y border-white/[0.04] bg-surface px-4 py-16 sm:py-20">
-					<div class="container max-w-5xl">
-						<div class="mb-10 text-center sm:mb-14">
-							<h2 class="font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl md:text-4xl">
-								De la duda a la decisión en tres pasos
-							</h2>
-							<p class="mx-auto mt-3 max-w-xl text-sm text-muted-foreground sm:text-base">
-								Sin configuraciones complejas. Conectas, revisas y actúas.
-							</p>
-						</div>
-
-						<div class="grid gap-4 sm:grid-cols-3">
-							<StepCard
-								step="01"
-								icon={Users}
-								title="Conecta tu cuenta"
-								description="Inicia sesión con tu cuenta de LALIGA FANTASY. El acceso se guarda en tu sesión local, de forma segura."
-							/>
-							<StepCard
-								step="02"
-								icon={BarChart3}
-								title="Revisa tu liga"
-								description="Explora tu plantilla, alineación, mercado y clasificación con datos actualizados de cada jornada."
-							/>
-							<StepCard
-								step="03"
-								icon={Zap}
-								title="Actúa con criterio"
-								description="Aplica las recomendaciones de compra, venta, capitán y cláusulas antes del cierre de la jornada."
-							/>
-						</div>
-					</div>
-				</section>
-
-				<!-- Final CTA -->
-				<section class="px-4 py-16 sm:py-24">
-					<div class="container max-w-4xl">
-						<div class="relative overflow-hidden rounded-3xl border border-white/[0.08] bg-surface p-10 text-center sm:p-14">
-							<div class="relative z-10">
-								<h2 class="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl md:text-5xl">
-									Empieza a gestionar como un profesional
-								</h2>
-								<p class="mx-auto mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-									Conecta tu cuenta ahora y accede a tu centro de comando. La próxima jornada empieza antes del pitido inicial.
+								<p class="measure mt-6 text-lg leading-relaxed text-content-secondary">
+									Fantasy Manager calcula los puntos esperados de cada jugador de tu plantilla,
+									resuelve tu mejor once con capitán incluido y te dice qué fichar, qué vender y qué
+									cláusula subir. Con la cifra delante, no con corazonadas.
 								</p>
-								<a href="/login" class="mt-8 inline-flex max-w-full">
-									<Button size="lg" className="h-auto min-h-12 gap-2 whitespace-normal px-6 py-3 text-center text-sm font-medium sm:text-base">
-										Conectar mi cuenta de LALIGA FANTASY
-										<ArrowRight className="h-5 w-5 shrink-0" />
-									</Button>
-								</a>
+
+								<div class="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
+									<a href="/login" class="group sm:w-auto">
+										<Button variant="accent" size="lg" className="w-full gap-2 sm:w-auto">
+											Conectar mi cuenta
+											<!-- La flecha se adelanta 3 px al apuntar al botón: dice
+												hacia dónde lleva. CSS puro, sin JavaScript. -->
+											<ArrowRight className="nudge-x" aria-hidden="true" />
+										</Button>
+									</a>
+									<a href="#como-funciona" class="sm:w-auto">
+										<Button variant="outline" size="lg" className="w-full sm:w-auto">
+											Ver cómo funciona
+										</Button>
+									</a>
+								</div>
+
+								<!-- Datos de apoyo: no son adornos, son las tres objeciones habituales -->
+								<!-- Sin animación propia: son las tres objeciones que el
+									lector busca activamente. Que estén ya ahí vale más que
+									verlas llegar. -->
+								<dl
+									class="mt-12 grid grid-cols-1 gap-6 border-t border-white/[0.09] pt-8 sm:grid-cols-3"
+								>
+									{
+										proofPoints.map(({ figure, unit, label }) => (
+											<div>
+												<dt class="sr-only">{label}</dt>
+												<dd>
+													<span class="numeral text-3xl font-bold tracking-[-0.03em] text-content">
+														{figure}
+													</span>
+													<span class="ml-1.5 text-sm font-medium text-content-tertiary">{unit}</span>
+													<p class="mt-1.5 text-sm leading-relaxed text-content-tertiary">{label}</p>
+												</dd>
+											</div>
+										))
+									}
+								</dl>
+							</div>
+
+							<!-- Columna de producto: 5 de 12 -->
+							<!-- El panel entra después del texto y desde algo más lejos:
+								es la prueba, y llega cuando ya se ha hecho la promesa. -->
+							<div
+								class="animate-fade-up lg:col-span-5"
+								style="animation-delay: 140ms; animation-duration: var(--dur-page)"
+							>
+								<HeroPreview />
 							</div>
 						</div>
+					</div>
+				</section>
+
+				<!-- ── Capacidades ──────────────────────────────────────────────── -->
+				<section id="capacidades" class="container scroll-mt-20 py-16 sm:py-24">
+					<div class="max-w-2xl">
+						<p class="eyebrow">Qué hace</p>
+						<h2 class="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+							Doce secciones, una sola pregunta: qué muevo esta jornada
+						</h2>
+						<p class="measure mt-4 text-base leading-relaxed text-content-tertiary">
+							No es un visor de estadísticas. Cada pantalla termina en una acción concreta con su
+							coste y su ganancia estimada.
+						</p>
+					</div>
+
+					<!-- Rejilla deliberadamente desigual: la pieza principal ocupa el doble -->
+					<div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+						<CapabilityCard
+							icon={Target}
+							title="Puntos esperados por jugador"
+							description="Un modelo por componentes estima cuánto va a puntuar cada futbolista: minutos probables, dificultad del rival por Elo, forma con decaimiento y regresión a la media por posición y nivel."
+							detail="La estimación se guarda cada jornada y se liquida contra el resultado real. El error del modelo frente al baseline está publicado dentro de la app."
+							span="wide"
+							accent
+						/>
+						<CapabilityCard
+							icon={ClipboardList}
+							title="Once óptimo y capitán"
+							description="Resuelve la mejor alineación posible con tu plantilla y elige el capitán co-optimizado, contando ya con que sus puntos se doblan."
+						/>
+						<CapabilityCard
+							icon={Gavel}
+							title="Clausulazos"
+							description="Lista solo los jugadores de tu liga que puedes clausular hoy y ordena por lo que mejorarían tu once, no por lo caros que son."
+							detail="Incluye qué vender para llegar a la cláusula, contando que cada venta aporta el 80 % de su valor al presupuesto operativo."
+						/>
+						<CapabilityCard
+							icon={Store}
+							title="Mercado con contexto"
+							description="Precio, tendencia de valor y titularidad de cada jugador en venta, cruzados con los huecos reales de tu plantilla."
+						/>
+						<CapabilityCard
+							icon={Radar}
+							title="Predicción por equipo"
+							description="Clasificación de la jornada por puntos esperados de cada manager de tu liga, con su once inferido y su entrenador estimado."
+						/>
+						<CapabilityCard
+							icon={Swords}
+							title="Partidos en vivo"
+							description="Marcador, minuto y eventos de los partidos donde juegan tus futbolistas, ordenados por cuántos de los tuyos están sobre el césped."
+						/>
+						<CapabilityCard
+							icon={Lock}
+							title="Sin credenciales guardadas"
+							description="El acceso vive en la sesión de tu navegador. Ni la contraseña ni los tokens se almacenan en una base de datos nuestra."
+						/>
+					</div>
+				</section>
+
+				<!-- ── Cómo funciona ────────────────────────────────────────────── -->
+				<section
+					id="como-funciona"
+					class="scroll-mt-20 border-y border-white/[0.09] bg-surface-sunken"
+				>
+					<div class="container py-16 sm:py-24">
+						<div class="grid gap-12 lg:grid-cols-12 lg:gap-16">
+							<div class="lg:col-span-4">
+								<p class="eyebrow">Cómo funciona</p>
+								<h2 class="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+									Tres pasos y ninguna configuración
+								</h2>
+								<p class="measure mt-4 text-base leading-relaxed text-content-tertiary">
+									No hay que rellenar nada ni enseñarle tu equipo al programa: lo lee de tu liga.
+								</p>
+							</div>
+
+							<!--
+								El ÚNICO momento de la web ligado al scroll.
+
+								Los tres pasos son una secuencia con orden y con recorrido, así que el
+								raíl que los une se dibuja a medida que el lector baja: la barra de
+								progreso del propio texto. Es una línea de tiempo encadenada al scroll
+								(`scrub`) con cuatro elementos que dependen unos de otros, que es
+								exactamente lo que GSAP + ScrollTrigger hace bien y lo que ni CSS ni
+								Motion resuelven con soltura.
+
+								Es deliberadamente el único: si cada sección de la portada tuviera su
+								secuencia de scroll, ninguna significaría nada.
+
+								Sin JavaScript —o con movimiento reducido— el raíl aparece completo y
+								los pasos ya están en su color final: el contenido nunca depende de la
+								animación para poder leerse.
+							-->
+							<ol class="relative lg:col-span-8" data-steps>
+								<!-- La guía apagada y, encima, el trazo que la recorre. -->
+								<span
+									class="pointer-events-none absolute bottom-0 left-[4px] top-[36px] w-px bg-white/[0.09]"
+									aria-hidden="true"></span>
+								<span
+									class="pointer-events-none absolute bottom-0 left-[4px] top-[36px] w-px origin-top bg-accent"
+									data-steps-progress
+									aria-hidden="true"></span>
+
+								{
+									steps.map(({ n, title, body }, i) => (
+										<li
+											class:list={[
+												'flex items-start gap-4 py-6',
+												i > 0 ? 'border-t border-white/[0.09]' : '',
+											]}
+											data-step
+										>
+											<span class="flex w-[10px] shrink-0 justify-center pt-[5px]" aria-hidden="true">
+												<span
+													class="h-2.5 w-2.5 rounded-full border-2 border-accent bg-accent transition-colors duration-base ease-out"
+													data-step-dot
+												/>
+											</span>
+											<span
+												class="numeral w-8 shrink-0 text-sm font-bold tracking-[0.1em] text-accent transition-colors duration-base ease-out"
+												data-step-number
+												aria-hidden="true"
+											>
+												{n}
+											</span>
+											<div>
+												<h3 class="font-display text-lg font-semibold tracking-[-0.02em] text-content">
+													{title}
+												</h3>
+												<p class="measure mt-2 text-sm leading-relaxed text-content-tertiary">
+													{body}
+												</p>
+											</div>
+										</li>
+									))
+								}
+							</ol>
+						</div>
+					</div>
+				</section>
+
+				<!-- ── Límites: decir la verdad vende más que prometer de más ────── -->
+				<section id="limites" class="container scroll-mt-20 py-16 sm:py-24">
+					<div class="grid gap-10 lg:grid-cols-12 lg:gap-16">
+						<div class="lg:col-span-4">
+							<p class="eyebrow">Lo que no hace</p>
+							<h2 class="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] sm:text-4xl">
+								Los límites, por delante
+							</h2>
+						</div>
+
+						<ul class="space-y-4 lg:col-span-8">
+							<li class="rounded-lg border border-white/[0.09] bg-surface p-5">
+								<h3 class="font-display text-base font-semibold text-content">
+									No ve la alineación de tus rivales
+								</h3>
+								<p class="measure mt-1.5 text-sm leading-relaxed text-content-tertiary">
+									La API oficial no la expone. Cuando hace falta, el once rival se infiere desde su
+									plantilla y la app lo indica como estimación.
+								</p>
+							</li>
+							<li class="rounded-lg border border-white/[0.09] bg-surface p-5">
+								<h3 class="font-display text-base font-semibold text-content">
+									No adivina lesiones de última hora
+								</h3>
+								<p class="measure mt-1.5 text-sm leading-relaxed text-content-tertiary">
+									Lee onces probables y noticias con hora de publicación, y sustituye la estimación
+									por la alineación confirmada cuando aparece, aproximadamente una hora antes del
+									partido.
+								</p>
+							</li>
+							<li class="rounded-lg border border-white/[0.09] bg-surface p-5">
+								<h3 class="font-display text-base font-semibold text-content">
+									No es una aplicación oficial de LALIGA
+								</h3>
+								<p class="measure mt-1.5 text-sm leading-relaxed text-content-tertiary">
+									Es una herramienta personal que consulta la misma API que la app oficial con tu
+									propia sesión. Sin relación con LALIGA ni con LFP.
+								</p>
+							</li>
+						</ul>
+					</div>
+				</section>
+
+				<!-- ── CTA final ────────────────────────────────────────────────── -->
+				<!--
+					El único elemento de la portada que se revela al llegar a él, y es
+					uno solo, no una rejilla: el cierre tiene que sentirse como una
+					llegada después de haber leído los límites. Se hace con
+					`animation-timeline: view()` —CSS puro, sin observador ni
+					JavaScript— y se desactiva por completo con movimiento reducido.
+				-->
+				<section class="container pb-24">
+					<div
+						class="pitch-weave reveal-on-scroll flex flex-col items-start gap-6 rounded-lg border border-white/[0.14] bg-surface p-8 sm:p-12 lg:flex-row lg:items-center lg:justify-between"
+					>
+						<div>
+							<h2 class="font-display text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
+								La próxima jornada ya está en marcha
+							</h2>
+							<p class="measure mt-3 text-base leading-relaxed text-content-tertiary">
+								Conecta tu cuenta y mira tu once óptimo antes de que cierre el mercado.
+							</p>
+						</div>
+						<a href="/login" class="group w-full shrink-0 lg:w-auto">
+							<Button variant="accent" size="lg" className="w-full gap-2 lg:w-auto">
+								Conectar mi cuenta
+								<ArrowRight className="nudge-x" aria-hidden="true" />
+							</Button>
+						</a>
 					</div>
 				</section>
 			</main>
 
-			<footer class="border-t border-white/[0.04] bg-background px-4 py-8">
-				<div class="container flex flex-col items-center justify-between gap-4 sm:flex-row">
-					<a href="/" class="flex items-center gap-2 text-base font-semibold tracking-tight text-foreground">
-						<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-2 border border-white/[0.08]">
-							<Trophy className="h-4 w-4 text-foreground" />
-						</div>
-						<span class="font-display tracking-tight">Fantasy<span class="text-brand-muted">Manager</span></span>
-					</a>
-					<div class="text-xs text-muted-foreground">
-						© {new Date().getFullYear()} Fantasy Manager · Uso personal
+			<footer class="border-t border-white/[0.09]">
+				<div
+					class="container flex flex-col items-start justify-between gap-6 py-8 sm:flex-row sm:items-center"
+				>
+					<Logo size="sm" />
+					<div class="flex flex-col gap-1 text-xs text-content-tertiary sm:text-right">
+						<p>© {new Date().getFullYear()} Fantasy Manager · Proyecto personal de uso libre</p>
+						<p>Sin vinculación con LALIGA, LFP ni con la aplicación oficial LALIGA FANTASY.</p>
 					</div>
 				</div>
 			</footer>
 		</div>
+
+		<!--
+			Todo el JavaScript de animación de la portada, en un solo módulo y
+			cargado en diferido. Astro lo empaqueta y lo sirve con `type="module"`,
+			así que ya no bloquea la pintada; dentro, el propio módulo espera al
+			primer hueco de inactividad antes de tocar nada.
+		-->
+		<script>
+			import '../scripts/landing-motion';
+		</script>
 	</body>
 </html>

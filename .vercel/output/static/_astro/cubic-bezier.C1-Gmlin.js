@@ -1,0 +1,1 @@
+import{n as e}from"./helpers.BAsGXqwM.js";import{t}from"./none.DOc6skV4.js";var n=(e,t,n)=>(((1-3*n+3*t)*e+(3*n-6*t))*e+3*t)*e,r=(t,r,i)=>{let a=0,o=1,s,c,l=0;do c=a+(o-a)/2,s=n(c,r,i)-t,s>0?o=c:a=c;while(e(s)>1e-7&&++l<100);return c},i=(e=.5,i=0,a=.5,o=1)=>e===i&&a===o?t:t=>t===0||t===1?t:n(r(t,e,a),i,o);export{i as cubicBezier};

@@ -39,18 +39,18 @@ function MetricCard({
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.08] bg-surface-2 text-foreground">
+        <div className="flex items-center gap-2 text-content-tertiary">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.09] bg-surface-raised text-content">
             {icon}
           </span>
           <span className="text-xs font-medium uppercase tracking-wider">{title}</span>
         </div>
         <div className="mt-3 flex items-end justify-between">
           <div>
-            <div className="text-2xl font-bold font-display tracking-tight text-foreground">
+            <div className="text-2xl font-bold font-display tracking-tight text-content">
               {typeof value === 'number' ? <NumberFlow value={value} format={{ maximumFractionDigits: 2 }} /> : value}
             </div>
-            <div className="mt-0.5 text-xs text-muted-foreground">{description}</div>
+            <div className="mt-0.5 text-xs text-content-tertiary">{description}</div>
           </div>
           {trend && <Badge variant="secondary" className="text-[10px]">{trend}</Badge>}
         </div>
@@ -67,18 +67,25 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
 
   if (isLoading) {
     return (
-      <div className="space-y-6 pb-20 lg:pb-0">
+      <div className="space-y-6">
         <SectionHeader title="Track record" description="Rendimiento real del motor por jornada" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-xl" />
+            <Skeleton key={i} className="h-28 rounded-lg" />
           ))}
         </div>
       </div>
     );
   }
 
-  if (error) return <ErrorState title="Error cargando el track record" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido leer el histórico del motor"
+        description="El acierto del motor se guarda jornada a jornada en disco. Si el fichero aún no existe para esta liga, aparecerá tras la primera jornada liquidada."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
   if (!data) return null;
 
   const { summary, walkForward, calibration, notes } = data;
@@ -91,17 +98,19 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
   const hasSettled = summary.weeks.some((w) => w.settled > 0);
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Track record"
-        description={`Rendimiento real del motor en ${league.name} · jornada actual ${data.week}`}
+        as="h1"
+        eyebrow={`Acierto del motor · jornada ${data.week}`}
+        title="Cuánto acierta de verdad"
+        description="Cada predicción se guarda y se compara con los puntos reales de la jornada. Si el modelo falla más que el baseline, aquí se ve."
       />
 
       {notes.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-caution/25 bg-caution-quiet">
           <CardContent className="pt-4">
             {notes.map((note) => (
-              <p key={note} className="text-sm text-amber-200/90">{note}</p>
+              <p key={note} className="text-sm text-caution-text">{note}</p>
             ))}
           </CardContent>
         </Card>
@@ -170,12 +179,16 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
         </CardHeader>
         <CardContent>
           {summary.weeks.length === 0 ? (
-            <EmptyState compact title="Sin jornadas registradas" description="Aún no hay datos de track record para esta liga." />
+            <EmptyState
+              compact
+              title="Aún no hay jornadas liquidadas"
+              description="El acierto del motor se mide comparando su predicción con los puntos reales. La primera medición llega tras el cierre de la próxima jornada."
+            />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-left text-xs text-muted-foreground">
+                  <tr className="border-b border-white/[0.09] text-left text-xs text-content-tertiary">
                     <th className="py-2 pr-4 font-medium">Jornada</th>
                     <th className="py-2 pr-4 font-medium">Predicciones</th>
                     <th className="py-2 pr-4 font-medium">MAE modelo</th>
@@ -187,9 +200,9 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
                 </thead>
                 <tbody>
                   {summary.weeks.map((week) => (
-                    <tr key={week.week} className="border-b border-white/[0.04] last:border-0">
+                    <tr key={week.week} className="border-b border-white/[0.09] last:border-0">
                       <td className="py-2 pr-4 font-medium">J{week.week}</td>
-                      <td className="py-2 pr-4 text-muted-foreground">{week.settled}/{week.predictions}</td>
+                      <td className="py-2 pr-4 text-content-tertiary">{week.settled}/{week.predictions}</td>
                       <td className="py-2 pr-4">{formatMetric(week.maeXp)}</td>
                       <td className="py-2 pr-4">{formatMetric(week.maeLegacy)}</td>
                       <td className="py-2 pr-4">{formatMetric(week.spearmanXp)}</td>
@@ -213,7 +226,7 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
                 MAE baseline {walkForward.maeLegacy} · MAE decaimiento {walkForward.maeV1} · {walkForward.samples} muestras
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">{walkForward?.note ?? 'Sin datos todavía.'}</p>
+              <p className="text-sm text-content-tertiary">{walkForward?.note ?? 'Sin datos todavía.'}</p>
             )}
           </AccordionContent>
         </AccordionItem>
@@ -226,7 +239,7 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
                 {calibration.best.mae} ({calibration.samples} muestras)
               </p>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-content-tertiary">
                 {calibration?.note ?? 'Se activará cuando haya suficientes jornadas liquidadas (mínimo 30 muestras jugador-jornada).'}
               </p>
             )}

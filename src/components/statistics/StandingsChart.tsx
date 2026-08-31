@@ -19,33 +19,33 @@ export default function StandingsChart({ standing }: StandingsChartProps) {
       <div className="h-[280px] sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 16, bottom: 32, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--ink-400))" />
             <XAxis
               dataKey="name"
               angle={-45}
               textAnchor="end"
               interval={0}
-              tick={{ fontSize: 11, fill: '#9A9A9A' }}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-              tickLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }}
+              axisLine={{ stroke: 'hsl(var(--ink-400))' }}
+              tickLine={{ stroke: 'hsl(var(--ink-400))' }}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#9A9A9A' }}
-              axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-              tickLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+              tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }}
+              axisLine={{ stroke: 'hsl(var(--ink-400))' }}
+              tickLine={{ stroke: 'hsl(var(--ink-400))' }}
             />
             <Tooltip
               formatter={(value: number) => [value.toLocaleString('es-ES'), 'Puntos']}
               contentStyle={{
-                backgroundColor: '#1C1C1C',
-                border: '1px solid rgba(255,255,255,0.08)',
+                backgroundColor: 'hsl(var(--surface-overlay))',
+                border: '1px solid hsl(var(--ink-400))',
                 borderRadius: 8,
-                color: '#ECECEC',
+                color: 'hsl(var(--text-primary))',
               }}
-              itemStyle={{ color: '#ECECEC' }}
-              labelStyle={{ color: '#9A9A9A' }}
+              itemStyle={{ color: 'hsl(var(--text-primary))' }}
+              labelStyle={{ color: 'hsl(var(--text-tertiary))' }}
             />
-            <Bar dataKey="puntos" fill="#ECECEC" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="puntos" fill="hsl(var(--ink-800))" radius={[3, 3, 0, 0]} maxBarSize={44} />
           </BarChart>
         </ResponsiveContainer>
       </div>

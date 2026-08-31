@@ -1,5 +1,6 @@
 import type { StandingEntry } from '../../types/fantasy';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
+import { chartTheme, axisProps } from '../../lib/chart-theme';
 
 interface TeamValueChartProps {
   standing: StandingEntry[];
@@ -19,39 +20,40 @@ export default function TeamValueChart({ standing, ownTeamId }: TeamValueChartPr
     <div className="h-[280px] sm:h-80">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 16, bottom: 32, left: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--ink-400))" />
           <XAxis
             dataKey="name"
             angle={-45}
             textAnchor="end"
             interval={0}
-            tick={{ fontSize: 11, fill: '#9A9A9A' }}
-            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-            tickLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+            tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }}
+            axisLine={{ stroke: 'hsl(var(--ink-400))' }}
+            tickLine={{ stroke: 'hsl(var(--ink-400))' }}
           />
           <YAxis
             tickFormatter={(v) => `${(v / 1_000_000).toFixed(0)}M`}
-            tick={{ fontSize: 11, fill: '#9A9A9A' }}
-            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-            tickLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+            tick={{ fontSize: 11, fill: 'hsl(var(--text-tertiary))' }}
+            axisLine={{ stroke: 'hsl(var(--ink-400))' }}
+            tickLine={{ stroke: 'hsl(var(--ink-400))' }}
           />
           <Tooltip
             formatter={(value: number) => [
               new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value),
               'Valor de plantilla',
             ]}
-            contentStyle={{
-              backgroundColor: '#1C1C1C',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 8,
-              color: '#ECECEC',
-            }}
-            itemStyle={{ color: '#ECECEC' }}
-            labelStyle={{ color: '#9A9A9A' }}
+            contentStyle={chartTheme.tooltip.contentStyle}
+            itemStyle={chartTheme.tooltip.itemStyle}
+            labelStyle={chartTheme.tooltip.labelStyle}
+            cursor={{ fill: 'hsl(var(--ink-300) / 0.5)' }}
           />
           <Bar dataKey="valor" radius={[4, 4, 0, 0]}>
             {data.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.esPropio ? '#ECECEC' : '#6E6E6E'} />
+              // Tu equipo va en el acento; el resto en neutro. La barra propia
+              // no necesita etiqueta: es la única con color.
+              <Cell
+                key={`cell-${index}`}
+                fill={entry.esPropio ? chartTheme.semantic.own : chartTheme.semantic.neutral}
+              />
             ))}
           </Bar>
         </BarChart>

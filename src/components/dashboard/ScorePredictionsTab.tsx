@@ -27,14 +27,14 @@ interface ScorePredictionsTabProps {
 
 function ScoreSkeleton() {
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader title="Puntuación" description="Predicción de puntos por equipo de la jornada" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+          <Skeleton key={i} className="h-28 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-96 rounded-xl" />
+      <Skeleton className="h-96 rounded-lg" />
     </div>
   );
 }
@@ -63,35 +63,35 @@ function dataQualityLabel(level: 'high' | 'medium' | 'low') {
 
 function PlayerScoreRow({ entry, showCaptain }: { entry: PredictedPlayerScore; showCaptain?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-2 text-sm border-b border-white/[0.04] last:border-0">
+    <div className="flex items-center justify-between gap-3 py-2 text-sm border-b border-white/[0.09] last:border-0">
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={cn(
             'flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold',
-            entry.isCaptain && 'bg-amber-500/20 text-amber-300',
-            entry.isCoach && 'bg-indigo-500/20 text-indigo-300',
-            !entry.isCaptain && !entry.isCoach && 'bg-surface-2 text-muted-foreground',
+            entry.isCaptain && 'bg-caution-quiet text-caution-text',
+            entry.isCoach && 'bg-info-quiet text-info-text',
+            !entry.isCaptain && !entry.isCoach && 'bg-surface-raised text-content-tertiary',
           )}
         >
           {entry.isCaptain ? 'C' : entry.isCoach ? 'E' : entry.player.position.slice(0, 2).toUpperCase()}
         </div>
         <div className="min-w-0">
-          <div className="truncate font-medium text-foreground">
+          <div className="truncate font-medium text-content">
             {entry.player.nickname}
             {entry.isCaptain && showCaptain && (
-              <span className="ml-2 text-[10px] uppercase tracking-wider text-amber-400">Capitán</span>
+              <span className="ml-2 text-[10px] uppercase tracking-wider text-caution-text">Capitán</span>
             )}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-content-tertiary">
             {entry.player.team?.name} · {entry.expectedMinutes !== null ? `${entry.expectedMinutes} min` : 'minutos estimados'}
           </div>
         </div>
       </div>
       <div className="text-right shrink-0">
-        <div className="font-semibold text-foreground">
+        <div className="font-semibold text-content">
           <NumberFlow value={entry.expectedPoints} format={{ maximumFractionDigits: 1 }} />
         </div>
-        <div className="text-[10px] text-muted-foreground">{entry.source}</div>
+        <div className="text-[10px] text-content-tertiary">{entry.source}</div>
       </div>
     </div>
   );
@@ -102,34 +102,34 @@ function TeamDetail({ prediction }: { prediction: TeamScorePrediction }) {
   return (
     <div className="space-y-4 pt-2">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-surface-2/40">
+        <Card className="bg-surface-raised/40">
           <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground">Titulares</div>
-            <div className="text-xl font-semibold text-foreground">
+            <div className="text-xs text-content-tertiary">Titulares</div>
+            <div className="text-xl font-semibold text-content">
               <NumberFlow value={lineup.fieldExpected} format={{ maximumFractionDigits: 1 }} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-surface-2/40">
+        <Card className="bg-surface-raised/40">
           <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground">Capitán</div>
-            <div className="text-xl font-semibold text-foreground">
+            <div className="text-xs text-content-tertiary">Capitán</div>
+            <div className="text-xl font-semibold text-content">
               <NumberFlow value={lineup.captainBonus} format={{ maximumFractionDigits: 1 }} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-surface-2/40">
+        <Card className="bg-surface-raised/40">
           <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground">Entrenador</div>
-            <div className="text-xl font-semibold text-foreground">
+            <div className="text-xs text-content-tertiary">Entrenador</div>
+            <div className="text-xl font-semibold text-content">
               <NumberFlow value={lineup.coachPoints} format={{ maximumFractionDigits: 1 }} />
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-surface-2/40">
+        <Card className="bg-surface-raised/40">
           <CardContent className="p-4">
-            <div className="text-xs text-muted-foreground">Banquillo (potencial)</div>
-            <div className="text-xl font-semibold text-foreground">
+            <div className="text-xs text-content-tertiary">Banquillo (potencial)</div>
+            <div className="text-xl font-semibold text-content">
               <NumberFlow value={lineup.benchExpected} format={{ maximumFractionDigits: 1 }} />
             </div>
           </CardContent>
@@ -157,7 +157,7 @@ function TeamDetail({ prediction }: { prediction: TeamScorePrediction }) {
               {lineup.bench.length > 0 ? (
                 lineup.bench.map((b) => <PlayerScoreRow key={b.player.id} entry={b} />)
               ) : (
-                <p className="py-4 text-sm text-muted-foreground">Sin suplentes disponibles.</p>
+                <p className="py-4 text-sm text-content-tertiary">Sin suplentes disponibles.</p>
               )}
             </CardContent>
           </Card>
@@ -169,7 +169,7 @@ function TeamDetail({ prediction }: { prediction: TeamScorePrediction }) {
               </CardHeader>
               <CardContent className="pt-0">
                 <PlayerScoreRow entry={lineup.coach} />
-                <div className="mt-2 text-xs text-muted-foreground">
+                <div className="mt-2 text-xs text-content-tertiary">
                   {prediction.coachPrediction.notes.join(' · ')}
                 </div>
               </CardContent>
@@ -218,7 +218,7 @@ function HistoryChart({ history }: { history: Awaited<ReturnType<typeof fantasyA
             return (
               <g key={week}>
                 <rect x={x} y={y} width={barWidth} height={h} className="fill-foreground/70" rx={4} />
-                <text x={x + barWidth / 2} y={chartHeight + 36} textAnchor="middle" className="fill-muted-foreground text-[10px]">
+                <text x={x + barWidth / 2} y={chartHeight + 36} textAnchor="middle" className="fill-content-tertiary text-[10px]">
                   J{week}
                 </text>
                 <text x={x + barWidth / 2} y={y - 4} textAnchor="middle" className="fill-foreground text-[10px]">
@@ -241,14 +241,21 @@ export default function ScorePredictionsTab({ league }: ScorePredictionsTabProps
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   if (isLoading) return <ScoreSkeleton />;
-  if (error) return <ErrorState title="Error cargando predicciones" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido calcular la predicción de la jornada"
+        description="La predicción necesita el once probable de cada equipo de tu liga y el Elo de los rivales. Reintenta en unos segundos."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
   if (!data) return null;
 
   const { predictions, notes, week, history } = data;
 
   if (predictions.length === 0) {
     return (
-      <div className="space-y-6 pb-20 lg:pb-0">
+      <div className="space-y-6">
         <SectionHeader title="Puntuación" description={`Predicción de puntos por equipo · Jornada ${week} · ${league.name}`} />
         <EmptyState
           title="Sin predicciones disponibles"
@@ -268,7 +275,7 @@ export default function ScorePredictionsTab({ league }: ScorePredictionsTabProps
       header: 'Equipo',
       cell: ({ row }) => (
         <div className="flex items-center gap-2">
-          <span className="font-medium text-foreground">{row.original.managerName}</span>
+          <span className="font-medium text-content">{row.original.managerName}</span>
           {row.original.predictedLineup.inferred && (
             <Badge variant="warning" className="text-[10px]">Inferido</Badge>
           )}
@@ -279,7 +286,7 @@ export default function ScorePredictionsTab({ league }: ScorePredictionsTabProps
       accessorKey: 'predictedLineup.totalExpected',
       header: 'xP total',
       cell: ({ row }) => (
-        <span className="font-semibold text-foreground">
+        <span className="font-semibold text-content">
           <NumberFlow value={row.original.predictedLineup.totalExpected} format={{ maximumFractionDigits: 1 }} />
         </span>
       ),
@@ -317,17 +324,19 @@ export default function ScorePredictionsTab({ league }: ScorePredictionsTabProps
   };
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Puntuación"
-        description={`Predicción de puntos por equipo · Jornada ${week} · ${league.name}`}
+        as="h1"
+        eyebrow={`Predicción · jornada ${week}`}
+        title="Cuánto va a puntuar cada manager"
+        description={`Puntos esperados de cada equipo de ${league.name} con su once —real el tuyo, inferido el de tus rivales— y su capitán.`}
       />
 
       {notes.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-caution/25 bg-caution-quiet">
           <CardContent className="pt-4">
             {notes.map((note) => (
-              <p key={note} className="flex items-start gap-2 text-sm text-amber-200/90">
+              <p key={note} className="flex items-start gap-2 text-sm text-caution-text">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 {note}
               </p>
@@ -379,9 +388,9 @@ export default function ScorePredictionsTab({ league }: ScorePredictionsTabProps
           {predictions.map((p) => (
             <div key={p.teamId}>
               {expanded.has(p.teamId) && (
-                <div className="mt-4 border-t border-white/[0.06] pt-4">
+                <div className="mt-4 border-t border-white/[0.09] pt-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-foreground">{p.managerName}</h3>
+                    <h3 className="text-sm font-semibold text-content">{p.managerName}</h3>
                     <Button variant="ghost" size="sm" onClick={() => toggle(p.teamId)}>
                       <ChevronUp className="h-4 w-4" />
                     </Button>

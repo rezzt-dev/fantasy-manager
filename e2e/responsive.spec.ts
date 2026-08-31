@@ -10,14 +10,14 @@ const SIZES = [
 
 const TABS = [
   { id: 'overview', name: 'Resumen' },
-  { id: 'team', name: 'Mi Equipo' },
+  { id: 'team', name: 'Plantilla' },
   { id: 'lineup', name: 'Alineación' },
   { id: 'market', name: 'Mercado' },
-  { id: 'recommendations', name: 'Recomendaciones' },
+  { id: 'recommendations', name: 'Centro Estrategia' },
   { id: 'standings', name: 'Clasificación' },
   { id: 'rivals', name: 'Rivales' },
   { id: 'statistics', name: 'Estadísticas' },
-  { id: 'track-record', name: 'Track Record' },
+  { id: 'track-record', name: 'Acierto del motor' },
 ];
 
 test('responsive screenshots', async ({ page }) => {
@@ -28,8 +28,8 @@ test('responsive screenshots', async ({ page }) => {
 
   await page.goto('http://localhost:4321/login');
   await page.getByRole('tab', { name: 'Email' }).click();
-  await page.locator('input#username').fill(email);
-  await page.locator('input#password, input[type="password"]').first().fill(password);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: /entrar/i }).click();
 
   await page.waitForTimeout(15000);

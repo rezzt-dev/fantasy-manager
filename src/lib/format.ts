@@ -6,6 +6,19 @@ export function formatCurrency(value: number): string {
   }).format(value);
 }
 
+/**
+ * Importe abreviado: «14,2 M €». Para columnas estrechas y tarjetas, donde
+ * «14.237.500 €» obliga a encoger la tipografía hasta que deja de leerse.
+ */
+export function formatCurrencyCompact(value: number): string {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 export function formatNumber(value: number, decimals = 1): string {
   return new Intl.NumberFormat('es-ES', {
     minimumFractionDigits: decimals,
@@ -77,40 +90,69 @@ export function positionShortName(position?: string | null, positionId?: number 
   }
 }
 
+/**
+ * Color de demarcación como variable CSS resoluble en SVG (gráficos) y en
+ * `style`. Sale del token `--pos-*`, no de un hex suelto.
+ *
+ * Los cuatro tonos están separados en luminosidad además de en matiz, para que
+ * sigan distinguiéndose sin percepción de color; aun así la sigla (POR, DEF,
+ * MED, DEL) acompaña siempre al color.
+ */
 export function positionColor(position?: string | null, positionId?: number | null): string {
   const name = position || getPositionName(positionId);
   switch (name) {
     case 'Portero':
-      return '#f59e0b';
+      return 'hsl(var(--pos-gk))';
     case 'Defensa':
-      return '#3b82f6';
+      return 'hsl(var(--pos-df))';
     case 'Centrocampista':
     case 'Mediocentro Ofensivo':
-      return '#10b981';
+      return 'hsl(var(--pos-mf))';
     case 'Delantero':
-      return '#ef4444';
+      return 'hsl(var(--pos-fw))';
     case 'Entrenador':
-      return '#6366f1';
+      return 'hsl(var(--pos-co))';
     default:
-      return '#94a3b8';
+      return 'hsl(var(--ink-700))';
   }
 }
 
+/** Clase de fondo para la demarcación. El texto encima va en `text-ink-0`. */
 export function positionBgClass(position?: string | null, positionId?: number | null): string {
   const name = position || getPositionName(positionId);
   switch (name) {
     case 'Portero':
-      return 'bg-amber-500';
+      return 'bg-pitch-gk';
     case 'Defensa':
-      return 'bg-blue-500';
+      return 'bg-pitch-df';
     case 'Centrocampista':
     case 'Mediocentro Ofensivo':
-      return 'bg-emerald-500';
+      return 'bg-pitch-mf';
     case 'Delantero':
-      return 'bg-rose-500';
+      return 'bg-pitch-fw';
     case 'Entrenador':
-      return 'bg-indigo-500';
+      return 'bg-pitch-co';
     default:
-      return 'bg-slate-500';
+      return 'bg-ink-600';
+  }
+}
+
+/** Clase de color de texto para la demarcación sobre superficie oscura. */
+export function positionTextClass(position?: string | null, positionId?: number | null): string {
+  const name = position || getPositionName(positionId);
+  switch (name) {
+    case 'Portero':
+      return 'text-pitch-gk';
+    case 'Defensa':
+      return 'text-pitch-df';
+    case 'Centrocampista':
+    case 'Mediocentro Ofensivo':
+      return 'text-pitch-mf';
+    case 'Delantero':
+      return 'text-pitch-fw';
+    case 'Entrenador':
+      return 'text-pitch-co';
+    default:
+      return 'text-content-tertiary';
   }
 }

@@ -18,7 +18,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn('sticky top-0 z-10 bg-surface-2/95 backdrop-blur-sm [&_tr]:border-b [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wider', className)} {...props} />
+  <thead ref={ref} className={cn('sticky top-0 z-raised bg-surface-raised/95 backdrop-blur-sm [&_tr]:border-b [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-[0.08em] [&_th]:text-content-tertiary', className)} {...props} />
 ));
 TableHeader.displayName = 'TableHeader';
 
@@ -53,7 +53,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      'border-b border-white/[0.04] transition-colors duration-150 hover:bg-white/[0.035] data-[state=selected]:bg-white/[0.05]',
+      'border-b border-white/[0.09] transition-colors duration-150 hover:bg-white/[0.05] data-[state=selected]:bg-white/[0.05]',
       className,
     )}
     {...props}
@@ -68,7 +68,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-11 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
+      'h-11 px-4 text-left align-middle font-medium text-content-tertiary [&:has([role=checkbox])]:pr-0',
       className,
     )}
     {...props}
@@ -94,7 +94,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn('mt-4 text-sm text-muted-foreground', className)}
+    className={cn('mt-4 text-sm text-content-tertiary', className)}
     {...props}
   />
 ));

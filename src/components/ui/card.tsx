@@ -2,19 +2,41 @@ import * as React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '../../lib/utils';
 
-const cardVariants = cva('rounded-xl border text-card-foreground transition-colors', {
+/**
+ * Una tarjeta NO es «un rectángulo con sombra». El variante declara en qué
+ * peldaño del eje Z vive el contenido, y de ahí salen a la vez la superficie,
+ * el filete y la elevación. Si todas las tarjetas de una pantalla usan
+ * `default`, la pantalla no tiene jerarquía: eso es un error de diseño, no de
+ * estilo.
+ *
+ *   sunken      → pozo dentro de otra tarjeta (tablas embebidas, resúmenes).
+ *   flat        → agrupa sin competir. Sin filete ni sombra.
+ *   default     → la unidad de contenido normal.
+ *   raised      → el panel protagonista de la vista. Uno, como mucho dos.
+ *   interactive → default que además se puede pulsar; se levanta al pasar.
+ *   accent      → la voz del motor de recomendaciones. Filete de acento a la
+ *                 izquierda + tinte. Nunca decorativo.
+ *   critical    → algo va mal y hay que actuar.
+ */
+const cardVariants = cva('relative rounded-lg text-content', {
   variants: {
     variant: {
-      default: 'border-white/[0.08] bg-card shadow-card',
-      glass: 'border-white/[0.08] bg-white/[0.03] backdrop-blur-sm shadow-card',
-      interactive:
-        'border-white/[0.08] bg-card shadow-card hover:border-white/[0.14] hover:bg-surface-2 hover:shadow-card-hover',
-      outline: 'border-white/[0.08] bg-transparent',
+      sunken: 'bg-surface-sunken',
+      flat: 'bg-surface',
+      default: 'border border-white/[0.09] bg-surface shadow-1',
+      raised: 'border border-white/[0.09] bg-surface-raised shadow-3',
+      interactive: [
+        'border border-white/[0.09] bg-surface shadow-1 cursor-pointer',
+        'transition-[transform,border-color,background-color,box-shadow] duration-base ease-out',
+        'hover:-translate-y-0.5 hover:border-white/[0.14] hover:bg-surface-raised hover:shadow-3',
+        'active:translate-y-0 active:shadow-1',
+      ].join(' '),
+      outline: 'border border-white/[0.09] bg-transparent',
+      accent: 'border border-accent/25 bg-accent-quiet shadow-1 before:absolute before:inset-y-3 before:left-0 before:w-0.5 before:rounded-full before:bg-accent before:content-[""]',
+      critical: 'border border-negative/30 bg-negative-quiet shadow-1',
     },
   },
-  defaultVariants: {
-    variant: 'default',
-  },
+  defaultVariants: { variant: 'default' },
 });
 
 export interface CardProps
@@ -26,14 +48,16 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, variant, 
 ));
 Card.displayName = 'Card';
 
-// Las variantes [.density-dense_&]:* compactan paddings y tipografía cuando
-// <html> lleva la clase density-dense (modo compacto global, ver useDensity).
+/* Los relieves [.density-dense_&] compactan el interior cuando <html> lleva la
+   clase density-dense (modo compacto global, ver useDensity). El padding sale
+   siempre de la escala 12/16/20/24: nunca un p-[17px]. */
+
 const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
       className={cn(
-        'flex flex-col space-y-1.5 p-5 [.density-dense_&]:space-y-1 [.density-dense_&]:p-3.5',
+        'flex flex-col gap-1 p-5 [.density-dense_&]:gap-0.5 [.density-dense_&]:p-3',
         className,
       )}
       {...props}
@@ -42,11 +66,14 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 );
 CardHeader.displayName = 'CardHeader';
 
-const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
+const CardTitle = React.forwardRef<HTMLHeadingElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
     <h3
       ref={ref}
-      className={cn('text-lg font-semibold leading-none tracking-tight [.density-dense_&]:text-base', className)}
+      className={cn(
+        'font-display text-base font-semibold leading-tight tracking-[-0.015em] text-content [.density-dense_&]:text-sm',
+        className,
+      )}
       {...props}
     />
   ),
@@ -57,7 +84,11 @@ const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={cn('text-sm text-muted-foreground [.density-dense_&]:text-xs', className)} {...props} />
+  <p
+    ref={ref}
+    className={cn('text-sm leading-normal text-content-tertiary [.density-dense_&]:text-xs', className)}
+    {...props}
+  />
 ));
 CardDescription.displayName = 'CardDescription';
 
@@ -65,7 +96,7 @@ const CardContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDi
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('p-5 pt-0 [.density-dense_&]:px-3.5 [.density-dense_&]:pb-3.5', className)}
+      className={cn('p-5 pt-0 [.density-dense_&]:px-3 [.density-dense_&]:pb-3', className)}
       {...props}
     />
   ),
@@ -76,11 +107,14 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('flex items-center p-5 pt-0 [.density-dense_&]:px-3.5 [.density-dense_&]:pb-3.5', className)}
+      className={cn(
+        'flex items-center gap-3 border-t border-white/[0.09] px-5 py-3 [.density-dense_&]:px-3 [.density-dense_&]:py-2',
+        className,
+      )}
       {...props}
     />
   ),
 );
 CardFooter.displayName = 'CardFooter';
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent, cardVariants };

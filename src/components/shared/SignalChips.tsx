@@ -34,19 +34,24 @@ export default function SignalChips({ signals, className, max = 6 }: SignalChips
       {visible.map((signal, idx) => {
         const category = signal.category ? CATEGORY_LABELS[signal.category] || signal.category : null;
         const label = `${signal.source}${category ? ` · ${category}` : ''}`;
+        // El signo (+ / −) acompaña al color: la señal se tiene que leer sin
+        // depender de distinguir verde de rojo.
         const chipClass = cn(
-          'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-opacity',
+          'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium',
+          'transition-colors duration-fast',
           signal.signal === 'buy'
-            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400 hover:opacity-80'
+            ? 'border-positive/25 bg-positive-quiet text-positive-text'
             : signal.signal === 'sell'
-            ? 'border-rose-500/20 bg-rose-500/10 text-rose-400 hover:opacity-80'
-            : 'border-white/[0.08] bg-surface-2 text-muted-foreground hover:text-foreground',
+              ? 'border-negative/25 bg-negative-quiet text-negative-text'
+              : 'border-white/[0.09] bg-white/[0.05] text-content-tertiary hover:text-content',
         );
+        const sign = signal.signal === 'buy' ? '+' : signal.signal === 'sell' ? '−' : '';
 
         const content = (
           <>
+            {sign && <span aria-hidden="true">{sign}</span>}
             {label}
-            <span className="opacity-70">{Math.round(signal.confidence * 100)}%</span>
+            <span className="numeral opacity-70">{Math.round(signal.confidence * 100)}%</span>
           </>
         );
 
@@ -72,8 +77,8 @@ export default function SignalChips({ signals, className, max = 6 }: SignalChips
         );
       })}
       {remaining > 0 && (
-        <span className="inline-flex items-center rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-0.5 text-[10px] text-muted-foreground">
-          +{remaining} más
+        <span className="inline-flex items-center rounded-full border border-white/[0.09] bg-white/[0.05] px-2 py-0.5 text-[10px] text-content-tertiary">
+          <span className="numeral">+{remaining}</span>&nbsp;más
         </span>
       )}
     </div>

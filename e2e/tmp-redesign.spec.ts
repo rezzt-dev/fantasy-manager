@@ -11,8 +11,8 @@ test('tmp: player dialog + sidebar collapse', async ({ page }) => {
 
   await page.goto('http://localhost:4321/login');
   await page.getByRole('tab', { name: 'Email' }).click();
-  await page.locator('input#username').fill(email);
-  await page.locator('input#password, input[type="password"]').first().fill(password);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: /entrar/i }).click();
 
   await page.waitForURL('**/dashboard**', { timeout: 60000 });
@@ -28,7 +28,7 @@ test('tmp: player dialog + sidebar collapse', async ({ page }) => {
   await page.screenshot({ path: 'e2e/tmp-sidebar-expanded.png' });
 
   // 2. Abrir detalle de jugador desde Mi Equipo
-  await page.getByRole('button', { name: 'Mi Equipo' }).first().click();
+  await page.getByRole('button', { name: 'Plantilla' }).first().click();
   await page.waitForTimeout(6000);
   await page.getByText('Szczesny').first().click();
   await page.waitForTimeout(1500);

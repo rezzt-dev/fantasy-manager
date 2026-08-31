@@ -1,0 +1,42 @@
+---
+import type { LucideIcon } from 'lucide-react';
+
+interface Props {
+	icon: LucideIcon;
+	title: string;
+	description: string;
+	/** Dato concreto que respalda la afirmación. Sin relleno. */
+	detail?: string;
+	/** `wide` ocupa dos columnas: la rejilla no es uniforme a propósito. */
+	span?: 'default' | 'wide';
+	accent?: boolean;
+}
+
+const { icon: Icon, title, description, detail, span = 'default', accent = false } = Astro.props;
+---
+
+<article
+	class:list={[
+		'group relative flex flex-col rounded-lg border p-6 transition-[border-color,background-color] duration-base ease-out',
+		span === 'wide' ? 'sm:col-span-2' : '',
+		accent
+			? 'border-accent/25 bg-accent-quiet'
+			: 'border-white/[0.09] bg-surface hover:border-white/[0.14] hover:bg-surface-raised',
+	]}
+>
+	<Icon
+		className={`h-5 w-5 ${accent ? 'text-accent' : 'text-content-tertiary'}`}
+		aria-hidden="true"
+	/>
+	<h3 class="mt-4 font-display text-base font-semibold tracking-[-0.015em] text-content">
+		{title}
+	</h3>
+	<p class="mt-2 text-sm leading-relaxed text-content-tertiary">{description}</p>
+	{
+		detail && (
+			<p class="mt-4 border-t border-white/[0.09] pt-3 text-xs leading-relaxed text-content-tertiary">
+				{detail}
+			</p>
+		)
+	}
+</article>
