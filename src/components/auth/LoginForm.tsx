@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuthStore } from '../../stores/authStore';
-import { detectExtension, loginWithExtension, persistTokens } from '../../lib/auth/extension-bridge';
+import { loginWithExtension, persistTokens } from '../../lib/auth/extension-bridge';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { AlertCircle, Mail, KeyRound, ArrowRight, Loader2, Download, ExternalLink } from 'lucide-react';
+import { AlertCircle, Mail, KeyRound, ArrowRight, Loader2 } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -38,22 +38,21 @@ export default function LoginForm() {
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [tokenLoading, setTokenLoading] = useState(false);
 
-  const [extension, setExtension] = useState<'checking' | 'ready' | 'missing'>('checking');
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const [showInstall, setShowInstall] = useState(false);
 
-  useEffect(() => {
-    let active = true;
-    detectExtension().then(({ installed }) => {
-      if (active) setExtension(installed ? 'ready' : 'missing');
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+  // El login con Google depende de la extensión del navegador, que todavía no
+  // está publicada en las tiendas de Chrome/Firefox. Hasta entonces el botón
+  // queda deshabilitado y sólo muestra el motivo al pulsarlo.
+  const googleDisabled = true;
 
   const handleGoogle = async () => {
+    if (googleDisabled) {
+      setGoogleError(
+        'El acceso con Google está temporalmente deshabilitado: la extensión del navegador que completa el login aún no está publicada en las tiendas oficiales. Mientras tanto, entra con email y contraseña o con un token.',
+      );
+      return;
+    }
     setGoogleError(null);
     setGoogleLoading(true);
     try {
@@ -118,48 +117,19 @@ export default function LoginForm() {
             </div>
           )}
 
-          {extension === 'missing' ? (
-            <>
-              <Button variant="outline" className="w-full" onClick={() => setShowInstall((v) => !v)}>
-                <GoogleIcon className="mr-2 h-4 w-4" />
-                Entrar con Google
-                <Download className="ml-2 h-4 w-4 opacity-60" />
-              </Button>
-              {showInstall && (
-                <div className="space-y-2 rounded-lg border border-white/[0.08] bg-surface-2/60 p-3 text-sm text-muted-foreground">
-                  <p className="text-foreground">Necesitas el conector de Fantasy Manager.</p>
-                  <p>
-                    LaLiga sólo acepta el login de su app oficial, así que hace falta una pequeña extensión que complete el
-                    proceso por ti. Se instala una vez y no vuelves a tocar ningún token.
-                  </p>
-                  <a
-                    className="inline-flex items-center gap-1.5 text-foreground underline underline-offset-4"
-                    href="/extension"
-                  >
-                    Cómo instalarla
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-              )}
-            </>
-          ) : (
-            <Button className="w-full" onClick={handleGoogle} disabled={googleLoading || extension === 'checking'}>
-              {googleLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Esperando a que termines el login...
-                </>
-              ) : (
-                <>
-                  <GoogleIcon className="mr-2 h-4 w-4" />
-                  Entrar con Google
-                </>
-              )}
-            </Button>
-          )}
+          <Button
+            className="w-full opacity-60"
+            onClick={handleGoogle}
+            aria-disabled="true"
+            title="El acceso con Google no está disponible todavía"
+          >
+            <GoogleIcon className="mr-2 h-4 w-4" />
+            Entrar con Google
+          </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Te loguearás en la página oficial de LaLiga. Nosotros no vemos tu contraseña.
+            El acceso con Google está deshabilitado temporalmente hasta que se publique la extensión del navegador. Usa
+            email y contraseña o un token.
           </p>
         </div>
 
