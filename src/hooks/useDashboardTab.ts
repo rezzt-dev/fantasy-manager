@@ -6,6 +6,7 @@ const VALID_TABS: DashboardTab[] = [
   'team',
   'lineup',
   'market',
+  'clause-market',
   'standings',
   'rivals',
   'statistics',

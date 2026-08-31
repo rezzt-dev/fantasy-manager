@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import fantasyAPI, { LaLigaFantasyClient } from '../../lib/fantasy/api';
 import type { FantasyLeague, Formation, PlayerMaster, TeamPlayer } from '../../types/fantasy';
-import type { OptimalLineup, TacticalScheme } from '../../types/analysis';
+import type { CaptainRecommendation, OptimalLineup, TacticalScheme } from '../../types/analysis';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
@@ -18,11 +18,12 @@ import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import Currency from '../shared/Currency';
 import PlayerCard from '../shared/PlayerCard';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
+import CaptainCard from '../shared/CaptainCard';
 import EmptyState from '../shared/EmptyState';
 import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
 import { StaggerContainer, StaggerItem } from '../ui/motion';
-import { Shield, Users, Swords, AlertTriangle, Sparkles, ArrowRightLeft, Wallet, Save, RefreshCw, Loader2 } from 'lucide-react';
+import { Shield, Users, Swords, AlertTriangle, Sparkles, ArrowRightLeft, Wallet, Save, RefreshCw, Loader2, Crown } from 'lucide-react';
 import { positionShortName } from '../../lib/format';
 import { useState, useEffect, useRef } from 'react';
 
@@ -39,6 +40,8 @@ interface FormationEntry {
 interface FilledEntry extends FormationEntry {
   suggested?: boolean;
   expectedPoints?: number;
+  /** Capitán recomendado del once que se está mostrando. */
+  isCaptain?: boolean;
 }
 
 interface FilledRow {
@@ -95,6 +98,25 @@ function buildRecommendedRows(optimalLineup: OptimalLineup, teamPlayers: TeamPla
     label,
     entries: byPosition[positionId] || [],
   }));
+}
+
+/**
+ * Capitán del once que se está mostrando: el jugador en pantalla con mejor
+ * score de capitán. El score viene del backend para toda la plantilla, así que
+ * el brazalete sigue vivo aunque el usuario cambie titulares a mano.
+ */
+function pickCaptainFromEntries(entries: FilledEntry[], scoreByPlayerId?: Record<string, number>): string | null {
+  if (!scoreByPlayerId) return null;
+  let bestId: string | null = null;
+  let bestScore = -Infinity;
+  for (const entry of entries) {
+    const score = scoreByPlayerId[entry.playerMaster.id];
+    if (typeof score === 'number' && score > bestScore) {
+      bestScore = score;
+      bestId = entry.playerMaster.id;
+    }
+  }
+  return bestId;
 }
 
 function hasUnownedEntries(formation: Formation, teamPlayers: TeamPlayer[]): boolean {
@@ -241,6 +263,7 @@ export default function LineupTab({ league }: LineupTabProps) {
     enabled: !!teamId,
   });
   const optimalLineup: OptimalLineup | undefined = analysisQuery.data?.analysis?.optimalLineup;
+  const captainRecommendation: CaptainRecommendation | undefined = analysisQuery.data?.analysis?.captain;
 
   const recommendationsQuery = useQuery({
     queryKey: ['recommendations', leagueId, teamId],
@@ -368,11 +391,35 @@ export default function LineupTab({ league }: LineupTabProps) {
   // Vista recomendada: once óptimo calculado con tus jugadores.
   // Vista actual: tu once oficial sin rellenar con sugerencias.
   const isRecommendedView = viewMode === 'recommended';
-  const displayRows = isRecommendedView && optimalLineup
+  const rawDisplayRows = isRecommendedView && optimalLineup
     ? buildRecommendedRows(optimalLineup, teamPlayers)
     : buildOfficialRows(localFormation, teamPlayers);
+
+  // Capitán del once que se está viendo: el mejor score entre los jugadores en
+  // pantalla, no el que devolvió la API. Así el brazalete sigue a los cambios
+  // manuales y al alternar entre "mi once" y "mejor once".
+  const suggestedCaptainId = pickCaptainFromEntries(
+    rawDisplayRows.flatMap((row) => row.entries),
+    captainRecommendation?.scoreByPlayerId,
+  );
+  const displayRows: FilledRow[] = rawDisplayRows.map((row) => ({
+    ...row,
+    entries: row.entries.map((entry) => ({
+      ...entry,
+      isCaptain: entry.playerMaster.id === suggestedCaptainId,
+    })),
+  }));
   const displayEntries = displayRows.flatMap((row) => row.entries);
   const displayCount = displayEntries.length;
+  // Si tus cambios locales mueven el brazalete respecto a la tarjeta, se avisa.
+  const crownedEntry = displayEntries.find((e) => e.isCaptain);
+  // En la vista "mejor once" la tarjeta ya explica el cambio de brazalete.
+  const captainMoved = Boolean(
+    !isRecommendedView &&
+      captainRecommendation &&
+      crownedEntry &&
+      crownedEntry.playerMaster.id !== captainRecommendation.captain.player.id,
+  );
 
   // Incompleto solo se evalúa en la vista oficial; en la recomendada siempre hay 11.
   const isIncomplete = !isRecommendedView && totalLineup < 11;
@@ -644,6 +691,24 @@ export default function LineupTab({ league }: LineupTabProps) {
         </div>
       )}
 
+      {captainRecommendation && (
+        <CaptainCard
+          captain={captainRecommendation}
+          description="El brazalete duplica los puntos del jugador. Se elige dentro del once que vas a jugar."
+          onSelectPlayer={(player) => setSelectedPlayer(teamPlayerById.get(player.id) || null)}
+        />
+      )}
+
+      {captainMoved && crownedEntry && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-sm text-amber-200">
+          <Crown className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+          <span>
+            Con el once que estás viendo, el mejor capitán pasa a ser{' '}
+            <span className="font-semibold text-foreground">{crownedEntry.playerMaster.nickname}</span>.
+          </span>
+        </div>
+      )}
+
       {optimalLineup && (
         <RecommendedLineupCard
           optimalLineup={optimalLineup}
@@ -776,6 +841,7 @@ export default function LineupTab({ league }: LineupTabProps) {
                       player={entry.playerMaster}
                       buyoutClause={entry.buyoutClause}
                       suggested={entry.suggested}
+                      isCaptain={entry.isCaptain}
                       expectedPoints={entry.expectedPoints}
                       onClick={() => setSelectedPlayer(teamPlayerById.get(entry.playerMaster.id) || null)}
                     />
@@ -934,14 +1000,24 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
       whileHover={{ scale: 1.05, y: -4 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`group flex w-28 flex-col items-center rounded-2xl border bg-card/95 p-2.5 text-center shadow-card transition-colors hover:bg-surface-2 sm:w-32 sm:p-3 ${
-        entry.suggested
+      className={`group relative flex w-28 flex-col items-center rounded-2xl border bg-card/95 p-2.5 text-center shadow-card transition-colors hover:bg-surface-2 sm:w-32 sm:p-3 ${
+        entry.isCaptain
+          ? 'border-amber-400/70 shadow-[0_0_16px_-4px_rgba(245,158,11,0.45)]'
+          : entry.suggested
           ? 'border-dashed border-amber-500/60'
           : isWarning
           ? 'border-rose-500/50 shadow-[0_0_12px_-4px_rgba(244,63,94,0.25)]'
           : 'border-white/[0.12]'
       }`}
     >
+      {entry.isCaptain && (
+        <span
+          className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-amber-400 text-background shadow-sm"
+          title="Capitán recomendado: duplica sus puntos"
+        >
+          <Crown className="h-3 w-3" />
+        </span>
+      )}
       <PlayerAvatar player={player} size="xl" showPosition className="mb-2.5" />
       <div className="w-full truncate text-sm font-bold text-foreground">{player.nickname}</div>
       <div className="mt-0.5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -950,12 +1026,19 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
         <span>{points} pts</span>
       </div>
       {showExpected && (
-        <div className="mt-1 text-xs font-semibold text-emerald-400">
-          {entry.expectedPoints?.toFixed(1)} xP
+        <div className={`mt-1 text-xs font-semibold ${entry.isCaptain ? 'text-amber-300' : 'text-emerald-400'}`}>
+          {entry.isCaptain
+            ? `${((entry.expectedPoints ?? 0) * 2).toFixed(1)} xP ×2`
+            : `${entry.expectedPoints?.toFixed(1)} xP`}
         </div>
       )}
-      <div className="mt-2 flex w-full items-center justify-center gap-1.5">
+      <div className="mt-2 flex w-full flex-wrap items-center justify-center gap-1.5">
         <PlayerStatusBadge status={player.playerStatus} />
+        {entry.isCaptain && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+            <Crown className="h-2.5 w-2.5" /> Capitán
+          </span>
+        )}
         {entry.suggested && (
           <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-400">
             Sugerido
@@ -993,6 +1076,12 @@ function RecommendedLineupCard({
             </CardTitle>
             <CardDescription>
               Maximiza los puntos esperados de la jornada según rendimiento, rival, titularidad y noticias.
+              {optimalLineup.captain && (
+                <span className="mt-1 block text-amber-300">
+                  Capitán co-optimizado: {optimalLineup.captain.player.nickname} (+
+                  {optimalLineup.captain.expectedPoints.toFixed(1)} pts por duplicar).
+                </span>
+              )}
               {optimalLineup.degraded && (
                 <span className="mt-1 block text-amber-400">
                   No hay suficientes jugadores sanos: la propuesta incluye jugadores con dudas.
@@ -1046,15 +1135,21 @@ function RecommendedLineupCard({
               <div key={positionId} className="flex items-start gap-3">
                 <span className="mt-1.5 w-9 shrink-0 font-display text-xs font-bold text-muted-foreground">{label}</span>
                 <div className="flex flex-wrap gap-2">
-                  {entries.map((entry) => (
-                    <span
-                      key={entry.player.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-surface px-2.5 py-1 text-xs"
-                    >
-                      <span className="font-semibold text-foreground">{entry.player.nickname}</span>
-                      <span className="text-muted-foreground">{entry.expectedPoints.toFixed(1)}</span>
-                    </span>
-                  ))}
+                  {entries.map((entry) => {
+                    const isCaptain = optimalLineup.captain?.player.id === entry.player.id;
+                    return (
+                      <span
+                        key={entry.player.id}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
+                          isCaptain ? 'border-amber-500/40 bg-amber-500/[0.08]' : 'border-white/[0.08] bg-surface'
+                        }`}
+                      >
+                        {isCaptain && <Crown className="h-3 w-3 shrink-0 text-amber-400" />}
+                        <span className="font-semibold text-foreground">{entry.player.nickname}</span>
+                        <span className="text-muted-foreground">{entry.expectedPoints.toFixed(1)}</span>
+                      </span>
+                    );
+                  })}
                 </div>
               </div>
             );

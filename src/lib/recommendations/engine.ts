@@ -418,20 +418,21 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
     const cap = captain.captain;
     // ΔxP del capitán: ganancia marginal sobre la mejor alternativa (los
     // puntos del capitán se duplican, así que es la decisión más apalancada).
-    const bestAlternative = captain.alternatives[0];
-    const captainImpact = round1(bestAlternative ? Math.max(0, cap.expectedPoints - bestAlternative.expectedPoints) : cap.expectedPoints);
+    const details = [
+      captain.alternatives.length > 0
+        ? `Alternativas: ${captain.alternatives.map((a) => `${a.player.nickname} (${a.expectedPoints.toFixed(1)})`).join(', ')}.`
+        : 'No hay alternativas claras.',
+      ...cap.risks,
+    ].join(' ');
     recommendations.push({
       id: `captain-${cap.player.id}`,
       type: 'captain' as RecommendationType,
       priority: 'high',
       player: cap.player,
       reason: `Mejor candidato a capitán para esta jornada: ${cap.reasoning}.`,
-      details:
-        captain.alternatives.length > 0
-          ? `Alternativas: ${captain.alternatives.map((a) => a.player.nickname).join(', ')}.`
-          : 'No hay alternativas claras.',
-      suggestedAction: 'Asígnale el brazalete de capitán para duplicar sus puntos.',
-      impactScore: captainImpact,
+      details,
+      suggestedAction: `Asígnale el brazalete: duplica sus puntos y suma ${cap.captainBonus.toFixed(1)} pts esperados.`,
+      impactScore: captain.gainOverAlternative,
     });
   }
 

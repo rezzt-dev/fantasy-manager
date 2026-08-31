@@ -81,6 +81,12 @@ Procesa feeds RSS de la prensa deportiva (Marca, AS, Mundo Deportivo, Sport, 20m
 </details>
 
 <details open>
+<summary><b><img src="https://api.iconify.design/lucide/gavel.svg?color=white" width="18" height="18" align="absbottom" /> Clausulazos</b></summary>
+<br/>
+Pestaña <strong>Clausulazos</strong> dedicada a las cláusulas de rescisión: lista únicamente los jugadores de los <em>otros</em> equipos de la liga que se pueden clausular ahora mismo y los ordena por <strong>encaje real con tu equipo</strong>. De cada objetivo calcula la mejora del once titular (<code>Δ Once</code>, recalculando la mejor formación con él dentro), el ratio cláusula/valor, la titularidad de la jornada, la urgencia (cuántos rivales podrían pagar esa cláusula antes que tú) y un veredicto. Incluye <strong>planes de financiación</strong> (qué vender para llegar al importe), <strong>combos</strong> de 2-3 clausulazos que caben a la vez en el presupuesto, un radar de <strong>próximamente disponibles</strong> (cláusulas bloqueadas con cuenta atrás y blindados) y la <strong>exposición de cada rival</strong>.
+</details>
+
+<details open>
 <summary><b><img src="https://api.iconify.design/lucide/users.svg?color=white" width="18" height="18" align="absbottom" /> Análisis de Rivales y Mercado</b></summary>
 <br/>
 Explora la plantilla completa de cada rival, el estado de protección de cada jugador (disponible, protegido por fecha, blindado), oportunidades de clausulazos estratégicos y riesgos de que te roben tus jugadores clave. El análisis cruza la actividad real de la liga con tu presupuesto disponible.
@@ -128,6 +134,7 @@ El dashboard está organizado en pestañas accesibles desde la sidebar, la naveg
 | **Mi Equipo** | `Cmd/Ctrl + 2` | Plantilla completa con estado, cláusulas, valores y puntos de cada jugador. |
 | **Alineación** | `Cmd/Ctrl + 3` | Vista dual: alineación real declarada (saneada) y alineación recomendada que maximiza xP, con capitán y banquillo incluidos. |
 | **Mercado** | `Cmd/Ctrl + 4` | Jugadores en venta, ofertas y oportunidades de compra recomendadas. |
+| **Clausulazos** | `C` | Jugadores rivales clausulables hoy, recomendados por encaje, combos, financiación y exposición por rival. |
 | **Rivales** | `Cmd/Ctrl + 5` | Plantillas de los managers rivales, cláusulas y riesgos. |
 | **Clasificación** | `Cmd/Ctrl + 6` | Tabla de clasificación y gráficos de evolución. |
 | **Estadísticas** | `Cmd/Ctrl + 7` | Análisis avanzado de la liga con gráficos y tablas comparativas. |
@@ -135,7 +142,7 @@ El dashboard está organizado en pestañas accesibles desde la sidebar, la naveg
 | **Matches** | `Cmd/Ctrl + 0` | Partidos en vivo de la jornada con marcador y eventos. |
 | **Track Record** | — | Métricas del modelo, calibración y evolución de predicciones. |
 
-> **Atajos globales:** `Cmd/Ctrl + K` (paleta de comandos), `R` (recargar datos), `D` (modo compacto), `B` (plegar sidebar).
+> **Atajos globales:** `Cmd/Ctrl + K` (paleta de comandos), `R` (recargar datos), `D` (modo compacto), `B` (plegar sidebar), `C` (Clausulazos).
 
 ---
 
@@ -180,7 +187,7 @@ fantasy-manager/
 ├── src/
 │   ├── components/
 │   │   ├── auth/                 # Formularios de autenticación
-│   │   ├── dashboard/            # Pestañas del dashboard (Overview, Team, Lineup, Market, Rivals, Standings, Statistics, Score Predictions, Matches, Track Record)
+│   │   ├── dashboard/            # Pestañas del dashboard (Overview, Team, Lineup, Market, Clausulazos, Rivals, Standings, Statistics, Score Predictions, Matches, Track Record)
 │   │   ├── layout/               # AppLayout, Sidebar, Header, MobileNav, CommandPalette, NotificationBell
 │   │   ├── league/               # Resumen de liga y equipo
 │   │   ├── market/               # Componentes específicos de la pestaña Mercado
@@ -191,14 +198,14 @@ fantasy-manager/
 │   │   └── ui/                   # Primitivos UI estilo shadcn (Radix + Tailwind)
 │   ├── hooks/                    # useDashboardTab, useDensity, useSidebarCollapsed, useNotifications
 │   ├── lib/
-│   │   ├── analysis/             # Análisis de liga, alineación óptima, estado de titulares, predictor de puntuación por equipo
+│   │   ├── analysis/             # Análisis de liga, alineación óptima, estado de titulares, mercado de cláusulas, predictor de puntuación por equipo
 │   │   ├── engine/               # Motor predictivo, fuentes externas, partidos, track record, calibración y persistencia atómica
 │   │   ├── fantasy/              # Cliente hacia API oficial, proxy, formaciones, mercado, calendario, actividad de liga
 │   │   ├── news/                 # Ingesta RSS, clasificador y matcher de noticias
 │   │   ├── recommendations/      # Motor de recomendaciones, capitán, riesgo de cláusulas, inteligencia externa
 │   │   └── utils/                # Utilidades compartidas
 │   ├── pages/
-│   │   ├── api/                  # Endpoints propios (auth, proxy, recommendations, league-analysis, matches, score-predictions, track-record, debug)
+│   │   ├── api/                  # Endpoints propios (auth, proxy, recommendations, league-analysis, clause-market, matches, score-predictions, track-record, debug)
 │   │   ├── dashboard.astro
 │   │   ├── login.astro
 │   │   └── index.astro
@@ -363,6 +370,7 @@ Los endpoints propios actúan como proxy seguro hacia la API oficial y orquestan
 | `/api/proxy/{ruta-oficial}` | GET/POST/PUT/DELETE/PATCH | Proxy genérico a la API de LALIGA FANTASY. |
 | `/api/recommendations?leagueId=&teamId=` | GET | Recomendaciones completas de compra, venta, alineación, cláusulas, capitán y plan multi-jornada. |
 | `/api/league-analysis?leagueId=&teamId=` | GET | Análisis agregado de la liga: rivales, riesgos, capitán y estadísticas. |
+| `/api/clause-market?leagueId=&teamId=` | GET | Mercado de cláusulas: jugadores rivales clausulables hoy, encaje con tu equipo, combos, financiación y exposición por rival. |
 | `/api/score-predictions?leagueId=&teamId=` | GET | Predicción de puntos esperados por equipo para la jornada actual. |
 | `/api/matches?leagueId=&teamId=` | GET | Partidos en vivo de la jornada con marcador, eventos e importancia. |
 | `/api/track-record?leagueId=` | GET | Métricas de calidad del modelo y calibración actual. |

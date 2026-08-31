@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fantasy Manager</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        width: 300px;
+        padding: 18px;
+        background: #151515;
+        color: #ececec;
+        font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      h1 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        letter-spacing: -0.01em;
+      }
+      p {
+        margin: 0 0 14px;
+        color: #9a9a9a;
+      }
+      button {
+        width: 100%;
+        padding: 9px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        color: inherit;
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      button:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding: 8px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #4ade80;
+        flex: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Fantasy Manager</h1>
+    <p>Conecta tu cuenta de LALIGA FANTASY sin copiar tokens.</p>
+
+    <div class="status"><span class="dot"></span><span id="status">Extensión activa</span></div>
+
+    <button id="open">Abrir Fantasy Manager</button>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

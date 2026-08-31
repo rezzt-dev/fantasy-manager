@@ -1,18 +1,20 @@
 import { fetchOfficialAPI, CMP } from '../fantasy/api-proxy';
-import { fetchTeamsMaster } from '../fantasy/teams';
-import { fetchLaLigaEventsWindow, fetchEventDetails, fetchEventIncidents, fetchEventLineups, teamLogoUrl } from './sources/sofascore';
+import { fetchTeamsCatalog } from '../fantasy/teams';
+import { fetchLaLigaEventsWindow, fetchLaLigaEventsRound, fetchEventDetails, fetchEventIncidents, fetchEventLineups, teamLogoUrl } from './sources/sofascore';
 import { generateMatchSummary, fetchExternalMatchSummary } from './sources/match-summary';
 import { buildTeamMatcher } from './team-names';
-import type { OfficialTeam } from './team-names';
-import type { TeamData, WeekInfo, Match, PlayerMaster, EnrichedMatch, MatchEvent, SquadPlayerInMatch, EnrichedMatchTeam, EnrichedMatchStatus, MatchPhase } from '../../types/fantasy';
+import type { OfficialTeam, TeamMatcher } from './team-names';
+import type { TeamData, WeekInfo, Match, PlayerMaster, EnrichedMatch, MatchEvent, SquadPlayerInMatch, EnrichedMatchTeam, EnrichedMatchStatus, MatchPhase, TeamCatalogEntry } from '../../types/fantasy';
 import type { SofaEvent, SofaIncident } from './sources/sofascore';
 
 const MATCH_WINDOW_HOURS = 48;
+const ENRICH_CONCURRENCY = 4;
 
 interface BuildMatchesInput {
   token: string;
   teamId: number;
-  currentWeek: number;
+  /** Jornada que se está construyendo (puede ser pasada). */
+  week: number;
   calendar: Match[];
   teamData: TeamData;
 }
@@ -180,14 +182,12 @@ function buildSquadPlayers(calendarMatch: Match, ownPlayers: PlayerMaster[]): Sq
 function findSofaEvent(
   calendarMatch: Match,
   sofaEvents: SofaEvent[],
-  officialTeams: OfficialTeam[],
+  teamsById: Map<number, TeamCatalogEntry>,
+  matchTeam: TeamMatcher,
 ): SofaEvent | null {
-  const localTeam = officialTeams.find((t) => t.id === calendarMatch.localId);
-  const visitorTeam = officialTeams.find((t) => t.id === calendarMatch.visitorId);
-  if (!localTeam || !visitorTeam) return null;
+  if (!teamsById.has(calendarMatch.localId) || !teamsById.has(calendarMatch.visitorId)) return null;
 
   const matchTs = new Date(calendarMatch.matchDate).getTime() / 1000;
-  const matchTeam = buildTeamMatcher(officialTeams);
 
   let best: SofaEvent | null = null;
   let bestDelta = Infinity;
@@ -215,7 +215,7 @@ async function buildEnrichedMatch(
   calendarMatch: Match,
   sofaEvent: SofaEvent | null,
   ownPlayers: PlayerMaster[],
-  officialTeams: OfficialTeam[],
+  teamsById: Map<number, TeamCatalogEntry>,
 ): Promise<{ match: EnrichedMatch; fetchNotes: string[] }> {
   const fetchNotes: string[] = [];
   const squadPlayers = buildSquadPlayers(calendarMatch, ownPlayers);
@@ -250,22 +250,28 @@ async function buildEnrichedMatch(
   const minute = effectiveEvent ? computeMinute(effectiveEvent) : null;
   const phase = computePhase(effectiveEvent);
 
-  const localTeam = officialTeams.find((t) => t.id === calendarMatch.localId);
-  const visitorTeam = officialTeams.find((t) => t.id === calendarMatch.visitorId);
+  const localTeam = teamsById.get(calendarMatch.localId);
+  const visitorTeam = teamsById.get(calendarMatch.visitorId);
 
   const home: EnrichedMatchTeam = {
     id: calendarMatch.localId,
-    name: localTeam?.name ?? String(calendarMatch.localId),
-    shortName: effectiveEvent?.homeTeam.shortName,
-    logoUrl: effectiveEvent?.homeTeam.id ? teamLogoUrl(effectiveEvent.homeTeam.id) : '',
+    name: localTeam?.name ?? effectiveEvent?.homeTeam.name ?? String(calendarMatch.localId),
+    shortName: localTeam?.shortName || effectiveEvent?.homeTeam.shortName,
+    // El escudo oficial es más fiable que la imagen de SofaScore (que puede
+    // bloquear el hotlinking); esta última queda como respaldo.
+    logoUrl:
+      localTeam?.badgeColor ||
+      (effectiveEvent?.homeTeam.id ? teamLogoUrl(effectiveEvent.homeTeam.id) : ''),
     score: effectiveEvent?.homeScore?.current ?? calendarMatch.localScore ?? null,
   };
 
   const away: EnrichedMatchTeam = {
     id: calendarMatch.visitorId,
-    name: visitorTeam?.name ?? String(calendarMatch.visitorId),
-    shortName: effectiveEvent?.awayTeam.shortName,
-    logoUrl: effectiveEvent?.awayTeam.id ? teamLogoUrl(effectiveEvent.awayTeam.id) : '',
+    name: visitorTeam?.name ?? effectiveEvent?.awayTeam.name ?? String(calendarMatch.visitorId),
+    shortName: visitorTeam?.shortName || effectiveEvent?.awayTeam.shortName,
+    logoUrl:
+      visitorTeam?.badgeColor ||
+      (effectiveEvent?.awayTeam.id ? teamLogoUrl(effectiveEvent.awayTeam.id) : ''),
     score: effectiveEvent?.awayScore?.current ?? calendarMatch.visitorScore ?? null,
   };
 
@@ -307,9 +313,11 @@ async function buildEnrichedMatch(
   return { match, fetchNotes };
 }
 
-export async function buildMatchesForWeek({ token, teamId, currentWeek, calendar, teamData }: BuildMatchesInput): Promise<BuildMatchesResult> {
+export async function buildMatchesForWeek({ token, teamId, week, calendar, teamData }: BuildMatchesInput): Promise<BuildMatchesResult> {
   const notes: string[] = [];
-  const officialTeams = await fetchTeamsMaster(token);
+  const teamsCatalog = await fetchTeamsCatalog(token);
+  const officialTeams: OfficialTeam[] = teamsCatalog.map((t) => ({ id: t.id, name: t.name }));
+  const teamsById = new Map(teamsCatalog.map((t) => [t.id, t]));
 
   if (officialTeams.length === 0) {
     notes.push('No se pudo cargar el catálogo oficial de equipos; el cruce con SofaScore está desactivado.');
@@ -319,24 +327,56 @@ export async function buildMatchesForWeek({ token, teamId, currentWeek, calendar
   const minTs = timestamps.length > 0 ? Math.min(...timestamps) : 0;
   const maxTs = timestamps.length > 0 ? Math.max(...timestamps) : 0;
 
-  const sofaWindow =
-    officialTeams.length > 0 && calendar.length > 0
-      ? await fetchLaLigaEventsWindow(minTs - MATCH_WINDOW_HOURS * 3600, maxTs + MATCH_WINDOW_HOURS * 3600)
-      : null;
+  // Dos fuentes complementarias de eventos: la jornada concreta
+  // (`events/round/{n}`, imprescindible para jornadas pasadas porque
+  // `events/last/0` solo devuelve la página más reciente) y la ventana
+  // temporal alrededor del calendario oficial (cubre desajustes de numeración
+  // entre la jornada de Fantasy y la ronda de SofaScore).
+  const canQuerySofa = officialTeams.length > 0 && calendar.length > 0;
 
-  if (!sofaWindow) {
+  const [roundEvents, sofaWindow] = canQuerySofa
+    ? await Promise.all([
+        fetchLaLigaEventsRound(week),
+        fetchLaLigaEventsWindow(minTs - MATCH_WINDOW_HOURS * 3600, maxTs + MATCH_WINDOW_HOURS * 3600),
+      ])
+    : [[] as SofaEvent[], null];
+
+  const sofaEvents = new Map<number, SofaEvent>();
+  for (const event of [...roundEvents, ...(sofaWindow?.events ?? [])]) {
+    sofaEvents.set(event.id, event);
+  }
+
+  if (canQuerySofa && sofaEvents.size === 0) {
     notes.push('No se pudieron obtener eventos de SofaScore para la jornada.');
   }
 
+  const allSofaEvents = [...sofaEvents.values()];
+  // Un único matcher para toda la jornada: construirlo por partido repetía su
+  // trabajo (y sus avisos) una vez por encuentro.
+  const matchTeam = buildTeamMatcher(officialTeams);
   const ownPlayers = teamData.players.map((p) => p.playerMaster);
 
   const enrichedMatches: EnrichedMatch[] = [];
 
-  for (const calendarMatch of calendar) {
-    const sofaEvent = sofaWindow ? findSofaEvent(calendarMatch, sofaWindow.events, officialTeams) : null;
-    const { match, fetchNotes } = await buildEnrichedMatch(calendarMatch, sofaEvent, ownPlayers, officialTeams);
-    enrichedMatches.push(match);
-    notes.push(...fetchNotes);
+  // Cada partido dispara 3-4 peticiones a SofaScore; en serie una jornada
+  // entera se acerca al timeout de la función. Se procesan en tandas para
+  // acortar la espera sin castigar a la fuente.
+  for (let i = 0; i < calendar.length; i += ENRICH_CONCURRENCY) {
+    const chunk = calendar.slice(i, i + ENRICH_CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map((calendarMatch) =>
+        buildEnrichedMatch(
+          calendarMatch,
+          findSofaEvent(calendarMatch, allSofaEvents, teamsById, matchTeam),
+          ownPlayers,
+          teamsById,
+        ),
+      ),
+    );
+    for (const { match, fetchNotes } of results) {
+      enrichedMatches.push(match);
+      notes.push(...fetchNotes);
+    }
   }
 
   return { matches: enrichedMatches, notes: [...new Set(notes)] };

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { Command } from 'cmdk';
-import { Search, LayoutDashboard, Users, CalendarDays, ShoppingCart, Trophy, Shield, BarChart3, Lightbulb, TrendingUp, Rows3, PanelLeftClose, PanelLeftOpen, Gauge, Swords } from 'lucide-react';
+import { Search, LayoutDashboard, Users, CalendarDays, ShoppingCart, Trophy, Shield, BarChart3, Lightbulb, TrendingUp, Rows3, PanelLeftClose, PanelLeftOpen, Gauge, Swords, Gavel } from 'lucide-react';
 import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
 import type { DashboardTab } from './Sidebar';
 
@@ -11,6 +11,7 @@ const tabIcons: Record<DashboardTab, React.ReactNode> = {
   team: <Users className="h-4 w-4" />,
   lineup: <CalendarDays className="h-4 w-4" />,
   market: <ShoppingCart className="h-4 w-4" />,
+  'clause-market': <Gavel className="h-4 w-4" />,
   recommendations: <Lightbulb className="h-4 w-4" />,
   standings: <Trophy className="h-4 w-4" />,
   rivals: <Shield className="h-4 w-4" />,
@@ -25,6 +26,7 @@ const tabLabels: Record<DashboardTab, string> = {
   team: 'Mi Equipo',
   lineup: 'Alineación',
   market: 'Mercado',
+  'clause-market': 'Clausulazos',
   recommendations: 'Recomendaciones',
   standings: 'Clasificación',
   rivals: 'Rivales',

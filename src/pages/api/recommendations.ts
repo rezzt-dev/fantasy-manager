@@ -230,8 +230,6 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       confirmedLineups,
     };
     analysis.clauseRisks = analyzeClauseRisks(analysis, estimatorContext);
-    // El capitán solo existe si la liga tiene la feature premium activada.
-    analysis.captain = league.config?.premiumFeatures?.captain === false ? undefined : recommendCaptain(analysis, estimatorContext);
 
     const formations = await fetchAvailableFormations(token, league.config?.premiumFeatures?.formations === true);
     const captainEnabled = league.config?.premiumFeatures?.captain === true;
@@ -243,6 +241,13 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       context: estimatorContext,
       captainEnabled,
     });
+
+    // El capitán se calcula después del once óptimo para poder proponer también
+    // el brazalete del "mejor once". Solo se omite si la liga lo desactiva.
+    analysis.captain =
+      league.config?.premiumFeatures?.captain === false
+        ? undefined
+        : recommendCaptain(analysis, estimatorContext, { optimalLineup: analysis.optimalLineup, enabled: captainEnabled });
 
     // Esquema táctico con presupuesto: mejor once alcanzable combinando
     // plantilla, mercado y cláusulas de rivales.
@@ -397,7 +402,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       console.warn('[track-record] persist failed:', persistError instanceof Error ? persistError.message : persistError);
     }
 
-    return new Response(JSON.stringify({ recommendations, bestMoves, optimalLineup: analysis.optimalLineup, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, league, money, week, marketCount: market.length }), {
+    return new Response(JSON.stringify({ recommendations, bestMoves, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, league, money, week, marketCount: market.length }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

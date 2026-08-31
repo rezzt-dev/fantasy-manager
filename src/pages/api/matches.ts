@@ -17,6 +17,12 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       return new Response(JSON.stringify({ error: 'teamId must be a number' }), { status: 400 });
     }
 
+    const weekParam = url.searchParams.get('week');
+    const requestedWeek = weekParam !== null ? parseInt(weekParam, 10) : null;
+    if (weekParam !== null && !Number.isFinite(requestedWeek)) {
+      return new Response(JSON.stringify({ error: 'week must be a number' }), { status: 400 });
+    }
+
     const token = await getToken(cookies, session);
     if (!token) {
       return new Response(JSON.stringify({ error: 'No token configured' }), { status: 401 });
@@ -28,14 +34,18 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     ]);
 
     const currentWeek = week?.number ?? week?.weekNumber ?? 1;
+    // La jornada pedida se acota a [1, jornada actual]: el calendario de
+    // jornadas futuras no aporta datos y evita peticiones inútiles.
+    const selectedWeek = requestedWeek === null ? currentWeek : Math.min(Math.max(requestedWeek, 1), currentWeek);
+
     const calendar = await fetchOfficialAPI<Match[]>(`${CMP}/calendar`, token, {
-      weekNumber: String(currentWeek),
+      weekNumber: String(selectedWeek),
     });
 
     const { matches, notes } = await buildMatchesForWeek({
       token,
       teamId,
-      currentWeek,
+      week: selectedWeek,
       calendar,
       teamData,
     });
@@ -45,7 +55,9 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     const normal = sorted.filter((m) => !m.important);
 
     const response: MatchesResponse = {
-      week: currentWeek,
+      week: selectedWeek,
+      currentWeek,
+      availableWeeks: Array.from({ length: currentWeek }, (_, i) => i + 1),
       generatedAt: new Date().toISOString(),
       matches: sorted,
       important,

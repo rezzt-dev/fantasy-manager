@@ -12,6 +12,9 @@ const DROP_TOKENS = new Set([
   'fc', 'cf', 'ud', 'rc', 'rcd', 'cd', 'ca', 'sd', 'ad', 'de', 'club', 'real', 'sad', 'cfc',
 ]);
 
+/** Sufijos de filial: se conservan aunque sean tokens de una sola letra. */
+const FILIAL_SUFFIXES = new Set(['b', 'ii']);
+
 /**
  * Alias: nombre normalizado de la fuente → nombre normalizado oficial.
  * Se aplican en ambos sentidos: el nombre oficial también se indexa bajo la
@@ -45,14 +48,25 @@ function expandAliases(aliases: Record<string, string>): Record<string, string[]
 const EXPANDED_ALIASES = expandAliases(NAME_ALIASES);
 
 export function normalizeTeamName(name: string): string {
-  const tokens = name
+  const rawTokens = name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9 ]/g, ' ')
     .split(/\s+/)
-    .filter((token) => token.length > 1 && !DROP_TOKENS.has(token));
-  const normalized = tokens.join(' ').trim();
+    .filter(Boolean);
+
+  // El marcador de filial va siempre al final ("R. Sociedad B") y es lo único
+  // que lo distingue del primer equipo. Se extrae antes de descartar tokens de
+  // una letra para no colapsar "Real Sociedad" y "R. Sociedad B" en el mismo
+  // nombre normalizado.
+  const lastToken = rawTokens[rawTokens.length - 1];
+  const filial = lastToken && FILIAL_SUFFIXES.has(lastToken) ? lastToken : null;
+  const baseTokens = filial ? rawTokens.slice(0, -1) : rawTokens;
+
+  const tokens = baseTokens.filter((token) => token.length > 1 && !DROP_TOKENS.has(token));
+  const base = tokens.join(' ').trim();
+  const normalized = filial ? `${base} ${filial}`.trim() : base;
   return NAME_ALIASES[normalized] ?? normalized;
 }
 
@@ -72,6 +86,19 @@ export interface OfficialTeam {
 export type TeamMatcher = (sourceName: string) => number | null;
 
 /**
+ * Los avisos de normalización describen el catálogo, no la petición: se
+ * construye un matcher por consulta y sin esto el mismo aviso se repetiría en
+ * cada una, inundando el log.
+ */
+const warnedKeys = new Set<string>();
+
+function warnOnce(message: string): void {
+  if (warnedKeys.has(message)) return;
+  warnedKeys.add(message);
+  console.warn(message);
+}
+
+/**
  * Construye el matcher nombre-de-fuente → teamId oficial a partir de la lista
  * oficial (teams-master). Indexa variaciones de alias en ambos sentidos para
  * que pequeñas diferencias de nomenclatura ("Celta" vs "Celta Vigo") no
@@ -83,12 +110,12 @@ export function buildTeamMatcher(officialTeams: OfficialTeam[]): TeamMatcher {
   for (const team of officialTeams) {
     const variations = nameVariations(team.name);
     if (variations.length === 0) {
-      console.warn(`[team-names] nombre oficial no normalizable: ${team.name}`);
+      warnOnce(`[team-names] nombre oficial no normalizable: ${team.name}`);
       continue;
     }
     for (const key of variations) {
       if (byNormalized.has(key) && byNormalized.get(key) !== team.id) {
-        console.warn(`[team-names] nombre normalizado duplicado: ${key} (${byNormalized.get(key)} y ${team.id})`);
+        warnOnce(`[team-names] nombre normalizado duplicado: ${key} (${byNormalized.get(key)} y ${team.id})`);
         continue;
       }
       byNormalized.set(key, team.id);

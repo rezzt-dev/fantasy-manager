@@ -20,6 +20,7 @@ import SectionHeader from '../shared/SectionHeader';
 import SignalChips from '../shared/SignalChips';
 import EmptyState from '../shared/EmptyState';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
+import CaptainCard from '../shared/CaptainCard';
 import {
   Lightbulb,
   Banknote,
@@ -67,6 +68,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
   });
 
   const recommendations = data?.recommendations || [];
+  const captain = data?.captain ?? undefined;
   const money = data?.money;
   const ownMoney = money?.teamMoney ?? 0;
   const teamPlayers = teamDataQuery?.players || [];
@@ -213,6 +215,9 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
           <Lightbulb className="h-6 w-6 text-amber-400 shrink-0" />
         </div>
       </div>
+
+      {/* 👑 Capitán de la jornada: la decisión con más apalancamiento (x2 puntos) */}
+      {captain && <CaptainCard captain={captain} onSelectPlayer={setSelectedDetailPlayer} />}
 
       {/* 🔥 Oportunidades Destacadas (Highlights) */}
       <Card>

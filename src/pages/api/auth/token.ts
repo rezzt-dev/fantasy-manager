@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import type { AuthTokens } from '../../../types/fantasy';
+import { readSession } from '../../../lib/fantasy/api-proxy';
 
 function parseFullTokens(input: string): AuthTokens | null {
   let t = input.trim();
@@ -78,6 +79,6 @@ export const POST: APIRoute = async ({ request, session }) => {
 };
 
 export const GET: APIRoute = async ({ session }) => {
-  const tokens = session ? await session.get('fantasy_tokens') : undefined;
+  const tokens = session ? await readSession(session) : undefined;
   return new Response(JSON.stringify({ hasToken: Boolean(tokens?.access_token) }), { status: 200 });
 };

@@ -60,6 +60,27 @@ export async function performTokenRefresh(refreshTokenValue: string): Promise<Au
   };
 }
 
+/** Lectura tolerante a fallos del store de sesión. */
+export async function readSession(session: AstroSession): Promise<AuthTokens | undefined> {
+  try {
+    return await session.get<AuthTokens>('fantasy_tokens');
+  } catch (error) {
+    console.warn('[session] read failed:', error instanceof Error ? error.message : error);
+    return undefined;
+  }
+}
+
+/** Escritura tolerante a fallos: devuelve false si el store no ha aceptado. */
+export async function writeSession(session: AstroSession, tokens: AuthTokens): Promise<boolean> {
+  try {
+    await session.set('fantasy_tokens', tokens);
+    return true;
+  } catch (error) {
+    console.warn('[session] write failed:', error instanceof Error ? error.message : error);
+    return false;
+  }
+}
+
 export async function getOrRefreshTokens(
   cookies: {
     get: (name: string) => { value?: string } | undefined;
@@ -69,8 +90,10 @@ export async function getOrRefreshTokens(
 ): Promise<string | undefined> {
   let tokens: AuthTokens | undefined;
 
+  // La sesión es best-effort: si el store no está disponible (p. ej. Upstash
+  // sin credenciales en local) no puede tumbar la request, hay cookie detrás.
   if (session) {
-    tokens = await session.get<AuthTokens>('fantasy_tokens');
+    tokens = await readSession(session);
   }
 
   if (!tokens) {
@@ -94,7 +117,7 @@ export async function getOrRefreshTokens(
         const newTokens = await performTokenRefresh(tokens.refresh_token);
 
         if (session) {
-          await session.set('fantasy_tokens', newTokens);
+          await writeSession(session, newTokens);
         }
 
         if (cookies.set) {

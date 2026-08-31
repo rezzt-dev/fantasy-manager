@@ -173,6 +173,15 @@ export interface WeekInfo {
   current?: boolean;
 }
 
+export interface TeamCatalogEntry {
+  id: number;
+  name: string;
+  shortName: string;
+  slug: string;
+  badgeColor: string;
+  badgeWhite: string;
+}
+
 export interface Match {
   id: string;
   matchDate: string;
@@ -280,6 +289,10 @@ export interface EnrichedMatch {
 
 export interface MatchesResponse {
   week: number;
+  /** Jornada en curso según la API oficial (la vista puede mostrar otra). */
+  currentWeek: number;
+  /** Jornadas consultables (1..currentWeek). */
+  availableWeeks: number[];
   generatedAt: string;
   matches: EnrichedMatch[];
   important: EnrichedMatch[];

@@ -4,13 +4,14 @@ import * as React from 'react';
 import { cn } from '../../lib/utils';
 import { Sheet, SheetContent } from '../ui/sheet';
 import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
-import { Trophy, LayoutDashboard, Users, CalendarDays, ShoppingCart, Lightbulb, BarChart3, Shield, TrendingUp, Gauge, Swords } from 'lucide-react';
+import { Trophy, LayoutDashboard, Users, CalendarDays, ShoppingCart, Lightbulb, BarChart3, Shield, TrendingUp, Gauge, Swords, Gavel } from 'lucide-react';
 
 export type DashboardTab =
   | 'overview'
   | 'team'
   | 'lineup'
   | 'market'
+  | 'clause-market'
   | 'standings'
   | 'rivals'
   | 'statistics'
@@ -38,6 +39,7 @@ const navigation: NavSection[] = [
     label: 'Mercado',
     items: [
       { id: 'market', label: 'Mercado', icon: ShoppingCart },
+      { id: 'clause-market', label: 'Clausulazos', icon: Gavel },
       { id: 'recommendations', label: 'Centro Estrategia', icon: Lightbulb },
     ],
   },

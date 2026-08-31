@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getEnv } from '../../../lib/env';
+import { readSession } from '../../../lib/fantasy/api-proxy';
 import type { AuthTokens } from '../../../types/fantasy';
 
 const AUTH_BASE_URL = getEnv('LALIGA_AUTH_BASE_URL', 'https://login.laliga.es/laligadspprob2c.onmicrosoft.com/oauth2/v2.0/token');
@@ -62,6 +63,6 @@ export const POST: APIRoute = async ({ request, session, redirect }) => {
 };
 
 export const GET: APIRoute = async ({ session }) => {
-  const tokens = session ? await session.get('fantasy_tokens') : undefined;
+  const tokens = session ? await readSession(session) : undefined;
   return new Response(JSON.stringify({ authenticated: Boolean(tokens?.access_token) }), { status: 200 });
 };

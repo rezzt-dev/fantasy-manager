@@ -1,79 +1,244 @@
-import type { LeagueAnalysis, CaptainCandidate, CaptainRecommendation } from '../../types/analysis';
-import { estimatePoints, type EstimatorContext } from './points-estimator';
+import type { PlayerMaster, TeamPlayer } from '../../types/fantasy';
+import type { CaptainCandidate, CaptainRecommendation, LeagueAnalysis, OptimalLineup } from '../../types/analysis';
+import { estimatePointsDetailed, type EstimatorContext } from './points-estimator';
 import { combinedSignal } from './external-intelligence';
 import { isSuspended } from '../engine/features/minutes';
+import { resolveTeamId } from '../engine/model';
+
+const COACH_POSITION_ID = 5;
+const BAD_NEWS_CONFIDENCE = 0.6;
+const MAX_ALTERNATIVES = 3;
 
 /**
- * Recomendación de capitán: el jugador del once con más puntos esperados.
+ * Peso de la media (xP) frente al suelo (xP − λσ) en el score de decisión.
  *
- * El score es el xP del modelo SIN factores extra: localía, estado físico,
- * titularidad, noticias y dificultad del rival ya están aplicados una vez en
- * el estimador (§2.1.8 del diseño: aquí se elimina la doble/triple
- * contabilidad que tenía el motor anterior). El filtro de salud solo ordena
- * (un capitán debe estar disponible), no vuelve a penalizar.
+ * El brazalete duplica los puntos, así que en valor esperado puro la mejor
+ * elección es simplemente el mayor xP: E[2X] = 2·E[X]. Pero es una apuesta
+ * única e irreversible (no hay banquillo que la rescate), así que entre dos
+ * jugadores con la misma media preferimos al de suelo más alto. Es la misma
+ * lógica que ya usa el optimizador de once (§5.2), no una re-aplicación de
+ * los factores de contexto: localía, rival, estado, titularidad y noticias
+ * ya están dentro de xP una sola vez (§2.1.8).
  */
-export function recommendCaptain(analysis: LeagueAnalysis, estimatorContext?: EstimatorContext): CaptainRecommendation {
-  const { lineup, calendar, externalSignals, starterInfo } = analysis;
+const EV_WEIGHT = 0.7;
 
-  const lineupEntries = [
-    ...(lineup.formation.goalkeeper || []),
-    ...(lineup.formation.defender || []),
-    ...(lineup.formation.midfielder || []),
-    ...(lineup.formation.attacker || []),
+/** Por debajo de esta probabilidad de ser titular, el brazalete es una apuesta. */
+const ROTATION_RISK_PSTARTER = 0.6;
+
+const STARTER_TEXT: Record<string, string> = {
+  Titular: 'titular indiscutible',
+  Habitual: 'titular habitual',
+  'Rotación': 'entra en rotaciones',
+  Suplente: 'suplente habitual',
+};
+
+interface CaptainOptions {
+  /** Once óptimo ya calculado: amplía el pool y permite sugerir su capitán. */
+  optimalLineup?: OptimalLineup;
+  /** `league.config.premiumFeatures.captain`: si la liga permite capitán. */
+  enabled?: boolean;
+}
+
+/**
+ * Recomendación de capitán de la jornada.
+ *
+ * Evalúa toda la plantilla (no solo el once guardado, que LaLiga devuelve
+ * incompleto a menudo) y elige el brazalete dentro del once que el usuario va
+ * a jugar de verdad: el oficial si existe, el recomendado si no.
+ *
+ * Devuelve además `scoreByPlayerId` con toda la plantilla para que la UI pueda
+ * coronar al mejor de cualquier once que esté mostrando, incluso después de
+ * que el usuario haga cambios manuales.
+ */
+export function recommendCaptain(
+  analysis: LeagueAnalysis,
+  estimatorContext?: EstimatorContext,
+  options?: CaptainOptions,
+): CaptainRecommendation | undefined {
+  const { lineup, calendar, teamData, externalSignals, starterInfo } = analysis;
+  const optimalLineup = options?.optimalLineup;
+
+  const currentEntries = [
+    ...(lineup?.formation.goalkeeper || []),
+    ...(lineup?.formation.defender || []),
+    ...(lineup?.formation.midfielder || []),
+    ...(lineup?.formation.attacker || []),
   ];
+  const currentIds = new Set(currentEntries.map((e) => e.playerMaster.id));
+  const optimalIds = new Set((optimalLineup?.starters || []).map((e) => e.player.id));
 
-  const candidates: CaptainCandidate[] = lineupEntries.map((entry) => {
-    const player = entry.playerMaster;
-    const isHome = calendar.some((m) => m.localId === Number(player.teamId) || m.localId === Number(player.team?.id));
-    const isHealthy = player.playerStatus === 'ok' && !isSuspended(player, estimatorContext?.injuryReport);
-    const expected = estimatePoints(player, calendar, estimatorContext);
-    const external = combinedSignal(externalSignals[player.id] || []);
-    const hasBadNews = external.signal === 'sell' && external.confidence >= 0.6;
-    const starterScore = starterInfo[player.id]?.score;
+  // Universo: plantilla + cualquier jugador del once oficial que no se haya
+  // podido cruzar con ella (la API de alineación es más laxa que la de equipo).
+  const universe = new Map<string, PlayerMaster>();
+  for (const tp of (teamData?.players || []) as TeamPlayer[]) {
+    universe.set(tp.playerMaster.id, tp.playerMaster);
+  }
+  for (const entry of currentEntries) {
+    if (!universe.has(entry.playerMaster.id)) universe.set(entry.playerMaster.id, entry.playerMaster);
+  }
 
-    const reasons: string[] = [];
-    reasons.push(`${expected.toFixed(1)} pts esperados`);
-    if (isHome) reasons.push('juega en casa');
-    else reasons.push('juega fuera');
-    if (!isHealthy) reasons.push(`está ${statusText(player.playerStatus)}`);
-    if (hasBadNews) reasons.push('noticias negativas recientes');
-    if (starterScore !== undefined && starterScore < 0.35) reasons.push('suplente habitual');
-    else if (starterScore !== undefined && starterScore >= 0.8) reasons.push('titular habitual');
+  const evaluated = [...universe.values()]
+    .filter((player) => player.positionId !== COACH_POSITION_ID)
+    .map((player) =>
+      buildCandidate(player, {
+        estimatorContext,
+        externalSignals,
+        starterInfo,
+        calendar,
+        inCurrentLineup: currentIds.has(player.id),
+        inOptimalLineup: optimalIds.has(player.id),
+      }),
+    );
 
-    return {
-      player,
-      expectedPoints: expected,
-      isHome,
-      isHealthy,
-      score: expected,
-      reasoning: reasons.join(' · '),
-    };
-  });
+  if (evaluated.length === 0) return undefined;
 
-  // Ordenar por puntos esperados. Los disponibles primero: un capitán debe jugar.
-  candidates.sort((a, b) => b.score - a.score);
+  const scoreByPlayerId: Record<string, number> = {};
+  for (const candidate of evaluated) scoreByPlayerId[candidate.player.id] = round2(candidate.score);
 
-  const healthyOnes = candidates.filter((c) => c.isHealthy);
-  const usable = healthyOnes.length > 0 ? healthyOnes : candidates;
+  const byScore = (a: CaptainCandidate, b: CaptainCandidate) => b.score - a.score;
 
-  const captain = usable[0] || candidates[0];
-  const alternatives = usable.slice(1, 3);
+  // El brazalete se pone en el once que se va a jugar: el oficial si LaLiga ya
+  // tiene uno guardado, y si no el recomendado. Solo si no hay ninguno se
+  // ordena la plantilla entera.
+  const currentPool = evaluated.filter((c) => c.inCurrentLineup).sort(byScore);
+  const optimalPool = evaluated.filter((c) => c.inOptimalLineup).sort(byScore);
+  const { pool, ranked } =
+    currentPool.length > 0
+      ? { pool: 'lineup' as const, ranked: currentPool }
+      : optimalPool.length > 0
+        ? { pool: 'optimal' as const, ranked: optimalPool }
+        : { pool: 'squad' as const, ranked: [...evaluated].sort(byScore) };
+
+  const captain = pickBest(ranked);
+  if (!captain) return undefined;
+
+  const alternatives = ranked.filter((c) => c.player.id !== captain.player.id).slice(0, MAX_ALTERNATIVES);
+  const bestAlternative = alternatives[0];
+
+  // Ganancia de acertar: los puntos del capitán se duplican, así que la
+  // diferencia de xP frente a la mejor alternativa son puntos reales de más.
+  const gainOverAlternative = round1(
+    bestAlternative ? Math.max(0, captain.expectedPoints - bestAlternative.expectedPoints) : captain.expectedPoints,
+  );
+
+  // Si el mejor once propone otro brazalete, se enseña: al aplicar la
+  // alineación recomendada el capitán del once oficial puede dejar de estar.
+  const optimalBest = pickBest(optimalPool);
+  const optimalCaptain = optimalBest && optimalBest.player.id !== captain.player.id ? optimalBest : undefined;
 
   return {
-    captain: captain || (alternatives[0] as CaptainCandidate),
+    captain,
     alternatives,
+    gainOverAlternative,
+    optimalCaptain,
+    pool,
+    enabled: options?.enabled === true,
+    scoreByPlayerId,
   };
 }
 
-function statusText(status: string): string {
-  switch (status) {
-    case 'doubtful':
-      return 'dudoso';
-    case 'injured':
-      return 'lesionado';
-    case 'out_of_league':
-      return 'fuera de la liga';
-    default:
-      return status;
+/**
+ * Mejor candidato disponible. El filtro de disponibilidad solo ordena (un
+ * capitán tiene que jugar); nunca vuelve a penalizar puntos, que ya están
+ * ajustados en el estimador.
+ */
+function pickBest(ranked: CaptainCandidate[]): CaptainCandidate | undefined {
+  return (
+    ranked.find((c) => c.hasFixture && c.isHealthy) ??
+    ranked.find((c) => c.hasFixture) ??
+    ranked[0]
+  );
+}
+
+interface CandidateInput {
+  estimatorContext?: EstimatorContext;
+  externalSignals: LeagueAnalysis['externalSignals'];
+  starterInfo: LeagueAnalysis['starterInfo'];
+  calendar: LeagueAnalysis['calendar'];
+  inCurrentLineup: boolean;
+  inOptimalLineup: boolean;
+}
+
+function buildCandidate(player: PlayerMaster, input: CandidateInput): CaptainCandidate {
+  const { estimatorContext, externalSignals, starterInfo, calendar, inCurrentLineup, inOptimalLineup } = input;
+
+  const prediction = estimatePointsDetailed(player, calendar, estimatorContext);
+  const expectedPoints = round1(prediction.xp);
+  const floorPoints = round1(prediction.riskAdjustedXp);
+
+  const teamId = resolveTeamId(player);
+  const homeMatch = teamId !== undefined ? calendar.find((m) => m.localId === teamId) : undefined;
+  const awayMatch = teamId !== undefined ? calendar.find((m) => m.visitorId === teamId) : undefined;
+  // Sin calendario no podemos afirmar que descanse: se asume que juega.
+  const hasFixture = calendar.length === 0 || teamId === undefined || Boolean(homeMatch || awayMatch);
+  const isHome = homeMatch ? true : awayMatch ? false : null;
+
+  const suspended = isSuspended(player, estimatorContext?.injuryReport);
+  const isHealthy = player.playerStatus === 'ok' && !suspended;
+  const external = combinedSignal(externalSignals?.[player.id] || []);
+  const hasBadNews = external.signal === 'sell' && external.confidence >= BAD_NEWS_CONFIDENCE;
+  const starter = starterInfo?.[player.id];
+
+  const score = EV_WEIGHT * prediction.xp + (1 - EV_WEIGHT) * prediction.riskAdjustedXp;
+
+  const risks: string[] = [];
+  if (!hasFixture) risks.push('Su equipo descansa esta jornada: el brazalete se perdería.');
+  if (suspended) risks.push('Está sancionado y no puede jugar.');
+  else if (player.playerStatus === 'injured') risks.push('Está lesionado.');
+  else if (player.playerStatus === 'doubtful') risks.push('Es duda para la jornada.');
+  if (hasBadNews) risks.push('Noticias negativas recientes sobre el jugador.');
+  if (prediction.pStarter !== null && prediction.pStarter < ROTATION_RISK_PSTARTER) {
+    risks.push(`Solo ${Math.round(prediction.pStarter * 100)}% de probabilidad de ser titular.`);
   }
+  if (prediction.dataQuality.level === 'low') {
+    risks.push('Pocos datos para estimar su puntuación con confianza.');
+  }
+
+  return {
+    player,
+    expectedPoints,
+    floorPoints,
+    captainBonus: expectedPoints,
+    totalWithArmband: round1(prediction.xp * 2),
+    score: round2(score),
+    pStarter: prediction.pStarter,
+    isHome,
+    hasFixture,
+    isHealthy,
+    confidence: prediction.dataQuality.level,
+    inCurrentLineup,
+    inOptimalLineup,
+    risks,
+    reasoning: buildReasoning({ expectedPoints, hasFixture, isHome, prediction, starter }),
+  };
+}
+
+function buildReasoning(input: {
+  expectedPoints: number;
+  hasFixture: boolean;
+  isHome: boolean | null;
+  prediction: ReturnType<typeof estimatePointsDetailed>;
+  starter?: LeagueAnalysis['starterInfo'][string];
+}): string {
+  const { expectedPoints, hasFixture, isHome, prediction, starter } = input;
+  const parts: string[] = [`${expectedPoints.toFixed(1)} pts esperados (${(expectedPoints * 2).toFixed(1)} con brazalete)`];
+
+  if (!hasFixture) parts.push('su equipo descansa');
+  else if (isHome === true) parts.push('juega en casa');
+  else if (isHome === false) parts.push('juega fuera');
+
+  if (starter) parts.push(STARTER_TEXT[starter.label] ?? starter.label.toLowerCase());
+  else if (prediction.pStarter !== null) parts.push(`${Math.round(prediction.pStarter * 100)}% de titularidad`);
+
+  if (prediction.pointsStdDev !== null) parts.push(`regularidad ±${prediction.pointsStdDev.toFixed(1)}`);
+
+  return parts.join(' · ');
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function round2(value: number): number {
+  return Math.round(value * 100) / 100;
 }

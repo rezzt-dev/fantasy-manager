@@ -16,6 +16,7 @@ import OverviewTab from './dashboard/OverviewTab';
 import TeamTab from './dashboard/TeamTab';
 import LineupTab from './dashboard/LineupTab';
 import MarketTab from './dashboard/MarketTab';
+import ClauseMarketTab from './dashboard/ClauseMarketTab';
 import StandingsTab from './dashboard/StandingsTab';
 import RivalsTab from './dashboard/RivalsTab';
 import StatisticsTab from './dashboard/StatisticsTab';
@@ -167,6 +168,14 @@ export default function DashboardContainer() {
         return;
       }
 
+      // C abre Clausulazos: la sección no cabe en los atajos numéricos, que
+      // ya están asignados a las diez pestañas originales.
+      if (e.key.toLowerCase() === 'c' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        changeTab('clause-market');
+        return;
+      }
+
       if (e.metaKey || e.ctrlKey) {
         const tabs: DashboardTab[] = [
           'overview',
@@ -289,6 +298,9 @@ function TabContent({ league, tab }: { league: FantasyLeague; tab: string }) {
       break;
     case 'market':
       content = <MarketTab league={league} />;
+      break;
+    case 'clause-market':
+      content = <ClauseMarketTab league={league} />;
       break;
     case 'standings':
       content = <StandingsTab league={league} />;

@@ -276,6 +276,24 @@ interface SofaEventsPage {
 }
 
 /**
+ * Eventos de una jornada concreta (`/events/round/{n}`). Es la vía fiable para
+ * jornadas pasadas: `events/last/0` solo devuelve la página más reciente, así
+ * que las jornadas antiguas se quedan fuera de la ventana temporal.
+ */
+export async function fetchLaLigaEventsRound(round: number): Promise<SofaEvent[]> {
+  const seasonId = await currentSeasonId();
+  if (seasonId === null) return [];
+
+  const page = (await fetchJson(
+    `sofa-events-round-${seasonId}-${round}`,
+    `/unique-tournament/${LALIGA_TOURNAMENT_ID}/season/${seasonId}/events/round/${round}`,
+    EVENTS_TTL_MS,
+  )) as SofaEventsPage | null;
+
+  return page?.events ?? [];
+}
+
+/**
  * Descarga eventos de LaLiga en una ventana temporal. Combina `/events/next/0`
  * y `/events/last/0` porque cubren la jornada actual y evitan tener que
  * conocer el número de ronda exacto. Filtra por timestamp para devolver solo

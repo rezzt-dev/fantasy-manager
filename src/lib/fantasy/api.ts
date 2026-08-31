@@ -10,8 +10,15 @@ import type {
   PlayerMaster,
   Recommendation,
   MatchesResponse,
+  TeamCatalogEntry,
 } from '../../types/fantasy';
-import type { LeagueAnalysis, TacticalScheme, ScorePredictionsResponse } from '../../types/analysis';
+import type {
+  CaptainRecommendation,
+  ClauseMarketResponse,
+  LeagueAnalysis,
+  TacticalScheme,
+  ScorePredictionsResponse,
+} from '../../types/analysis';
 import type { ScoreHistoryRecord } from '../engine/score-predictions-persistence';
 import type { TrackRecordSummary } from '../engine/track-record';
 import type { MultiWeekPlan } from '../engine/optimize';
@@ -152,6 +159,8 @@ export const fantasyAPI = {
       recommendations: Recommendation[];
       bestMoves?: Recommendation[];
       optimalLineup?: { formation: string; starters: { player: PlayerMaster; expectedPoints: number }[]; captain?: { player: PlayerMaster; expectedPoints: number }; totalExpected: number };
+      captain?: CaptainRecommendation | null;
+      captainEnabled?: boolean;
       tacticalScheme?: TacticalScheme;
       multiWeekPlan?: MultiWeekPlan | null;
       league: FantasyLeague;
@@ -165,6 +174,11 @@ export const fantasyAPI = {
       `/api/league-analysis?leagueId=${leagueId}&teamId=${teamId}`,
     ),
 
+  getClauseMarket: (leagueId: string, teamId: number) =>
+    fetchJSON<ClauseMarketResponse & { league: FantasyLeague; money: TeamMoney }>(
+      `/api/clause-market?leagueId=${leagueId}&teamId=${teamId}`,
+    ),
+
   getTrackRecord: (leagueId: string) => fetchJSON<TrackRecordResponse>(`/api/track-record?leagueId=${leagueId}`),
 
   getScorePredictions: (leagueId: string, teamId: number) =>
@@ -172,8 +186,12 @@ export const fantasyAPI = {
       `/api/score-predictions?leagueId=${leagueId}&teamId=${teamId}`,
     ),
 
-  getMatches: (leagueId: string, teamId: number) =>
-    fetchJSON<MatchesResponse>(`/api/matches?leagueId=${leagueId}&teamId=${teamId}`),
+  getMatches: (leagueId: string, teamId: number, week?: number) =>
+    fetchJSON<MatchesResponse>(
+      `/api/matches?leagueId=${leagueId}&teamId=${teamId}${week !== undefined ? `&week=${week}` : ''}`,
+    ),
+
+  getTeamsCatalog: () => fetchJSON<{ teams: TeamCatalogEntry[] }>(`/api/teams`).then((r) => r.teams),
 
   getFreeFormations: () =>
     fetchJSON<string[]>(`/api/proxy/v4/teams/lineup/formations?option=free&x-lang=es`),

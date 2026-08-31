@@ -117,6 +117,38 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 - Verificación: `pnpm exec tsc --noEmit` limpio + `/api/score-predictions` con
   datos reales de una liga.
 
+## Clausulazos (Mercado → Clausulazos)
+
+- Nueva pestaña `clause-market` en el dashboard (sidebar bajo *Mercado*, mobile
+  nav, paleta de comandos y atajo `C`; no entra en los atajos numéricos, que
+  siguen asignados a las diez pestañas originales). Lista **solo** jugadores de
+  otros equipos de la liga que se pueden clausular ahora mismo y recomienda
+  cuáles encajan mejor en el equipo.
+- Backend: `/api/clause-market?leagueId=&teamId=` (caché en memoria 3 min) usa
+  `src/lib/analysis/clause-market.ts`. Mismo pipeline de datos y mismo
+  `EstimatorContext` que `/api/recommendations` (Elo, onces probables, bajas,
+  alineaciones confirmadas, noticias, playerStats, tendencias de valor), sin la
+  persistencia de track record ni el planificador multi-jornada.
+- Métrica principal: `xiGain`, la mejora **real del once titular** al añadir al
+  jugador. `bestXi()` replica numéricamente `lineup-optimizer.ts` (misma
+  co-optimización del capitán) sobre xP ya calculados, de forma que se pueden
+  evaluar cientos de "¿y si ficho a X?" y los combos de 2-3 clausulazos sin
+  volver a estimar puntos. `deltaXp` (vs. media propia de la posición) queda
+  como métrica secundaria.
+- Cada objetivo trae `fitScore` 0-100 (once 45 · nivel 15 · precio 15 ·
+  necesidad 10 · titularidad 10 · datos 5, con penalizaciones por estado,
+  noticias y presupuesto), `urgency` 0-100 (rivales que pueden pagar la
+  cláusula, ratio cláusula/valor, nivel del jugador y clausulazos recientes de
+  la liga), `verdict`, motivos, avisos y `funding`: qué vender para llegar a la
+  cláusula, contando que cada venta aporta 0,8·valor (la caja sube el valor
+  íntegro pero baja el bonus del 20% del valor de plantilla).
+- La disponibilidad sale siempre de `getClauseProtection` (`clause-availability.ts`):
+  `available` va a `targets` y `locked`/`shielded` a `upcoming` con los días que
+  faltan. La asequibilidad usa `computeAvailableBudget` (§5.1), igual que el
+  resto del motor.
+- Verificación: `pnpm exec tsc --noEmit` limpio + `pnpm build` + `/api/clause-market`
+  con datos reales de una liga.
+
 ## Partidos en vivo (Partidos)
 
 - Nueva pestaña `matches` en el dashboard (sidebar, mobile nav, command palette
@@ -138,6 +170,37 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
   (60 s detalles/incidentes, 15 min listados).
 - Verificación: `pnpm exec tsc --noEmit` limpio + `/api/matches` con datos reales
   de una liga.
+
+## Login con Google (extensión `extension/`)
+
+- LaLiga usa Azure AD B2C y su único `redirect_uri` registrado es el esquema
+  nativo `authredirect://com.lfp.laligafantasy`. **Una web no puede completar
+  ese OAuth**: cualquier URL propia da `AADB2C90006`. No perder tiempo
+  intentándolo desde el servidor ni con popups.
+- `extension/` (MV3, Chrome + variante Firefox) intercepta esa redirección con
+  `webRequest.onBeforeRedirect`, canjea el `code` con PKCE contra la política
+  `B2C_1A_5ULAIP_PARAMETRIZED_SIGNIN` (cliente público, sin secreto) y devuelve
+  los tokens a la pestaña de la app.
+- Estado del flujo en `chrome.storage.session` y entrega por `tabs.sendMessage`:
+  el service worker muere durante el login y ni las variables de módulo ni el
+  `sendResponse` inicial sobreviven.
+- Web: `src/lib/auth/extension-bridge.ts` (diálogo por `postMessage`, sin
+  depender del ID de la extensión), botón en `LoginForm.tsx`, instrucciones en
+  `src/pages/extension.astro`. Los tokens se persisten reutilizando
+  `/api/auth/token`.
+- Al añadir un dominio de despliegue hay que tocarlo en tres sitios:
+  `manifest.json` (`host_permissions` y `content_scripts.matches`) y
+  `ALLOWED_APP_ORIGINS` de `extension/src/config.js`.
+- El login por email (`/api/auth/login`, ROPC) sólo funciona con cuentas
+  locales de B2C, nunca con cuentas de Google.
+- Portabilidad: todo el código de la extensión usa el alias
+  `api = globalThis.browser ?? globalThis.chrome` de `config.js` (y una copia
+  inline en `bridge.js`, porque los content scripts no admiten `import`). No
+  volver a `chrome.*`: en Firefox ese espacio de nombres es de callbacks y cada
+  `await` devolvería `undefined`.
+- Publicar en las stores: `agent-docs/publicacion-extension/` (empieza por su
+  `README.md`). El empaquetado es `empaquetar.sh`; antes de subir a Firefox,
+  `pnpm dlx web-ext lint` debe seguir dando 0 errores.
 
 ## Documentation
 

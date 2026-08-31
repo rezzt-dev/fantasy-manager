@@ -134,8 +134,8 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       },
     };
     analysis.clauseRisks = analyzeClauseRisks(analysis, estimatorContext);
-    analysis.captain = recommendCaptain(analysis, estimatorContext);
 
+    const captainEnabled = league.config?.premiumFeatures?.captain === true;
     const formations = await fetchAvailableFormations(token, league.config?.premiumFeatures?.formations === true);
     analysis.optimalLineup = computeOptimalLineup({
       squad: teamData.players,
@@ -143,8 +143,16 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       calendar,
       formations,
       context: estimatorContext,
-      captainEnabled: league.config?.premiumFeatures?.captain === true,
+      captainEnabled,
     });
+
+    // El capitán se calcula después del once óptimo: así puede proponer también
+    // el brazalete del "mejor once" y no solo el del once oficial guardado.
+    // Solo se omite si la liga desactiva la feature explícitamente.
+    analysis.captain =
+      league.config?.premiumFeatures?.captain === false
+        ? undefined
+        : recommendCaptain(analysis, estimatorContext, { optimalLineup: analysis.optimalLineup, enabled: captainEnabled });
 
     const payload = {
       analysis,

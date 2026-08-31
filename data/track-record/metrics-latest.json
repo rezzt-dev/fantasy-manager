@@ -1,15 +1,17 @@
 {
-  "computedAt": "2026-08-23T15:34:18.966Z",
+  "computedAt": "2026-08-31T12:05:13.121Z",
   "leagueId": "017832595",
-  "week": 2,
-  "samples": 0,
-  "maeLegacy": null,
-  "maeV1": null,
-  "weeks": [],
-  "note": "Sin puntos reales todavía (pretemporada): las métricas se calcularán en cuanto haya jornadas liquidadas.",
+  "week": 3,
+  "samples": 36,
+  "maeLegacy": 2.85,
+  "maeV1": 2.83,
+  "weeks": [
+    3
+  ],
+  "note": "Baseline = media simple; v1 = media con decaimiento. Sin factores de fixture en ninguna de las dos.",
   "trackRecord": {
-    "settled": 73,
-    "maeXp": 3.07,
-    "maeLegacy": 2.59
+    "settled": 195,
+    "maeXp": 2.91,
+    "maeLegacy": 2.9
   }
 }

@@ -1,10 +1,32 @@
 # Autenticación con LALIGA FANTASY
 
-Última actualización: 2026-07-31
+Última actualización: 2026-08-31
 
-## Método recomendado para el MVP
+## Método recomendado: extensión de navegador (`extension/`)
 
-Dado que no somos la aplicación oficial ni tenemos un `redirect_uri` registrado en Azure B2C de LaLiga, el método más seguro y sencillo es el **token manual**.
+Es el único login de un clic posible y el único que funciona con cuentas de
+Google. La web sola no puede hacerlo: comprobado contra el B2C real, el único
+`redirect_uri` registrado para el cliente público `af88bcff-…` es el esquema
+nativo `authredirect://com.lfp.laligafantasy`; cualquier URL http/https propia
+—incluido `http://localhost`— devuelve `AADB2C90006`. Lo mismo con el cliente
+web `6457fa17-…`.
+
+La extensión resuelve exactamente ese hueco: observa la redirección nativa con
+`webRequest.onBeforeRedirect` antes de que el navegador la descarte, se queda
+con el `code` y lo canjea con PKCE. El endpoint de token acepta
+`grant_type=authorization_code` **sin secreto de cliente** (verificado: con un
+code falso responde `AADB2C90090`, es decir, ya había pasado la autenticación
+de cliente).
+
+- Política del flujo: `B2C_1A_5ULAIP_PARAMETRIZED_SIGNIN` (renderiza
+  `CombinedSigninAndSignup`, que es la pantalla con el botón de Google —
+  `GoogleExchange`).
+- Detalles de implementación y permisos: `extension/README.md`.
+- Lado web: `src/lib/auth/extension-bridge.ts` + `src/pages/extension.astro`.
+
+## Método de reserva: token manual
+
+Para quien no pueda o no quiera instalar la extensión.
 
 ### Pasos para el usuario
 
@@ -14,13 +36,18 @@ Dado que no somos la aplicación oficial ni tenemos un `redirect_uri` registrado
 4. Ejecutar el siguiente snippet:
 
 ```javascript
-JSON.parse(localStorage.getItem("auth")).status.authenticate.access_token
+localStorage.getItem('fz-accessToken')
 ```
 
-5. Copiar el valor largo que devuelve (sin comillas).
-6. Pegarlo en el fichero `.env.local` del proyecto (ver `credentials.md`).
+5. Copiar el resultado **completo**, tal cual.
+6. Pegarlo en la pestaña "Token" de `/login` (o en `.env.local` como
+   `LALIGA_FANTASY_TOKEN`, ver `credentials.md`).
 
-> El token caduca aproximadamente cada 24 horas. Si la app empieza a dar 401, se debe repetir el proceso.
+> Importante: pegar el objeto entero y no sólo el `access_token`. Si trae
+> `refresh_token`, `getOrRefreshTokens` renueva la sesión sola y el usuario no
+> tiene que repetir el proceso; si sólo se pega el JWT, caduca a las ~24 h y
+> vuelven los 401. `parseFullTokens` (`src/pages/api/auth/token.ts`) acepta las
+> dos formas.
 
 ## Alternativas (para fases posteriores)
 
@@ -36,6 +63,10 @@ JSON.parse(localStorage.getItem("auth")).status.authenticate.access_token
 
 - Endpoint: `https://login.laliga.es/laligadspprob2c.onmicrosoft.com/oauth2/v2.0/token?p=B2C_1A_ResourceOwnerv2`
 - Body: `grant_type=password`, `client_id`, `username`, `password`, `scope`, `response_type=id_token`.
+- Implementado en `src/pages/api/auth/login.ts` (pestaña "Email" de `/login`).
+- **Limitación de fondo:** ROPC en B2C sólo sirve para cuentas locales. Una
+  cuenta federada con Google nunca podrá entrar por aquí, haga lo que haga el
+  usuario. Ése es el motivo de existir de la extensión.
 - **Riesgo:** la app no oficial recibiría la contraseña del usuario. Desaconsejado por seguridad y confianza.
 - **Posible bloqueo:** captchas o políticas de Azure B2C.
 

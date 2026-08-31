@@ -2,7 +2,7 @@
 
 import { cn } from '../../lib/utils';
 import type { DashboardTab } from './Sidebar';
-import { LayoutDashboard, Users, CalendarDays, ShoppingCart, Trophy, Shield, BarChart3, Lightbulb, TrendingUp, MoreHorizontal, Rows3, Check, Gauge, Swords } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarDays, ShoppingCart, Trophy, Shield, BarChart3, Lightbulb, TrendingUp, MoreHorizontal, Rows3, Check, Gauge, Swords, Gavel } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +21,7 @@ const mainItems: { id: DashboardTab; label: string; icon: React.ElementType }[] 
 ];
 
 const moreItems: { id: DashboardTab; label: string; icon: React.ElementType }[] = [
+  { id: 'clause-market', label: 'Clausulazos', icon: Gavel },
   { id: 'recommendations', label: 'Recomendaciones', icon: Lightbulb },
   { id: 'standings', label: 'Clasificación', icon: Trophy },
   { id: 'rivals', label: 'Rivales', icon: Shield },

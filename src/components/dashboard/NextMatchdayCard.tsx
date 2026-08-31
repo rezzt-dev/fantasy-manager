@@ -1,15 +1,69 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import fantasyAPI from '../../lib/fantasy/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
-import { Calendar, Clock, MapPin, Trophy } from 'lucide-react';
-import type { Match, WeekInfo } from '../../types/fantasy';
+import { Calendar, Clock, Trophy } from 'lucide-react';
+import type { Match, WeekInfo, TeamCatalogEntry } from '../../types/fantasy';
+import { cn } from '../../lib/utils';
 
 interface NextMatchdayCardProps {
   week?: WeekInfo;
   matches?: Match[];
   leagueName?: string;
+}
+
+function teamInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((word) => word[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * Escudo del equipo con degradación: escudo oficial → iniciales del nombre →
+ * interrogante. `/calendar` solo devuelve ids, así que el nombre llega del
+ * catálogo de equipos (`/api/teams`).
+ */
+function TeamBadge({ team, fallbackId, className }: { team?: TeamCatalogEntry; fallbackId: number; className?: string }) {
+  const [failed, setFailed] = useState(false);
+  const name = team?.name ?? `Equipo ${fallbackId}`;
+
+  if (failed || !team?.badgeColor) {
+    return (
+      <span
+        className={cn('flex shrink-0 items-center justify-center text-[10px] font-bold text-muted-foreground', className)}
+        title={name}
+      >
+        {team ? teamInitials(name) : '?'}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={team.badgeColor}
+      alt={name}
+      title={name}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={cn('shrink-0 object-contain', className)}
+    />
+  );
+}
+
+function TeamLabel({ team, fallbackId }: { team?: TeamCatalogEntry; fallbackId: number }) {
+  const name = team?.name ?? `Equipo ${fallbackId}`;
+  return (
+    <span className="min-w-0 truncate font-medium" title={name}>
+      {team?.shortName || name}
+    </span>
+  );
 }
 
 export default function NextMatchdayCard({ week, matches = [], leagueName }: NextMatchdayCardProps) {
@@ -19,6 +73,14 @@ export default function NextMatchdayCard({ week, matches = [], leagueName }: Nex
     const interval = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(interval);
   }, []);
+
+  const { data: teams } = useQuery({
+    queryKey: ['teams-catalog'],
+    queryFn: () => fantasyAPI.getTeamsCatalog(),
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+
+  const teamsById = useMemo(() => new Map((teams ?? []).map((t) => [t.id, t])), [teams]);
 
   const closing = week?.closingWeekDate ? new Date(week.closingWeekDate).getTime() : null;
   const opening = week?.openingWeekDate ? new Date(week.openingWeekDate).getTime() : null;
@@ -77,17 +139,31 @@ export default function NextMatchdayCard({ week, matches = [], leagueName }: Nex
         {sortedMatches.length > 0 && (
           <div className="space-y-2 pt-2">
             <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Partidos destacados</div>
-            {sortedMatches.slice(0, 3).map((match) => (
-              <div key={match.id} className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-surface-2/50 px-3 py-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-3 w-3 text-muted-foreground" />
-                  <span className="font-medium">{match.localId} vs {match.visitorId}</span>
+            {sortedMatches.slice(0, 3).map((match) => {
+              const local = teamsById.get(match.localId);
+              const visitor = teamsById.get(match.visitorId);
+              const hasScore = match.localScore !== null && match.visitorScore !== null;
+
+              return (
+                <div
+                  key={match.id}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-surface-2/50 px-3 py-2 text-xs"
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <TeamBadge team={local} fallbackId={match.localId} className="h-5 w-5" />
+                    <TeamLabel team={local} fallbackId={match.localId} />
+                    <span className="shrink-0 text-muted-foreground">
+                      {hasScore ? `${match.localScore}-${match.visitorScore}` : 'vs'}
+                    </span>
+                    <TeamLabel team={visitor} fallbackId={match.visitorId} />
+                    <TeamBadge team={visitor} fallbackId={match.visitorId} className="h-5 w-5" />
+                  </div>
+                  <span className="shrink-0 text-muted-foreground">
+                    {new Date(match.matchDate || match.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                  </span>
                 </div>
-                <span className="text-muted-foreground">
-                  {new Date(match.matchDate || match.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>

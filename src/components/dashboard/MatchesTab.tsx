@@ -11,7 +11,8 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
-import { ArrowRightLeft, Circle, AlertCircle, Trophy, Radio, Clock, CalendarDays, Goal, FileText, Users, ChevronRight, MapPin } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { ArrowRightLeft, Circle, AlertCircle, Trophy, Radio, Clock, CalendarDays, Goal, FileText, Users, ChevronRight, ChevronLeft, MapPin } from 'lucide-react';
 import KpiCard from '../shared/KpiCard';
 import SectionHeader from '../shared/SectionHeader';
 import ErrorState from '../shared/ErrorState';
@@ -403,7 +404,9 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
 
 function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void }) {
   const liveMinute = useLiveMinute(match.minute, match.status, match.startTimestamp);
-  const isClickable = match.status === 'live' || match.status === 'halftime' || match.status === 'finished';
+  // Todos los partidos abren detalle: incluso los pendientes tienen ficha
+  // (hora, alineaciones probables cuando existen, jugadores de la plantilla).
+  const isClickable = true;
   const goals = match.events.filter((e) => e.type === 'goal' && e.minute !== null);
 
   return (
@@ -549,10 +552,70 @@ function MatchSection({
   );
 }
 
+function WeekSelector({
+  week,
+  currentWeek,
+  availableWeeks,
+  onChange,
+}: {
+  week: number;
+  currentWeek: number;
+  availableWeeks: number[];
+  onChange: (week: number) => void;
+}) {
+  const weeks = availableWeeks.length > 0 ? availableWeeks : [week];
+  const index = weeks.indexOf(week);
+  const canGoBack = index > 0;
+  const canGoForward = index >= 0 && index < weeks.length - 1;
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="icon-sm"
+        aria-label="Jornada anterior"
+        disabled={!canGoBack}
+        onClick={() => canGoBack && onChange(weeks[index - 1])}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
+      <Select value={String(week)} onValueChange={(value) => onChange(Number(value))}>
+        <SelectTrigger className="w-40">
+          <SelectValue placeholder="Jornada" />
+        </SelectTrigger>
+        <SelectContent>
+          {[...weeks].reverse().map((w) => (
+            <SelectItem key={w} value={String(w)}>
+              Jornada {w}
+              {w === currentWeek ? ' (actual)' : ''}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Button
+        variant="outline"
+        size="icon-sm"
+        aria-label="Jornada siguiente"
+        disabled={!canGoForward}
+        onClick={() => canGoForward && onChange(weeks[index + 1])}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
 export default function MatchesTab({ league }: MatchesTabProps) {
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['matches', league.id, league.team.id],
-    queryFn: () => fantasyAPI.getMatches(league.id, league.team.id),
+  // `undefined` = jornada actual (la decide el servidor); al elegir otra en el
+  // selector se fija el número y se consulta esa jornada.
+  const [selectedWeek, setSelectedWeek] = useState<number | undefined>(undefined);
+
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
+    queryKey: ['matches', league.id, league.team.id, selectedWeek ?? 'current'],
+    queryFn: () => fantasyAPI.getMatches(league.id, league.team.id, selectedWeek),
+    placeholderData: (previous) => previous,
     refetchInterval: (query) => {
       const liveCount = query.state.data?.matches.filter((m) => m.status === 'live').length ?? 0;
       return liveCount > 0 ? 60_000 : false;
@@ -567,14 +630,41 @@ export default function MatchesTab({ league }: MatchesTabProps) {
   if (error) return <ErrorState title="Error cargando partidos" description={error.message} onRetry={refetch} />;
   if (!data) return null;
 
-  const { important, normal, week, notes } = data;
+  const { important, normal, week, notes, currentWeek, availableWeeks } = data;
+  const isPastWeek = week < currentWeek;
+  const isSwitchingWeek = isFetching && selectedWeek !== undefined && selectedWeek !== week;
   const liveCount = data.matches.filter((m) => m.status === 'live').length;
   const finishedCount = data.matches.filter((m) => m.status === 'finished').length;
   const importantCount = important.length;
 
   return (
     <div className="space-y-6 pb-20 lg:pb-0">
-      <SectionHeader title="Partidos" description={`Jornada ${week} · ${league.name}`} />
+      <SectionHeader
+        title="Partidos"
+        description={`Jornada ${week}${isPastWeek ? ' (finalizada)' : ''} · ${league.name}`}
+        action={
+          <WeekSelector
+            week={week}
+            currentWeek={currentWeek}
+            availableWeeks={availableWeeks}
+            onChange={(value) => setSelectedWeek(value)}
+          />
+        }
+      />
+
+      {isSwitchingWeek && (
+        <div className="text-xs text-muted-foreground">Cargando jornada {selectedWeek}…</div>
+      )}
+
+      {isPastWeek && (
+        <Card className="border-white/[0.06] bg-surface-2/30">
+          <CardContent className="flex items-start gap-2 pt-4 text-sm text-muted-foreground">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            Estás viendo una jornada pasada. Los jugadores marcados como «tuyos» son los de tu
+            plantilla actual, no los que tenías esa jornada.
+          </CardContent>
+        </Card>
+      )}
 
       {notes.length > 0 && (
         <Card className="border-amber-500/30 bg-amber-500/5">

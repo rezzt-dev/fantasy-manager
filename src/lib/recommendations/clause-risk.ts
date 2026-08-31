@@ -11,7 +11,7 @@ import { marketFlowByManager, type ManagerMarketFlow } from '../fantasy/activity
  * del 20% ajustado por su flujo real de mercado (actividad de la liga:
  * ventas recientes suman liquidez, compras la restan).
  */
-function rivalSpendingPower(rival: RivalTeam, flow?: ManagerMarketFlow): number {
+export function rivalSpendingPower(rival: RivalTeam, flow?: ManagerMarketFlow): number {
   if (rival.teamMoney !== null) {
     // Con efectivo real la actividad ya está reflejada en la cifra: no ajustar.
     return computeAvailableBudget({ teamMoney: rival.teamMoney, teamInvestment: 0 }, rival.teamValue).available;
