@@ -1,5 +1,5 @@
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import path from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { ensureDataDir, readablePath, writablePath } from '../runtime-paths';
 
 /**
  * Parámetros calibrables del motor (§8, Fase 3): se buscan por backtesting
@@ -8,7 +8,7 @@ import path from 'node:path';
  * valores por defecto del diseño.
  */
 
-const PARAMS_FILE = path.join(process.cwd(), 'data', 'engine-params.json');
+const PARAMS_FILE = 'engine-params.json';
 const MEM_CACHE_MS = 60 * 1000; // 60 s
 
 export interface EngineParams {
@@ -43,7 +43,7 @@ export async function loadEngineParams(): Promise<EngineParams> {
   if (cached && Date.now() - cached.loadedAt < MEM_CACHE_MS) return cached.params;
   let params = DEFAULT_ENGINE_PARAMS;
   try {
-    const raw = JSON.parse(await readFile(PARAMS_FILE, 'utf8')) as Partial<EngineParams>;
+    const raw = JSON.parse(await readFile(await readablePath(PARAMS_FILE), 'utf8')) as Partial<EngineParams>;
     params = { ...DEFAULT_ENGINE_PARAMS, ...raw };
   } catch {
     // Sin fichero todavía: valores por defecto.
@@ -59,7 +59,7 @@ export function getEngineParams(): EngineParams {
 
 /** Persiste parámetros calibrados y actualiza la caché. */
 export async function saveEngineParams(params: EngineParams): Promise<void> {
-  await mkdir(path.dirname(PARAMS_FILE), { recursive: true });
-  await writeFile(PARAMS_FILE, JSON.stringify(params, null, 2));
+  await ensureDataDir('.', { seed: false });
+  await writeFile(writablePath(PARAMS_FILE), JSON.stringify(params, null, 2));
   cached = { loadedAt: Date.now(), params };
 }

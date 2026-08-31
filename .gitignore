@@ -14,9 +14,21 @@ dist/
 .output/
 *.tsbuildinfo
 
+# Salida de build de Vercel. La regenera el adaptador en cada build, así que
+# versionarla no aporta nada y además rompe el despliegue: `dist/` y
+# `node_modules/` están ignorados y también casan DENTRO de .vercel/output, de
+# modo que lo commiteado era una función sin su handler (dist/server/entry.mjs)
+# ni sus dependencias -> FUNCTION_INVOCATION_FAILED en todas las rutas.
+.vercel/
+
 # Runtime / generated data
 data/
 !data/.gitkeep
+
+# Cachés regenerables: no van al repo ni al bundle del despliegue. data/cache/
+# eran 13 MB de HTML scrapeado que viajaban en cada función serverless; se
+# rellenan solos en la primera petición (en serverless, bajo /tmp).
+data/cache/
 
 # Cache / session artifacts
 .freebuff/

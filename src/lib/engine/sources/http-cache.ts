@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { ensureDataDir, readablePath, writablePath } from '../../runtime-paths';
 
 /**
  * Caché HTTP para fuentes externas (§3.5 del diseño): pocas peticiones, TTL
@@ -8,7 +9,8 @@ import path from 'node:path';
  * y el consumidor lo anota en `dataQuality`.
  */
 
-const SOURCES_CACHE_DIR = path.join(process.cwd(), 'data', 'cache', 'sources');
+const SOURCES_CACHE_REL = path.join('cache', 'sources');
+const SOURCES_CACHE_DIR = writablePath(SOURCES_CACHE_REL);
 const USER_AGENT = 'fantasy-manager/0.1 (analisis fantasy personal; scraping minimo con cache)';
 const FETCH_TIMEOUT_MS = 15_000;
 
@@ -33,7 +35,8 @@ function cacheFile(key: string): string {
 
 async function readDisk(key: string): Promise<DiskEntry | null> {
   try {
-    return JSON.parse(await readFile(cacheFile(key), 'utf8')) as DiskEntry;
+    const file = await readablePath(SOURCES_CACHE_REL, `${key}.txt`);
+    return JSON.parse(await readFile(file, 'utf8')) as DiskEntry;
   } catch {
     return null;
   }
@@ -41,7 +44,7 @@ async function readDisk(key: string): Promise<DiskEntry | null> {
 
 async function writeDisk(key: string, entry: DiskEntry): Promise<void> {
   try {
-    await mkdir(SOURCES_CACHE_DIR, { recursive: true });
+    await ensureDataDir(SOURCES_CACHE_REL, { seed: false });
     await writeFile(cacheFile(key), JSON.stringify(entry));
   } catch (error) {
     console.warn('[sources] disk cache write failed:', error instanceof Error ? error.message : error);
