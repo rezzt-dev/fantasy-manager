@@ -271,6 +271,38 @@ tabulares); sin ella las columnas bailan al ordenar una tabla.
   `README.md`). El empaquetado es `empaquetar.sh`; antes de subir a Firefox,
   `pnpm dlx web-ext lint` debe seguir dando 0 errores.
 
+## Despliegue en Vercel
+
+La app se despliega como función serverless (`output: 'server'` + `@astrojs/vercel`).
+Tres reglas que no se saltan, porque romperlas ya tumbó el despliegue entero:
+
+**1. `.vercel/` NUNCA se versiona.** El `.gitignore` tiene `dist/` y
+`node_modules/`, y esos patrones también casan dentro de
+`.vercel/output/functions/_render.func/`. Commitear la salida del build deja en
+el repo una función con su `.vc-config.json` pero sin `dist/server/entry.mjs` ni
+dependencias, y todas las rutas devuelven `FUNCTION_INVOCATION_FAILED` sin log
+de aplicación. La salida la regenera el adaptador en cada build.
+
+**2. El filesystem del despliegue es de solo lectura salvo `/tmp`.** Ningún
+módulo construye rutas con `path.join(process.cwd(), 'data', ...)`: todo pasa
+por `src/lib/runtime-paths.ts`, que separa la raíz del bundle (solo lectura, es
+la semilla versionada) de la raíz escribible (`/tmp` en serverless, el propio
+`data/` en local). Para un subdirectorio que se lee y se escribe se usa
+`ensureDataDir(rel)`, que copia la semilla una vez por proceso; para uno que
+solo se lee, `readablePath(...)`. Lo escrito en `/tmp` es por instancia y
+efímero: lo que tenga que persistir de verdad va a Upstash vía `kv-cache.ts`.
+
+**3. Las variables de entorno tienen que estar en el entorno de _Build_, no
+solo en el de _Runtime_.** `astro.config.mjs` elige el driver de sesión en build
+time y lo cuece en el bundle. Sin `UPSTASH_REDIS_REST_URL` /
+`UPSTASH_REDIS_REST_TOKEN` visibles durante el build, el despliegue sale con
+sesión en `/tmp`: funciona, pero se pierde al reciclarse la instancia.
+
+Antes de desplegar, `pnpm verify:deploy` construye con `VERCEL=1` y arranca la
+función real con el directorio en solo lectura, comprobando las rutas clave
+(incluido el login, que es el que escribe en la sesión). Falla en local en vez
+de en producción.
+
 ## Documentation
 
 Full documentation: https://docs.astro.build

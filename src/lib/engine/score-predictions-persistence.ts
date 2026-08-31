@@ -1,5 +1,6 @@
-import { mkdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { ensureDataDir, writablePath } from '../runtime-paths';
 import type { ScorePredictionsResponse, TeamScorePrediction } from '../../types/analysis';
 import { readJsonl, writeFileAtomic, writeJsonlAtomic } from './jsonl';
 import { withFileLock } from './file-lock';
@@ -14,7 +15,16 @@ import { withFileLock } from './file-lock';
  *   predicción de cada jornada).
  */
 
-const SCORE_DIR = path.join(process.cwd(), 'data', 'score-predictions');
+const SCORE_DIR = writablePath('score-predictions');
+
+/**
+ * Se lee y se escribe (el histórico es append-only sobre lo ya persistido), así
+ * que en serverless la semilla del bundle se copia a la raíz escribible antes
+ * de tocarlo. Idempotente, una vez por proceso.
+ */
+function scoreDir(): Promise<string> {
+  return ensureDataDir('score-predictions');
+}
 
 export interface ScoreHistoryRecord {
   leagueId: string;
@@ -43,14 +53,14 @@ export async function saveScorePredictions(
   week: number,
   response: ScorePredictionsResponse,
 ): Promise<void> {
-  await mkdir(SCORE_DIR, { recursive: true });
+  await scoreDir();
   await writeFileAtomic(snapshotFile(leagueId, week), JSON.stringify(response, null, 2));
 }
 
 export async function appendScorePredictionHistory(
   response: ScorePredictionsResponse,
 ): Promise<void> {
-  await mkdir(SCORE_DIR, { recursive: true });
+  await scoreDir();
 
   const records: ScoreHistoryRecord[] = response.predictions.map((p) => ({
     leagueId: response.leagueId,
@@ -83,6 +93,7 @@ export async function loadScorePredictionHistory(
   leagueId?: string,
   week?: number,
 ): Promise<ScoreHistoryRecord[]> {
+  await scoreDir();
   const records = await readJsonl<ScoreHistoryRecord>(HISTORY_FILE);
   return records.filter((r) => (!leagueId || r.leagueId === leagueId) && (week === undefined || r.week === week));
 }
@@ -92,6 +103,7 @@ export async function loadScorePredictionSnapshot(
   week: number,
 ): Promise<ScorePredictionsResponse | null> {
   try {
+    await scoreDir();
     const raw = await readFile(snapshotFile(leagueId, week), 'utf8');
     return JSON.parse(raw) as ScorePredictionsResponse;
   } catch {

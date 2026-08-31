@@ -1,5 +1,6 @@
-import { mkdir, readdir } from 'node:fs/promises';
+import { readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { ensureDataDir, writablePath } from '../runtime-paths';
 import { XI_PER_DAY } from './form';
 import type { PlayerWeekStat } from './player-stats';
 import { withFileLock } from './file-lock';
@@ -23,7 +24,18 @@ import { readJsonl, writeFileAtomic, writeJsonlAtomic } from './jsonl';
 /** Versión del modelo: v1.2 añade shrinkage jerárquico, xP−λσ, capitán co-optimizado y noticias por categorías. */
 export const MODEL_VERSION = 'components-v1.2';
 
-const TRACK_RECORD_DIR = path.join(process.cwd(), 'data', 'track-record');
+const TRACK_RECORD_DIR = writablePath('track-record');
+
+/**
+ * Este directorio se lee y se escribe (readdir + ciclos leer-modificar-
+ * escribir), así que en serverless necesita la semilla del bundle copiada a la
+ * raíz escribible antes de tocarlo: si no, `readdir` no vería el histórico
+ * versionado y cada liquidación empezaría de cero. Es idempotente y solo copia
+ * una vez por proceso.
+ */
+function trackRecordDir(): Promise<string> {
+  return ensureDataDir('track-record');
+}
 
 export interface PredictionRecord {
   playerId: string;
@@ -98,7 +110,7 @@ function recommendationsFile(week: number): string {
 
 async function appendJsonl<T>(file: string, records: T[]): Promise<void> {
   if (records.length === 0) return;
-  await mkdir(TRACK_RECORD_DIR, { recursive: true });
+  await trackRecordDir();
   const existing = await readJsonl<T>(file);
   await writeJsonlAtomic(file, [...existing, ...records]);
 }
@@ -111,6 +123,7 @@ export async function persistPredictions(
   week: number,
   records: PredictionRecord[],
 ): Promise<{ appended: number; skipped: number }> {
+  await trackRecordDir();
   const file = predictionsFile(week);
   return withFileLock(file, async () => {
     const existing = await readJsonl<PredictionRecord>(file);
@@ -128,6 +141,7 @@ export async function persistRecommendations(
   week: number,
   records: RecommendationRecord[],
 ): Promise<{ appended: number; skipped: number }> {
+  await trackRecordDir();
   const file = recommendationsFile(week);
   return withFileLock(file, async () => {
     const existing = await readJsonl<RecommendationRecord>(file);
@@ -149,6 +163,7 @@ export async function settleTrackRecord(
   resolveOutcome: (playerId: string, week: number) => Promise<{ points: number; idealXi: boolean } | null>,
 ): Promise<SettleSummary> {
   const summary: SettleSummary = { weeksSettled: [], recordsSettled: 0, recordsPending: 0 };
+  await trackRecordDir();
 
   let files: string[] = [];
   try {
@@ -270,6 +285,7 @@ export interface TrackRecordMetrics {
  * mejora: mismas jornadas, mismos jugadores, puntos reales de la API.
  */
 export async function evaluateTrackRecord(currentWeek: number): Promise<TrackRecordMetrics> {
+  await trackRecordDir();
   const errorsXp: number[] = [];
   const errorsLegacy: number[] = [];
 
@@ -301,12 +317,14 @@ export async function evaluateTrackRecord(currentWeek: number): Promise<TrackRec
 export async function persistMetrics(
   metrics: WalkForwardMetrics & { leagueId: string; week: number; trackRecord?: TrackRecordMetrics },
 ): Promise<void> {
+  await trackRecordDir();
   const file = path.join(TRACK_RECORD_DIR, 'metrics-latest.json');
   await writeFileAtomic(file, JSON.stringify({ computedAt: new Date().toISOString(), ...metrics }, null, 2));
 }
 
 /** Persiste la tabla de puntuación derivada de playerStats (§4.2). */
 export async function persistScoringTable(table: unknown): Promise<void> {
+  await trackRecordDir();
   const file = path.join(TRACK_RECORD_DIR, 'scoring-table.json');
   await writeFileAtomic(file, JSON.stringify(table, null, 2));
 }
@@ -317,6 +335,7 @@ function lineupsFile(week: number): string {
 
 /** Persiste el once recomendado de una jornada (primera escritura gana). */
 export async function persistLineup(record: LineupRecord): Promise<boolean> {
+  await trackRecordDir();
   const file = lineupsFile(record.week);
   return withFileLock(file, async () => {
     const existing = await readJsonl<LineupRecord>(file);
@@ -399,6 +418,7 @@ function spearman(xs: number[], ys: number[]): number | null {
  * computable todavía queda en null (nunca se presenta como "todo OK").
  */
 export async function summarizeTrackRecord(currentWeek: number, leagueId?: string): Promise<TrackRecordSummary> {
+  await trackRecordDir();
   const summary: TrackRecordSummary = {
     weeks: [],
     totals: {

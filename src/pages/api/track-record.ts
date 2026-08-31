@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { getToken } from '../../lib/fantasy/api-proxy';
+import { ensureDataDir } from '../../lib/runtime-paths';
 import { summarizeTrackRecord } from '../../lib/engine/track-record';
 
 /**
@@ -16,7 +17,7 @@ import { summarizeTrackRecord } from '../../lib/engine/track-record';
  * devuelve en null con nota, nunca como "todo OK" (§4.6, honestidad de datos).
  */
 
-const TRACK_RECORD_DIR = path.join(process.cwd(), 'data', 'track-record');
+
 
 async function readJson(file: string): Promise<unknown | null> {
   try {
@@ -34,12 +35,13 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       return new Response(JSON.stringify({ error: 'No token configured' }), { status: 401 });
     }
 
-    const metricsLatest = (await readJson(path.join(TRACK_RECORD_DIR, 'metrics-latest.json'))) as {
+    const trackRecordDir = await ensureDataDir('track-record');
+    const metricsLatest = (await readJson(path.join(trackRecordDir, 'metrics-latest.json'))) as {
       week?: number;
       note?: string;
       trackRecord?: { settled?: number };
     } | null;
-    const calibration = await readJson(path.join(TRACK_RECORD_DIR, 'calibration-latest.json'));
+    const calibration = await readJson(path.join(trackRecordDir, 'calibration-latest.json'));
 
     const currentWeek = metricsLatest?.week ?? 1;
     const summary = await summarizeTrackRecord(currentWeek, leagueId);

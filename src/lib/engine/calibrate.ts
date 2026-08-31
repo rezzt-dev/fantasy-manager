@@ -1,5 +1,6 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { ensureDataDir } from '../runtime-paths';
 import type { Match, PlayerMaster } from '../../types/fantasy';
 import { predictPlayerPoints, type PredictionContext } from './model';
 import { saveEngineParams, DEFAULT_ENGINE_PARAMS, type EngineParams } from './params';
@@ -22,7 +23,7 @@ import type { PlayerWeekStat } from './player-stats';
 const MIN_SAMPLES = 30;
 const GRID_SHRINKAGE_K = [3, 5, 8, 12];
 const GRID_ELO_DIVISOR = [600, 1000, 1400];
-const CALIBRATION_FILE = path.join(process.cwd(), 'data', 'track-record', 'calibration-latest.json');
+const CALIBRATION_FILE = 'calibration-latest.json';
 
 export interface CalibrationResult {
   status: 'ok' | 'insufficient-data';
@@ -127,6 +128,6 @@ export async function calibrateEngine(input: {
 }
 
 export async function persistCalibration(result: CalibrationResult): Promise<void> {
-  await mkdir(path.dirname(CALIBRATION_FILE), { recursive: true });
-  await writeFile(CALIBRATION_FILE, JSON.stringify(result, null, 2));
+  const dir = await ensureDataDir('track-record');
+  await writeFile(path.join(dir, CALIBRATION_FILE), JSON.stringify(result, null, 2));
 }

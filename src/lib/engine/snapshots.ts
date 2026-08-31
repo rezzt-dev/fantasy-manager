@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { ensureDataDir, writablePath } from '../runtime-paths';
 import type { MarketPlayer, PlayerMaster } from '../../types/fantasy';
 
 /**
@@ -13,7 +14,7 @@ import type { MarketPlayer, PlayerMaster } from '../../types/fantasy';
  * sin dependencias.
  */
 
-const SNAPSHOT_DIR = path.join(process.cwd(), 'data', 'snapshots');
+const SNAPSHOT_DIR = writablePath('snapshots');
 
 interface CatalogEntry {
   id: string;
@@ -99,7 +100,7 @@ export async function maybeWriteDailySnapshot(input: {
       market: input.market.map(slimMarketPlayer),
     };
 
-    await mkdir(SNAPSHOT_DIR, { recursive: true });
+    await ensureDataDir('snapshots');
     await writeFile(file, JSON.stringify(snapshot));
     console.log(`[snapshots] daily snapshot written: ${file} (${snapshot.catalog.length} jugadores, ${snapshot.market.length} en mercado)`);
     return true;

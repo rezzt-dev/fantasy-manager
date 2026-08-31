@@ -1,7 +1,9 @@
 import { createStorage, type StorageValue } from 'unstorage';
 import upstashDriver from 'unstorage/drivers/upstash';
 import fsLiteDriver from 'unstorage/drivers/fs-lite';
+import path from 'node:path';
 import { getEnvOptional } from './env';
+import { IS_SERVERLESS, WRITABLE_CACHE_DIR } from './runtime-paths';
 
 /**
  * Almacén KV compartido para los cachés de `player-stats` y `calendar-cache`.
@@ -15,17 +17,30 @@ import { getEnvOptional } from './env';
  * URL relativa ("/pipeline"), así que se perdía la caché entera y cada request
  * repetía todas las peticiones a la API oficial.
  *
+ * El respaldo en disco apunta a la única ruta escribible del entorno: en
+ * serverless, /tmp. Con una ruta relativa el driver fallaba con EROFS en cada
+ * operación y la caché quedaba inservible (fallo silencioso: `kvGet`/`kvSet`
+ * tragan el error), que es justo el escenario de un despliegue sin Upstash.
+ *
  * El TTL lo comprueban los consumidores con su propio `fetchedAt`, así que no
  * depende de que el driver soporte expiración.
  */
 const upstashUrl = getEnvOptional('UPSTASH_REDIS_REST_URL');
 const upstashToken = getEnvOptional('UPSTASH_REDIS_REST_TOKEN');
 
+if (IS_SERVERLESS && !(upstashUrl && upstashToken)) {
+  console.warn(
+    '[kv-cache] Sin UPSTASH_REDIS_REST_URL/TOKEN en un despliegue serverless: ' +
+      'la caché usa /tmp, que es por instancia y efímero. Cada arranque en frío ' +
+      'repetirá las peticiones a la API oficial.',
+  );
+}
+
 const storage = createStorage({
   driver:
     upstashUrl && upstashToken
       ? upstashDriver({ url: upstashUrl, token: upstashToken })
-      : fsLiteDriver({ base: '.cache/kv' }),
+      : fsLiteDriver({ base: path.join(WRITABLE_CACHE_DIR, 'kv') }),
 });
 
 /**
