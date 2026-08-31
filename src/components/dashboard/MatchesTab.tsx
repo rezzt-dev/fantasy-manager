@@ -24,15 +24,15 @@ interface MatchesTabProps {
 
 function MatchesSkeleton() {
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader title="Partidos" description="Partidos de la jornada" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+          <Skeleton key={i} className="h-28 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-64 rounded-xl" />
-      <Skeleton className="h-64 rounded-xl" />
+      <Skeleton className="h-64 rounded-lg" />
+      <Skeleton className="h-64 rounded-lg" />
     </div>
   );
 }
@@ -106,7 +106,7 @@ function TeamShield({ name, logoUrl, className }: { name: string; logoUrl: strin
   if (error || !logoUrl) {
     return (
       <div className={cn('flex shrink-0 items-center justify-center', className)} title={name}>
-        <span className="text-xs font-bold text-muted-foreground">{initials || '?'}</span>
+        <span className="text-xs font-bold text-content-tertiary">{initials || '?'}</span>
       </div>
     );
   }
@@ -126,14 +126,14 @@ function TeamShield({ name, logoUrl, className }: { name: string; logoUrl: strin
 
 function EventIcon({ event }: { event: MatchEvent }) {
   if (event.type === 'goal') {
-    return <Circle className="h-3.5 w-3.5 fill-foreground text-foreground" />;
+    return <Circle className="h-3.5 w-3.5 fill-foreground text-content" />;
   }
   if (event.type === 'card') {
     const isRed = event.detail?.includes('roja') || event.detail?.includes('doble');
-    return <span className={cn('h-3.5 w-2.5 rounded-sm', isRed ? 'bg-rose-500' : 'bg-amber-400')} />;
+    return <span className={cn('h-3.5 w-2.5 rounded-sm', isRed ? 'bg-negative' : 'bg-caution')} />;
   }
   if (event.type === 'substitution') {
-    return <ArrowRightLeft className="h-3.5 w-3.5 text-indigo-300" />;
+    return <ArrowRightLeft className="h-3.5 w-3.5 text-info-text" />;
   }
   return null;
 }
@@ -141,12 +141,12 @@ function EventIcon({ event }: { event: MatchEvent }) {
 function MatchEventRow({ event }: { event: MatchEvent }) {
   return (
     <div className="flex items-center gap-2 py-1 text-xs">
-      <span className="w-6 shrink-0 text-right tabular-nums text-muted-foreground">
+      <span className="w-6 shrink-0 text-right tabular-nums text-content-tertiary">
         {event.minute !== null ? `${event.minute}'` : ''}
       </span>
       <EventIcon event={event} />
-      <span className="font-medium text-foreground">{event.label}</span>
-      {event.detail && <span className="truncate text-muted-foreground">{event.detail}</span>}
+      <span className="font-medium text-content">{event.label}</span>
+      {event.detail && <span className="truncate text-content-tertiary">{event.detail}</span>}
     </div>
   );
 }
@@ -159,8 +159,8 @@ function extractGoalAuthor(detail?: string): string {
 function GoalRow({ event, isHome }: { event: MatchEvent; isHome: boolean | null }) {
   return (
     <div className={cn('flex items-center gap-1.5 text-xs', isHome === false ? 'flex-row-reverse' : '')}>
-      <span className="font-medium text-foreground">{extractGoalAuthor(event.detail)}</span>
-      <span className="text-muted-foreground">{event.minute}'</span>
+      <span className="font-medium text-content">{extractGoalAuthor(event.detail)}</span>
+      <span className="text-content-tertiary">{event.minute}'</span>
     </div>
   );
 }
@@ -189,23 +189,23 @@ function LineupSide({ side, isHome }: { side: MatchLineupSide; isHome: boolean }
   return (
     <div className={cn('flex flex-col gap-4', isHome ? 'items-start' : 'items-end')}>
       <div className={cn('flex items-center gap-2', isHome ? '' : 'flex-row-reverse')}>
-        <MapPin className={cn('h-3.5 w-3.5', isHome ? 'text-emerald-400' : 'text-indigo-400')} />
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <MapPin className={cn('h-3.5 w-3.5', isHome ? 'text-positive-text' : 'text-info-text')} />
+        <span className="text-xs font-medium uppercase tracking-wider text-content-tertiary">
           {isHome ? 'Local' : 'Visitante'}
         </span>
       </div>
 
       <div>
-        <div className={cn('text-sm font-semibold text-foreground', isHome ? 'text-left' : 'text-right')}>
+        <div className={cn('text-sm font-semibold text-content', isHome ? 'text-left' : 'text-right')}>
           {side.teamName}
         </div>
         {side.formation && (
-          <div className={cn('text-xs text-muted-foreground', isHome ? 'text-left' : 'text-right')}>
+          <div className={cn('text-xs text-content-tertiary', isHome ? 'text-left' : 'text-right')}>
             Formación {side.formation}
           </div>
         )}
         {side.coach && (
-          <div className={cn('text-xs text-muted-foreground', isHome ? 'text-left' : 'text-right')}>
+          <div className={cn('text-xs text-content-tertiary', isHome ? 'text-left' : 'text-right')}>
             Entrenador: {side.coach}
           </div>
         )}
@@ -217,7 +217,7 @@ function LineupSide({ side, isHome }: { side: MatchLineupSide; isHome: boolean }
           if (list.length === 0) return null;
           return (
             <div key={key} className={cn('flex w-full flex-col gap-1', isHome ? 'items-start' : 'items-end')}>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">
                 {POSITION_LABELS[key]}
               </span>
               <div className={cn('flex flex-wrap gap-1', isHome ? '' : 'flex-row-reverse')}>
@@ -239,7 +239,7 @@ function LineupSide({ side, isHome }: { side: MatchLineupSide; isHome: boolean }
 
       {side.bench.length > 0 && (
         <div className={cn('flex w-full flex-col gap-1', isHome ? 'items-start' : 'items-end')}>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Suplentes</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-content-tertiary">Suplentes</span>
           <div className={cn('flex flex-wrap gap-1', isHome ? '' : 'flex-row-reverse')}>
             {side.bench.map((player, idx) => (
               <Badge key={idx} variant="outline-muted" className="text-[11px] opacity-80">
@@ -260,12 +260,12 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden p-0">
-        <div className="border-b border-white/[0.06] p-5">
+        <div className="border-b border-white/[0.09] p-5">
             <DialogHeader className="gap-3">
               <DialogTitle className="sr-only">
                 {match.home.name} vs {match.away.name}
               </DialogTitle>
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center justify-center gap-2 text-xs text-content-tertiary">
                 <Badge variant={statusVariant(match.status)} className="text-[10px]">
                   {match.status === 'live' && liveMinute !== null ? `${liveMinute}'` : match.statusLabel}
                 </Badge>
@@ -283,24 +283,24 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
               <div className="flex items-center justify-center gap-3 sm:gap-6">
                 <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                   <TeamShield name={match.home.name} logoUrl={match.home.logoUrl} className="h-14 w-14 sm:h-16 sm:w-16" />
-                  <span className="text-center text-sm font-semibold text-foreground">{match.home.name}</span>
+                  <span className="text-center text-sm font-semibold text-content">{match.home.name}</span>
                   <Badge variant="outline-muted" className="text-[10px]">Local</Badge>
                 </div>
 
                 <div className="flex shrink-0 flex-col items-center gap-1">
-                  <div className="flex items-center gap-2 text-4xl font-bold tabular-nums text-foreground sm:text-5xl">
+                  <div className="flex items-center gap-2 text-4xl font-bold tabular-nums text-content sm:text-5xl">
                     <span>{match.home.score ?? '-'}</span>
-                    <span className="text-muted-foreground">:</span>
+                    <span className="text-content-tertiary">:</span>
                     <span>{match.away.score ?? '-'}</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-content-tertiary">
                     {match.status === 'live' && liveMinute !== null ? `Minuto ${liveMinute}` : match.statusLabel}
                   </div>
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                   <TeamShield name={match.away.name} logoUrl={match.away.logoUrl} className="h-14 w-14 sm:h-16 sm:w-16" />
-                  <span className="text-center text-sm font-semibold text-foreground">{match.away.name}</span>
+                  <span className="text-center text-sm font-semibold text-content">{match.away.name}</span>
                   <Badge variant="outline-muted" className="text-[10px]">Visitante</Badge>
                 </div>
               </div>
@@ -322,21 +322,21 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
             <ScrollArea className="h-[400px] px-5 pb-5 sm:h-[460px]">
               <TabsContent value="summary" className="mt-4 space-y-4">
                 {match.summary && (
-                  <div className="rounded-xl border border-white/[0.06] bg-surface-2/40 p-4">
-                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                    <div className="mb-2 flex items-center gap-2 text-xs font-medium text-content-tertiary">
                       <FileText className="h-3.5 w-3.5" />
                       Resumen del partido
                       {match.summary.source === 'generated' && (
                         <span className="ml-auto text-[10px] opacity-70">generado automáticamente</span>
                       )}
                     </div>
-                    <p className="text-sm leading-relaxed text-foreground">{match.summary.text}</p>
+                    <p className="text-sm leading-relaxed text-content">{match.summary.text}</p>
                   </div>
                 )}
 
                 {match.squadPlayers.length > 0 && (
-                  <div className="rounded-xl border border-white/[0.06] bg-surface-2/40 p-4">
-                    <div className="mb-2 text-xs font-medium text-muted-foreground">Jugadores de tu plantilla</div>
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                    <div className="mb-2 text-xs font-medium text-content-tertiary">Jugadores de tu plantilla</div>
                     <div className="flex flex-wrap gap-1.5">
                       {match.squadPlayers.map((p) => (
                         <Badge key={p.playerId} variant={p.isHome ? 'default' : 'secondary'} className="text-[10px]">
@@ -347,8 +347,8 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                   </div>
                 )}
 
-                <div className="rounded-xl border border-white/[0.06] bg-surface-2/40 p-4">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-medium text-content-tertiary">
                     <Goal className="h-3.5 w-3.5" />
                     Eventos
                   </div>
@@ -359,12 +359,12 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Sin eventos registrados todavía.</p>
+                    <p className="text-xs text-content-tertiary">Sin eventos registrados todavía.</p>
                   )}
                 </div>
 
                 {match.notes.length > 0 && (
-                  <div className="text-xs text-amber-200/80">
+                  <div className="text-xs text-caution-text">
                     {match.notes.map((n, i) => (
                       <p key={i} className="flex items-start gap-1.5">
                         <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
@@ -378,18 +378,18 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
               <TabsContent value="lineups" className="mt-4">
                 {hasLineups ? (
                   <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="rounded-xl border border-white/[0.06] bg-surface-2/40 p-4">
+                    <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
                       <LineupSide side={match.lineups!.home} isHome />
                     </div>
-                    <div className="rounded-xl border border-white/[0.06] bg-surface-2/40 p-4">
+                    <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
                       <LineupSide side={match.lineups!.away} isHome={false} />
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-white/[0.06] bg-surface-2/40 p-8 text-center">
-                    <Users className="mx-auto h-8 w-8 text-muted-foreground" />
-                    <p className="mt-2 text-sm font-medium text-foreground">Alineaciones no disponibles</p>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-8 text-center">
+                    <Users className="mx-auto h-8 w-8 text-content-tertiary" />
+                    <p className="mt-2 text-sm font-medium text-content">Alineaciones no disponibles</p>
+                    <p className="text-xs text-content-tertiary">
                       SofaScore solo publica alineaciones confirmadas cerca del inicio del partido.
                     </p>
                   </div>
@@ -413,8 +413,8 @@ function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void
     <Card
       className={cn(
         'overflow-hidden transition-colors',
-        match.important && 'border-foreground/10 bg-surface-2/30',
-        isClickable && 'hover:bg-surface-2/50 cursor-pointer',
+        match.important && 'border-foreground/10 bg-surface-raised/30',
+        isClickable && 'hover:bg-surface-raised/50 cursor-pointer',
       )}
     >
       <CardContent className="p-0">
@@ -427,7 +427,7 @@ function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void
           )}
         >
           {/* Estado + fase + hora */}
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground sm:justify-start">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-content-tertiary sm:justify-start">
             <Badge variant={statusVariant(match.status)} className="text-[10px]">
               {match.status === 'live' && liveMinute !== null ? `${liveMinute}'` : match.statusLabel}
             </Badge>
@@ -438,7 +438,16 @@ function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void
             )}
             <span className="flex items-center gap-1">
               {match.status === 'live' ? (
-                <Radio className="h-3 w-3 text-emerald-400" />
+                /* El ÚNICO latido infinito del producto junto a los
+                   indicadores de carga, y el único que se ha ganado el sitio:
+                   dice «esto está ocurriendo ahora mismo», que es un estado
+                   real y cambiante, no un adorno. Se detiene solo cuando el
+                   partido termina.
+
+                   No lleva `motion-essential`: con movimiento reducido el
+                   latido se apaga sin pérdida, porque el estado ya está escrito
+                   al lado en palabras y el minuto sigue avanzando. */
+                <Radio className="h-3 w-3 animate-breathe text-positive-text" aria-hidden="true" />
               ) : match.status === 'finished' ? (
                 <Clock className="h-3 w-3" />
               ) : (
@@ -452,17 +461,17 @@ function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void
           <div className="flex flex-1 items-center justify-center gap-3 sm:gap-5">
             <div className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:items-end">
               <TeamShield name={match.home.name} logoUrl={match.home.logoUrl} className="h-12 w-12 sm:h-14 sm:w-14" />
-              <span className="truncate text-sm font-semibold text-foreground">{match.home.name}</span>
+              <span className="truncate text-sm font-semibold text-content">{match.home.name}</span>
             </div>
 
             <div className="flex shrink-0 flex-col items-center gap-0.5">
-              <div className="flex items-center gap-1.5 text-3xl font-bold tabular-nums text-foreground sm:text-4xl">
+              <div className="flex items-center gap-1.5 text-3xl font-bold tabular-nums text-content sm:text-4xl">
                 <span className="min-w-[1.5ch] text-center">{match.home.score ?? '-'}</span>
-                <span className="text-muted-foreground">:</span>
+                <span className="text-content-tertiary">:</span>
                 <span className="min-w-[1.5ch] text-center">{match.away.score ?? '-'}</span>
               </div>
               {isClickable && (
-                <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                <span className="flex items-center gap-1 text-[10px] text-content-tertiary">
                   Ver detalle <ChevronRight className="h-3 w-3" />
                 </span>
               )}
@@ -470,7 +479,7 @@ function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void
 
             <div className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:items-start">
               <TeamShield name={match.away.name} logoUrl={match.away.logoUrl} className="h-12 w-12 sm:h-14 sm:w-14" />
-              <span className="truncate text-sm font-semibold text-foreground">{match.away.name}</span>
+              <span className="truncate text-sm font-semibold text-content">{match.away.name}</span>
             </div>
           </div>
 
@@ -482,7 +491,7 @@ function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void
                   <GoalRow key={idx} event={event} isHome={event.isHome} />
                 ))}
                 {goals.length > 3 && (
-                  <span className="text-[10px] text-muted-foreground">+{goals.length - 3}</span>
+                  <span className="text-[10px] text-content-tertiary">+{goals.length - 3}</span>
                 )}
               </div>
             )}
@@ -627,7 +636,14 @@ export default function MatchesTab({ league }: MatchesTabProps) {
   const [detailMatch, setDetailMatch] = useState<EnrichedMatch | null>(null);
 
   if (isLoading) return <MatchesSkeleton />;
-  if (error) return <ErrorState title="Error cargando partidos" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido cargar los partidos"
+        description="Los marcadores en vivo vienen de una fuente externa que limita las peticiones. Espera unos segundos y reintenta."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
   if (!data) return null;
 
   const { important, normal, week, notes, currentWeek, availableWeeks } = data;
@@ -638,10 +654,12 @@ export default function MatchesTab({ league }: MatchesTabProps) {
   const importantCount = important.length;
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Partidos"
-        description={`Jornada ${week}${isPastWeek ? ' (finalizada)' : ''} · ${league.name}`}
+        as="h1"
+        eyebrow={`Partidos · jornada ${week}${isPastWeek ? ' (finalizada)' : ''}`}
+        title="Dónde están jugando los tuyos"
+        description="Los partidos de la jornada, ordenados por cuántos jugadores de tu plantilla saltan al campo en cada uno."
         action={
           <WeekSelector
             week={week}
@@ -653,12 +671,12 @@ export default function MatchesTab({ league }: MatchesTabProps) {
       />
 
       {isSwitchingWeek && (
-        <div className="text-xs text-muted-foreground">Cargando jornada {selectedWeek}…</div>
+        <div className="text-xs text-content-tertiary">Cargando jornada {selectedWeek}…</div>
       )}
 
       {isPastWeek && (
-        <Card className="border-white/[0.06] bg-surface-2/30">
-          <CardContent className="flex items-start gap-2 pt-4 text-sm text-muted-foreground">
+        <Card className="border-white/[0.09] bg-surface-raised/30">
+          <CardContent className="flex items-start gap-2 pt-4 text-sm text-content-tertiary">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             Estás viendo una jornada pasada. Los jugadores marcados como «tuyos» son los de tu
             plantilla actual, no los que tenías esa jornada.
@@ -667,10 +685,10 @@ export default function MatchesTab({ league }: MatchesTabProps) {
       )}
 
       {notes.length > 0 && (
-        <Card className="border-amber-500/30 bg-amber-500/5">
+        <Card className="border-caution/25 bg-caution-quiet">
           <CardContent className="pt-4">
             {notes.map((note) => (
-              <p key={note} className="flex items-start gap-2 text-sm text-amber-200/90">
+              <p key={note} className="flex items-start gap-2 text-sm text-caution-text">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 {note}
               </p>

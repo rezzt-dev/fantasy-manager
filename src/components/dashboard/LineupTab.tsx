@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import fantasyAPI, { LaLigaFantasyClient } from '../../lib/fantasy/api';
 import type { FantasyLeague, Formation, PlayerMaster, TeamPlayer } from '../../types/fantasy';
@@ -22,7 +22,7 @@ import CaptainCard from '../shared/CaptainCard';
 import EmptyState from '../shared/EmptyState';
 import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
-import { StaggerContainer, StaggerItem } from '../ui/motion';
+import { motionTokens } from '../../lib/motion';
 import { Shield, Users, Swords, AlertTriangle, Sparkles, ArrowRightLeft, Wallet, Save, RefreshCw, Loader2, Crown } from 'lucide-react';
 import { positionShortName } from '../../lib/format';
 import { useState, useEffect, useRef } from 'react';
@@ -360,8 +360,14 @@ export default function LineupTab({ league }: LineupTabProps) {
   if (hasError)
     return (
       <ErrorState
-        title="Error cargando alineación"
-        description="No se ha podido cargar la alineación."
+        title="No hemos podido leer tu alineación"
+        description="Hace falta tanto la formación guardada en LALIGA FANTASY como tu plantilla. Reintenta; si sigue fallando, abre la app oficial una vez para que se regenere la alineación."
+        detail={
+          [lineupQuery.error, teamQuery.error]
+            .filter(Boolean)
+            .map((e) => (e as Error).message)
+            .join('\n') || undefined
+        }
         onRetry={() => {
           lineupQuery.refetch();
           teamQuery.refetch();
@@ -372,8 +378,8 @@ export default function LineupTab({ league }: LineupTabProps) {
   if (!formation || !localFormation) {
     return (
       <EmptyState
-        title="Sin alineación"
-        description="No hay datos de alineación disponibles para esta liga."
+        title="Todavía no has alineado a nadie"
+        description="Abre la aplicación oficial de LALIGA FANTASY y coloca un once una primera vez; a partir de ahí podrás optimizarlo desde aquí."
       />
     );
   }
@@ -456,7 +462,7 @@ export default function LineupTab({ league }: LineupTabProps) {
       attacker: [...(reset.attacker || [])],
       coach: [...(reset.coach || [])],
     });
-    toast.info('🔄 Cambios de alineación descartados.');
+    toast.info('Cambios de alineación descartados.');
   };
 
   // Check if lineup was modified compared to official
@@ -500,7 +506,7 @@ export default function LineupTab({ league }: LineupTabProps) {
     });
 
     if (gk.length === 0) {
-      toast.error('⚠️ No se puede aplicar la recomendación porque no tienes ningún portero de tu plantilla sugerido en la alineación óptima.');
+      toast.error('No se puede aplicar la recomendación porque no tienes ningún portero de tu plantilla sugerido en la alineación óptima.');
       return;
     }
 
@@ -514,7 +520,7 @@ export default function LineupTab({ league }: LineupTabProps) {
 
     setViewMode('actual');
 
-    toast.success('✨ ¡Alineación óptima recomendada aplicada (filtrando solo tus jugadores reales)! Haz clic en "Guardar Alineación" para guardarla.');
+    toast.success('¡Alineación óptima recomendada aplicada (filtrando solo tus jugadores reales)! Haz clic en "Guardar Alineación" para guardarla.');
   };
 
   // Perform starter bench player swap (with strict position validation)
@@ -523,14 +529,14 @@ export default function LineupTab({ league }: LineupTabProps) {
 
     // Strict validation: Ensure position matches
     if (benchPlayer.playerMaster.positionId !== swappingStarter.positionId) {
-      toast.error('❌ Error de validación: El jugador del banquillo debe jugar en la misma posición.');
+      toast.error('Error de validación: El jugador del banquillo debe jugar en la misma posición.');
       return;
     }
 
     // Strict validation: Ensure player actually belongs to our official squad
     const ownedPlayerTeamIds = new Set(teamPlayers.map((p) => p.playerTeamId));
     if (!ownedPlayerTeamIds.has(benchPlayer.playerTeamId)) {
-      toast.error('❌ Error de validación: El jugador seleccionado no pertenece a tu plantilla.');
+      toast.error('Error de validación: El jugador seleccionado no pertenece a tu plantilla.');
       return;
     }
 
@@ -553,7 +559,7 @@ export default function LineupTab({ league }: LineupTabProps) {
       [key]: list,
     });
 
-    toast.success(`🔄 ${swappingStarter.playerMaster.nickname} sustituido por ${benchPlayer.playerMaster.nickname}.`);
+    toast.success(`${swappingStarter.playerMaster.nickname} sustituido por ${benchPlayer.playerMaster.nickname}.`);
     setSwappingStarter(null);
   };
 
@@ -592,7 +598,7 @@ export default function LineupTab({ league }: LineupTabProps) {
         ];
         const invalidPlayer = allEntries.find(e => e.playerTeamId === invalidId);
         const name = invalidPlayer?.playerMaster?.nickname || 'Desconocido';
-        toast.error(`❌ Error de validación: El jugador ${name} no pertenece realmente a tu plantilla de LaLiga.`);
+        toast.error(`Error de validación: El jugador ${name} no pertenece realmente a tu plantilla de LaLiga.`);
         setIsSaving(false);
         return;
       }
@@ -607,7 +613,7 @@ export default function LineupTab({ league }: LineupTabProps) {
       };
 
       await LaLigaFantasyClient.updateLineup(teamId, payload);
-      toast.success('⚽ ¡Alineación actualizada en tu cuenta de LaLiga Fantasy!');
+      toast.success('¡Alineación actualizada en tu cuenta de LaLiga Fantasy!');
 
       // Reset initialization state so that localFormation is reloaded from the fresh server response
       setIsInitialized(false);
@@ -616,7 +622,7 @@ export default function LineupTab({ league }: LineupTabProps) {
       lineupQuery.refetch();
     } catch (err: any) {
       console.error('[Save Lineup Error]', err);
-      toast.error(`❌ Error al guardar la alineación: ${err.message || 'Error desconocido'}`);
+      toast.error(`Error al guardar la alineación: ${err.message || 'Error desconocido'}`);
     } finally {
       setIsSaving(false);
       setShowConfirmSave(false);
@@ -624,9 +630,11 @@ export default function LineupTab({ league }: LineupTabProps) {
   };
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Alineación"
+        as="h1"
+        eyebrow="Alineación"
+        title="Tu once para esta jornada"
         description={
           isRecommendedView
             ? 'El mejor once calculado con los jugadores de tu plantilla.'
@@ -635,14 +643,14 @@ export default function LineupTab({ league }: LineupTabProps) {
         action={
           <div className="flex flex-wrap items-center gap-2">
             {optimalLineup && (
-              <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-surface-2 px-3 py-1.5">
-                <span className={`text-xs font-medium ${viewMode === 'actual' ? 'text-foreground' : 'text-muted-foreground'}`}>Mi once</span>
+              <div className="flex items-center gap-2 rounded-lg border border-white/[0.09] bg-surface-raised px-3 py-1.5">
+                <span className={`text-xs font-medium ${viewMode === 'actual' ? 'text-content' : 'text-content-tertiary'}`}>Mi once</span>
                 <Switch
                   checked={viewMode === 'recommended'}
                   onCheckedChange={(checked) => setViewMode(checked ? 'recommended' : 'actual')}
                   aria-label="Alternar entre mi once y el mejor once recomendado"
                 />
-                <span className={`text-xs font-medium ${viewMode === 'recommended' ? 'text-foreground' : 'text-muted-foreground'}`}>Mejor once</span>
+                <span className={`text-xs font-medium ${viewMode === 'recommended' ? 'text-content' : 'text-content-tertiary'}`}>Mejor once</span>
               </div>
             )}
             {injuredOrDoubtful.length > 0 && (
@@ -652,13 +660,13 @@ export default function LineupTab({ league }: LineupTabProps) {
               </Badge>
             )}
             <Badge variant="secondary" className="font-display text-xs">
-              <Swords className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Swords className="mr-1.5 h-3.5 w-3.5 text-content-tertiary" />
               {displayCount} titulares
             </Badge>
             <Button
               variant="ghost"
               size="icon-sm"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 text-content-tertiary hover:text-content"
               onClick={() => {
                 setIsInitialized(false);
                 lineupQuery.refetch();
@@ -667,7 +675,11 @@ export default function LineupTab({ league }: LineupTabProps) {
               disabled={lineupQuery.isFetching || teamQuery.isFetching}
               title="Recargar alineación y plantilla"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${lineupQuery.isFetching || teamQuery.isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${
+                  lineupQuery.isFetching || teamQuery.isFetching ? 'motion-essential animate-spin' : ''
+                }`}
+              />
             </Button>
           </div>
         }
@@ -675,13 +687,13 @@ export default function LineupTab({ league }: LineupTabProps) {
 
       {/* Floating Save Actions Bar if modified */}
       {isModified && !isRecommendedView && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.08] p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
-          <div className="flex items-center gap-2 text-sm text-amber-200">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-400" />
+        <div className="rounded-lg border border-caution/25 bg-caution/[0.08] p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
+          <div className="flex items-center gap-2 text-sm text-caution-text">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-caution-text" />
             <span>Tienes cambios sin guardar en tu alineación local.</span>
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="ghost" size="sm" onClick={resetChanges} className="text-white hover:bg-white/[0.08]">
+            <Button variant="ghost" size="sm" onClick={resetChanges} className="text-white hover:bg-white/[0.1]">
               <RefreshCw className="h-4 w-4 mr-1.5" /> Descartar
             </Button>
             <Button variant="default" size="sm" onClick={() => setShowConfirmSave(true)}>
@@ -700,11 +712,11 @@ export default function LineupTab({ league }: LineupTabProps) {
       )}
 
       {captainMoved && crownedEntry && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-3 text-sm text-amber-200">
-          <Crown className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+        <div className="flex items-start gap-2 rounded-lg border border-caution/25 bg-caution-quiet p-3 text-sm text-caution-text">
+          <Crown className="mt-0.5 h-4 w-4 shrink-0 text-caution-text" />
           <span>
             Con el once que estás viendo, el mejor capitán pasa a ser{' '}
-            <span className="font-semibold text-foreground">{crownedEntry.playerMaster.nickname}</span>.
+            <span className="font-semibold text-content">{crownedEntry.playerMaster.nickname}</span>.
           </span>
         </div>
       )}
@@ -718,12 +730,12 @@ export default function LineupTab({ league }: LineupTabProps) {
       {tacticalScheme && <TacticalSchemeCard scheme={tacticalScheme} />}
 
       {isIncomplete && (
-        <div className="flex flex-col gap-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-lg border border-caution/25 bg-caution-quiet p-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-caution-text" />
             <div className="text-sm">
-              <span className="font-semibold text-foreground">LaLiga aún no ha devuelto tu 11 completo ({totalLineup} de 11 jugadores).</span>
-              <span className="text-muted-foreground">
+              <span className="font-semibold text-content">LaLiga aún no ha devuelto tu 11 completo ({totalLineup} de 11 jugadores).</span>
+              <span className="text-content-tertiary">
                 {' '}Esto es normal si acabas de hacer cambios o la jornada aún no está abierta. Activa "Mejor once" para ver una propuesta completa calculada con tus jugadores.
               </span>
             </div>
@@ -732,7 +744,7 @@ export default function LineupTab({ league }: LineupTabProps) {
             <Button
               variant="ghost"
               size="xs"
-              className="text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
+              className="text-caution-text hover:bg-caution-quiet hover:text-content"
               onClick={() => setViewMode('recommended')}
             >
               Ver mejor once
@@ -740,7 +752,7 @@ export default function LineupTab({ league }: LineupTabProps) {
             <Button
               variant="ghost"
               size="xs"
-              className="text-amber-200 hover:bg-amber-500/10 hover:text-amber-100"
+              className="text-caution-text hover:bg-caution-quiet hover:text-content"
               onClick={() => window.open(`/api/debug/lineup?leagueId=${encodeURIComponent(leagueId)}&teamId=${teamId}`, '_blank')}
             >
               Diagnosticar
@@ -750,7 +762,7 @@ export default function LineupTab({ league }: LineupTabProps) {
       )}
 
       <Tabs defaultValue="field" className="space-y-6">
-        <TabsList className="flex w-full items-start gap-1 overflow-x-auto rounded-xl p-1 scrollbar-thin lg:grid lg:grid-cols-3">
+        <TabsList variant="underline">
           <TabsTrigger value="field" className="shrink-0 gap-1.5">
             <Swords className="h-3.5 w-3.5" /> Campo
           </TabsTrigger>
@@ -764,15 +776,22 @@ export default function LineupTab({ league }: LineupTabProps) {
 
         <TabsContent value="field">
           <Card className="overflow-hidden">
-            <div className="relative flex min-h-[420px] flex-col overflow-hidden rounded-t-xl bg-gradient-to-b from-[#14532d] to-[#166534] p-3 sm:min-h-[540px] sm:p-5 lg:min-h-[680px]">
+            {/* El césped usa un verde muy desaturado del sistema: un verde
+                saturado compite con el estado de los jugadores, que es lo que
+                de verdad hay que leer sobre el campo. El rayado imita el corte
+                del césped y sustituye a la trama de puntos genérica. */}
+            <div className="relative flex min-h-[420px] flex-col overflow-hidden rounded-t-lg bg-pitch p-3 sm:min-h-[540px] sm:p-5 lg:min-h-[680px]">
               <div
-                className="pointer-events-none absolute inset-0 opacity-20"
-                style={{ backgroundImage: 'radial-gradient(#16a34a 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+                className="pointer-events-none absolute inset-0 opacity-60"
+                style={{
+                  backgroundImage:
+                    'repeating-linear-gradient(180deg, hsl(0 0% 100% / 0.02) 0 44px, transparent 44px 88px)',
+                }}
+                aria-hidden="true"
               />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/25" />
 
               <svg
-                className="pointer-events-none absolute inset-0 h-full w-full text-white/30"
+                className="pointer-events-none absolute inset-0 h-full w-full text-pitch-line"
                 preserveAspectRatio="none"
                 viewBox="0 0 100 100"
               >
@@ -824,7 +843,7 @@ export default function LineupTab({ league }: LineupTabProps) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-content-tertiary" />
                 {isRecommendedView ? 'Mejor once recomendado' : `Once titular (${totalLineup} oficial${totalLineup === 1 ? '' : 'es'})`}
               </CardTitle>
               <CardDescription>
@@ -834,20 +853,22 @@ export default function LineupTab({ league }: LineupTabProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.04}>
+              {/* Lista alternativa al campo, para quien prefiere leer el once
+                  en columna. No se escalona: es la MISMA información que ya
+                  está arriba, no contenido que llega por primera vez. */}
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
                 {displayEntries.map((entry) => (
-                  <StaggerItem key={entry.playerTeamId}>
-                    <PlayerCard
-                      player={entry.playerMaster}
-                      buyoutClause={entry.buyoutClause}
-                      suggested={entry.suggested}
-                      isCaptain={entry.isCaptain}
-                      expectedPoints={entry.expectedPoints}
-                      onClick={() => setSelectedPlayer(teamPlayerById.get(entry.playerMaster.id) || null)}
-                    />
-                  </StaggerItem>
+                  <PlayerCard
+                    key={entry.playerTeamId}
+                    player={entry.playerMaster}
+                    buyoutClause={entry.buyoutClause}
+                    suggested={entry.suggested}
+                    isCaptain={entry.isCaptain}
+                    expectedPoints={entry.expectedPoints}
+                    onClick={() => setSelectedPlayer(teamPlayerById.get(entry.playerMaster.id) || null)}
+                  />
                 ))}
-              </StaggerContainer>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -856,7 +877,7 @@ export default function LineupTab({ league }: LineupTabProps) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-content-tertiary" />
                 Banquillo
               </CardTitle>
               <CardDescription>Jugadores en el banquillo (pueden sustituir a titulares del mismo puesto)</CardDescription>
@@ -865,19 +886,18 @@ export default function LineupTab({ league }: LineupTabProps) {
               {bench.length === 0 ? (
                 <EmptyState compact title="Banquillo vacío" description="Todos tus jugadores están en el once titular." />
               ) : (
-                <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.04}>
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
                   {bench.map((p) => (
-                    <StaggerItem key={p.playerTeamId}>
-                      <PlayerCard
-                        player={p.playerMaster}
-                        buyoutClause={p.buyoutClause}
-                        isShielded={p.isShielded}
-                        expectedPoints={recommendedBenchXp.get(p.playerMaster.id) ?? null}
-                        onClick={() => setSelectedPlayer(p)}
-                      />
-                    </StaggerItem>
+                    <PlayerCard
+                      key={p.playerTeamId}
+                      player={p.playerMaster}
+                      buyoutClause={p.buyoutClause}
+                      isShielded={p.isShielded}
+                      expectedPoints={recommendedBenchXp.get(p.playerMaster.id) ?? null}
+                      onClick={() => setSelectedPlayer(p)}
+                    />
                   ))}
-                </StaggerContainer>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -909,7 +929,7 @@ export default function LineupTab({ league }: LineupTabProps) {
 
           <div className="max-h-60 overflow-y-auto space-y-2 py-3 scrollbar-thin">
             {bench.filter((p) => p.playerMaster.positionId === swappingStarter?.positionId).length === 0 ? (
-              <p className="text-center text-sm text-muted-foreground py-4">No tienes jugadores de esta posición en tu banquillo.</p>
+              <p className="text-center text-sm text-content-tertiary py-4">No tienes jugadores de esta posición en tu banquillo.</p>
             ) : (
               bench
                 .filter((p) => p.playerMaster.positionId === swappingStarter?.positionId)
@@ -917,16 +937,16 @@ export default function LineupTab({ league }: LineupTabProps) {
                   <button
                     key={benchPlayer.playerTeamId}
                     onClick={() => handleSwap(benchPlayer)}
-                    className="w-full flex items-center justify-between p-3 rounded-lg border border-white/[0.06] bg-card hover:bg-surface-2 transition-colors text-left"
+                    className="w-full flex items-center justify-between p-3 rounded-lg border border-white/[0.09] bg-surface hover:bg-surface-raised transition-colors text-left"
                   >
                     <div className="flex items-center gap-3">
                       <PlayerAvatar player={benchPlayer.playerMaster} size="md" />
                       <div>
-                        <div className="font-semibold text-foreground">{benchPlayer.playerMaster.nickname}</div>
+                        <div className="font-semibold text-content">{benchPlayer.playerMaster.nickname}</div>
                         <PlayerStatusBadge status={benchPlayer.playerMaster.playerStatus} />
                       </div>
                     </div>
-                    <div className="text-right text-xs font-semibold text-muted-foreground">
+                    <div className="text-right text-xs font-semibold text-content-tertiary">
                       {benchPlayer.playerMaster.points || benchPlayer.playerMaster.lastSeasonPoints || 0} pts
                     </div>
                   </button>
@@ -935,7 +955,7 @@ export default function LineupTab({ league }: LineupTabProps) {
           </div>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setSwappingStarter(null)} className="hover:bg-white/[0.06] text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" onClick={() => setSwappingStarter(null)} className="hover:bg-white/[0.05] text-content-tertiary hover:text-content">
               Cancelar
             </Button>
           </DialogFooter>
@@ -952,13 +972,13 @@ export default function LineupTab({ league }: LineupTabProps) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="ghost" onClick={() => setShowConfirmSave(false)} disabled={isSaving} className="hover:bg-white/[0.06] text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" onClick={() => setShowConfirmSave(false)} disabled={isSaving} className="hover:bg-white/[0.05] text-content-tertiary hover:text-content">
               Cancelar
             </Button>
             <Button variant="default" onClick={handleSaveLineup} disabled={isSaving}>
               {isSaving ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Guardando...
+                  <Loader2 className="motion-essential h-4 w-4 mr-1.5 animate-spin" /> Guardando...
                 </>
               ) : (
                 'Confirmar'
@@ -989,44 +1009,62 @@ function PositionRow({
   );
 }
 
+/**
+ * Ficha de un jugador sobre el campo.
+ *
+ * Aquí Motion hace UNA cosa y solo una: `layoutId`. Cuando el usuario pasa de
+ * su once actual al once recomendado, o aplica el plan del motor, los mismos
+ * futbolistas cambian de línea o salen al banquillo. Con `layoutId` la ficha
+ * VIAJA de una posición a la otra en lugar de desaparecer de un sitio y nacer
+ * en otro, y así se lee de un vistazo qué ha movido el motor —que es
+ * exactamente la pregunta que trae al usuario a esta pantalla—. Es una
+ * interpolación entre dos rectángulos medidos: CSS no puede hacerla.
+ *
+ * El hover y la pulsación, en cambio, NO pasan por JavaScript: son las
+ * utilidades `.lift` y `.press` de `global.css`. Antes eran
+ * `whileHover={{ scale: 1.05 }}`, que además de cargar trabajo en el hilo
+ * principal desenfocaba el nombre del jugador y empujaba a las fichas vecinas.
+ */
 function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () => void }) {
   const player = entry.playerMaster;
   const points = player.points || player.lastSeasonPoints || 0;
   const isWarning = player.playerStatus === 'injured' || player.playerStatus === 'doubtful';
   const showExpected = typeof entry.expectedPoints === 'number';
+  const t = motionTokens();
 
   return (
     <motion.button
-      whileHover={{ scale: 1.05, y: -4 }}
-      whileTap={{ scale: 0.98 }}
+      layout="position"
+      layoutId={`pitch-${entry.playerTeamId}`}
+      transition={{ duration: t.sec.slow, ease: t.ease.out }}
       onClick={onClick}
-      className={`group relative flex w-28 flex-col items-center rounded-2xl border bg-card/95 p-2.5 text-center shadow-card transition-colors hover:bg-surface-2 sm:w-32 sm:p-3 ${
+      className={`lift press group relative flex w-28 flex-col items-center rounded-lg border bg-surface/95 p-2.5 text-center shadow-1 transition-colors hover:bg-surface-raised sm:w-32 sm:p-3 ${
         entry.isCaptain
-          ? 'border-amber-400/70 shadow-[0_0_16px_-4px_rgba(245,158,11,0.45)]'
+          ? 'border-accent/50 shadow-glow-sm'
           : entry.suggested
-          ? 'border-dashed border-amber-500/60'
+          ? 'border-dashed border-caution/40'
           : isWarning
-          ? 'border-rose-500/50 shadow-[0_0_12px_-4px_rgba(244,63,94,0.25)]'
-          : 'border-white/[0.12]'
+          ? 'border-negative/40'
+          : 'border-white/[0.14]'
       }`}
     >
       {entry.isCaptain && (
         <span
-          className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-amber-400 text-background shadow-sm"
+          className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-caution text-background shadow-sm"
           title="Capitán recomendado: duplica sus puntos"
         >
           <Crown className="h-3 w-3" />
         </span>
       )}
       <PlayerAvatar player={player} size="xl" showPosition className="mb-2.5" />
-      <div className="w-full truncate text-sm font-bold text-foreground">{player.nickname}</div>
-      <div className="mt-0.5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+      <div className="w-full truncate text-sm font-bold text-content">{player.nickname}</div>
+      <div className="mt-0.5 flex items-center justify-center gap-2 text-xs text-content-tertiary">
         <span className="font-display font-semibold">{positionShortName(player.position, player.positionId)}</span>
         <span>•</span>
         <span>{points} pts</span>
       </div>
       {showExpected && (
-        <div className={`mt-1 text-xs font-semibold ${entry.isCaptain ? 'text-amber-300' : 'text-emerald-400'}`}>
+        <div className={`mt-1 text-xs font-semibold ${entry.isCaptain ? 'text-caution-text' : 'text-positive-text'}`}>
           {entry.isCaptain
             ? `${((entry.expectedPoints ?? 0) * 2).toFixed(1)} xP ×2`
             : `${entry.expectedPoints?.toFixed(1)} xP`}
@@ -1035,12 +1073,12 @@ function LineupPlayerCard({ entry, onClick }: { entry: FilledEntry; onClick: () 
       <div className="mt-2 flex w-full flex-wrap items-center justify-center gap-1.5">
         <PlayerStatusBadge status={player.playerStatus} />
         {entry.isCaptain && (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-300">
+          <span className="inline-flex items-center gap-1 rounded-full border border-caution/30 bg-caution-quiet px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-caution-text">
             <Crown className="h-2.5 w-2.5" /> Capitán
           </span>
         )}
         {entry.suggested && (
-          <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-amber-400">
+          <span className="inline-flex items-center rounded-full border border-caution/25 bg-caution-quiet px-1.5 py-0.5 text-[9px] font-semibold text-caution-text">
             Sugerido
           </span>
         )}
@@ -1070,20 +1108,20 @@ function RecommendedLineupCard({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-foreground" />
+              <Sparkles className="h-4 w-4 text-content" />
               Alineación recomendada
               <Badge variant="secondary" className="font-display text-xs">{optimalLineup.formation}</Badge>
             </CardTitle>
             <CardDescription>
               Maximiza los puntos esperados de la jornada según rendimiento, rival, titularidad y noticias.
               {optimalLineup.captain && (
-                <span className="mt-1 block text-amber-300">
+                <span className="mt-1 block text-caution-text">
                   Capitán co-optimizado: {optimalLineup.captain.player.nickname} (+
                   {optimalLineup.captain.expectedPoints.toFixed(1)} pts por duplicar).
                 </span>
               )}
               {optimalLineup.degraded && (
-                <span className="mt-1 block text-amber-400">
+                <span className="mt-1 block text-caution-text">
                   No hay suficientes jugadores sanos: la propuesta incluye jugadores con dudas.
                 </span>
               )}
@@ -1091,35 +1129,35 @@ function RecommendedLineupCard({
           </div>
           <div className="flex flex-col sm:items-end gap-2 text-right">
             <div>
-              <span className="font-display text-2xl font-bold text-foreground">{optimalLineup.totalExpected.toFixed(1)}</span>
-              <span className="text-muted-foreground"> pts esperados</span>
-              <span className={`ml-2 text-xs font-semibold ${improvement >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <span className="font-display text-2xl font-bold text-content">{optimalLineup.totalExpected.toFixed(1)}</span>
+              <span className="text-content-tertiary"> pts esperados</span>
+              <span className={`ml-2 text-xs font-semibold ${improvement >= 0 ? 'text-positive-text' : 'text-negative-text'}`}>
                 ({improvement >= 0 ? '+' : ''}{improvement.toFixed(1)} vs actual)
               </span>
             </div>
             <Button variant="glass" size="xs" onClick={onApply} className="text-xs font-semibold">
-              ✨ Aplicar recomendación
+              Aplicar recomendación
             </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {optimalLineup.changes.length > 0 && (
-          <div className="rounded-lg border border-white/[0.06] bg-surface-2 p-3">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cambios sugeridos</div>
+          <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-content-tertiary">Cambios sugeridos</div>
             <div className="flex flex-wrap gap-2">
               {optimalLineup.changes.map((change, idx) => (
-                <span key={idx} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs">
+                <span key={idx} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1 text-xs">
                   {change.out && change.in ? (
                     <>
-                      <span className="text-rose-400 line-through">{change.out.nickname}</span>
-                      <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                      <span className="font-semibold text-emerald-400">{change.in.nickname}</span>
+                      <span className="text-negative-text line-through">{change.out.nickname}</span>
+                      <ArrowRightLeft className="h-3 w-3 text-content-tertiary" />
+                      <span className="font-semibold text-positive-text">{change.in.nickname}</span>
                     </>
                   ) : change.in ? (
-                    <span className="font-semibold text-emerald-400">+ {change.in.nickname}</span>
+                    <span className="font-semibold text-positive-text">+ {change.in.nickname}</span>
                   ) : (
-                    <span className="text-rose-400">- {change.out?.nickname}</span>
+                    <span className="text-negative-text">- {change.out?.nickname}</span>
                   )}
                 </span>
               ))}
@@ -1133,7 +1171,7 @@ function RecommendedLineupCard({
             if (entries.length === 0) return null;
             return (
               <div key={positionId} className="flex items-start gap-3">
-                <span className="mt-1.5 w-9 shrink-0 font-display text-xs font-bold text-muted-foreground">{label}</span>
+                <span className="mt-1.5 w-9 shrink-0 font-display text-xs font-bold text-content-tertiary">{label}</span>
                 <div className="flex flex-wrap gap-2">
                   {entries.map((entry) => {
                     const isCaptain = optimalLineup.captain?.player.id === entry.player.id;
@@ -1141,12 +1179,12 @@ function RecommendedLineupCard({
                       <span
                         key={entry.player.id}
                         className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
-                          isCaptain ? 'border-amber-500/40 bg-amber-500/[0.08]' : 'border-white/[0.08] bg-surface'
+                          isCaptain ? 'border-caution/30 bg-caution/[0.08]' : 'border-white/[0.09] bg-surface'
                         }`}
                       >
-                        {isCaptain && <Crown className="h-3 w-3 shrink-0 text-amber-400" />}
-                        <span className="font-semibold text-foreground">{entry.player.nickname}</span>
-                        <span className="text-muted-foreground">{entry.expectedPoints.toFixed(1)}</span>
+                        {isCaptain && <Crown className="h-3 w-3 shrink-0 text-caution-text" />}
+                        <span className="font-semibold text-content">{entry.player.nickname}</span>
+                        <span className="text-content-tertiary">{entry.expectedPoints.toFixed(1)}</span>
                       </span>
                     );
                   })}
@@ -1157,7 +1195,7 @@ function RecommendedLineupCard({
         </div>
 
         {optimalLineup.bench.length > 0 && (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-content-tertiary">
             <span className="font-semibold uppercase tracking-wide">Banquillo sugerido: </span>
             {optimalLineup.bench.map((e) => `${e.player.nickname} (${e.expectedPoints.toFixed(1)})`).join(' · ')}
           </div>
@@ -1188,58 +1226,58 @@ function TacticalSchemeCard({ scheme }: { scheme: TacticalScheme }) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Wallet className="h-4 w-4 text-foreground" />
+              <Wallet className="h-4 w-4 text-content" />
               Esquema táctico con presupuesto
               <Badge variant="secondary" className="font-display text-xs">{scheme.formation}</Badge>
             </CardTitle>
             <CardDescription>
               Mejor once alcanzable combinando tu plantilla, el mercado y las cláusulas de rivales.
               {scheme.dataQuality.level !== 'high' && (
-                <span className="mt-1 block text-amber-400">
+                <span className="mt-1 block text-caution-text">
                   Confianza {scheme.dataQuality.level === 'medium' ? 'media' : 'baja'} en las estimaciones: {scheme.dataQuality.notes[0]}
                 </span>
               )}
             </CardDescription>
           </div>
           <div className="text-right">
-            <span className="font-display text-2xl font-bold text-foreground">{scheme.totalExpected.toFixed(1)}</span>
-            <span className="text-muted-foreground"> pts esperados</span>
-            <span className={`ml-2 text-xs font-semibold ${improvement >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <span className="font-display text-2xl font-bold text-content">{scheme.totalExpected.toFixed(1)}</span>
+            <span className="text-content-tertiary"> pts esperados</span>
+            <span className={`ml-2 text-xs font-semibold ${improvement >= 0 ? 'text-positive-text' : 'text-negative-text'}`}>
               ({improvement >= 0 ? '+' : ''}{improvement.toFixed(1)} vs sin fichar)
             </span>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg border border-white/[0.06] bg-surface-2 p-3 text-xs">
-          <span className="text-muted-foreground">
-            Disponible: <span className="font-semibold text-foreground"><Currency value={scheme.budget.available} /></span>
+        <div className="flex flex-wrap gap-x-6 gap-y-1 rounded-lg border border-white/[0.09] bg-surface-raised p-3 text-xs">
+          <span className="text-content-tertiary">
+            Disponible: <span className="font-semibold text-content"><Currency value={scheme.budget.available} /></span>
           </span>
-          <span className="text-muted-foreground">
-            Gastado: <span className="font-semibold text-foreground"><Currency value={scheme.budget.spent} /></span>
+          <span className="text-content-tertiary">
+            Gastado: <span className="font-semibold text-content"><Currency value={scheme.budget.spent} /></span>
           </span>
-          <span className="text-muted-foreground">
-            Restante: <span className="font-semibold text-emerald-400"><Currency value={scheme.budget.remaining} /></span>
+          <span className="text-content-tertiary">
+            Restante: <span className="font-semibold text-positive-text"><Currency value={scheme.budget.remaining} /></span>
           </span>
         </div>
 
         {scheme.moves.length > 0 ? (
-          <div className="rounded-lg border border-white/[0.06] bg-surface-2 p-3">
-            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Movimientos necesarios</div>
+          <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-3">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-content-tertiary">Movimientos necesarios</div>
             <div className="flex flex-wrap gap-2">
               {scheme.moves.map((move) => (
-                <span key={move.player.id} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs">
-                  <span className="font-semibold text-emerald-400">
+                <span key={move.player.id} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] px-2.5 py-1 text-xs">
+                  <span className="font-semibold text-positive-text">
                     {move.type === 'buy_market' ? 'Fichar' : 'Pagar cláusula'}: {move.player.nickname}
                   </span>
-                  <Currency value={move.cost} className="text-muted-foreground" />
-                  {move.sellerManagerName && <span className="text-muted-foreground">({move.sellerManagerName})</span>}
+                  <Currency value={move.cost} className="text-content-tertiary" />
+                  {move.sellerManagerName && <span className="text-content-tertiary">({move.sellerManagerName})</span>}
                 </span>
               ))}
             </div>
           </div>
         ) : (
-          <div className="text-xs text-muted-foreground">
+          <div className="text-xs text-content-tertiary">
             Tu plantilla actual ya permite montar este esquema: no hacen falta fichajes.
           </div>
         )}
@@ -1250,19 +1288,19 @@ function TacticalSchemeCard({ scheme }: { scheme: TacticalScheme }) {
             if (entries.length === 0) return null;
             return (
               <div key={positionId} className="flex items-start gap-3">
-                <span className="mt-1.5 w-9 shrink-0 font-display text-xs font-bold text-muted-foreground">{label}</span>
+                <span className="mt-1.5 w-9 shrink-0 font-display text-xs font-bold text-content-tertiary">{label}</span>
                 <div className="flex flex-wrap gap-2">
                   {entries.map((entry) => (
                     <span
                       key={entry.player.id}
                       className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs ${
                         entry.source === 'squad'
-                          ? 'border-white/[0.08] bg-surface'
-                          : 'border-emerald-500/30 bg-emerald-500/[0.06]'
+                          ? 'border-white/[0.09] bg-surface'
+                          : 'border-positive/25 bg-positive/[0.06]'
                       }`}
                     >
-                      <span className="font-semibold text-foreground">{entry.player.nickname}</span>
-                      <span className="text-muted-foreground">{entry.expectedPoints.toFixed(1)}</span>
+                      <span className="font-semibold text-content">{entry.player.nickname}</span>
+                      <span className="text-content-tertiary">{entry.expectedPoints.toFixed(1)}</span>
                       {confidenceBadge(entry.confidence)}
                     </span>
                   ))}
@@ -1280,7 +1318,7 @@ function LineupSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-8 w-40" />
-      <Skeleton className="h-[600px] w-full rounded-xl" />
+      <Skeleton className="h-[600px] w-full rounded-lg" />
       <Skeleton className="h-40 w-full" />
     </div>
   );

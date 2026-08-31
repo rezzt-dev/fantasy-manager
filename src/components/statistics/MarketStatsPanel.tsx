@@ -36,14 +36,14 @@ export default function MarketStatsPanel({ market }: MarketStatsPanelProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            <TrendingDown className="h-4 w-4 text-brand-muted" />
+            <TrendingDown className="h-4 w-4 text-content-secondary" />
             Oportunidades de mercado
           </CardTitle>
           <CardDescription>Jugadores con precio de venta sensiblemente por debajo de su valor de mercado</CardDescription>
         </CardHeader>
         <CardContent>
           {stats.bargains.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No hay oportunidades claras en el mercado actual.</div>
+            <div className="text-sm text-content-tertiary">No hay oportunidades claras en el mercado actual.</div>
           ) : (
             <div className="space-y-3">
               {stats.bargains.map((marketPlayer) => (
@@ -62,26 +62,26 @@ function BargainRow({ marketPlayer }: { marketPlayer: MarketPlayer & { diffPerce
   const posColor = positionBgClass(p.position || '', p.positionId);
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-white/[0.08] bg-surface-2 p-3">
+    <div className="flex items-center gap-3 rounded-lg border border-white/[0.09] bg-surface-raised p-3">
       <PlayerAvatar player={p} size="md" showPosition />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-semibold text-card-foreground">{p.nickname}</span>
+          <span className="truncate font-semibold text-content">{p.nickname}</span>
           <Badge variant="secondary" className={`font-display font-bold text-white ${posColor} border-0`}>
             {positionShortName(p.position, p.positionId)}
           </Badge>
         </div>
-        <div className="text-xs text-muted-foreground">{p.team?.name || 'Sin equipo'}</div>
+        <div className="text-xs text-content-tertiary">{p.team?.name || 'Sin equipo'}</div>
       </div>
       <div className="text-right">
-        <div className="text-sm font-semibold text-brand">{marketPlayer.diffPercent.toFixed(0)}% abajo</div>
-        <div className="text-xs text-muted-foreground">
+        <div className="text-sm font-semibold text-content">{marketPlayer.diffPercent.toFixed(0)}% abajo</div>
+        <div className="text-xs text-content-tertiary">
           <Currency value={marketPlayer.salePrice} /> / <Currency value={p.marketValue} />
         </div>
       </div>
       <div className="text-right">
         <PlayerStatusBadge status={p.playerStatus} />
-        <div className="text-xs text-muted-foreground">{marketPlayer.numberOfBids} pujas</div>
+        <div className="text-xs text-content-tertiary">{marketPlayer.numberOfBids} pujas</div>
       </div>
     </div>
   );
@@ -91,11 +91,11 @@ function MiniCard({ icon, label, value }: { icon: React.ReactNode; label: string
   return (
     <Card>
       <CardContent className="p-5">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-content-tertiary">
           {icon}
-          <span className="text-xs font-medium text-brand-muted">{label}</span>
+          <span className="text-xs font-medium text-content-secondary">{label}</span>
         </div>
-        <div className="mt-2 text-2xl font-bold text-card-foreground">{value}</div>
+        <div className="mt-2 text-2xl font-bold text-content">{value}</div>
       </CardContent>
     </Card>
   );

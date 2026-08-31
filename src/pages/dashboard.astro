@@ -24,21 +24,24 @@ if (!tokens?.access_token) {
 			} catch (e) { /* localStorage no disponible */ }
 		</script>
 	</head>
-	<body class="min-h-screen bg-background text-foreground antialiased">
+	<body class="min-h-dvh bg-canvas text-content antialiased">
 		<noscript>
-			<div class="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+			<div class="flex min-h-dvh flex-col items-center justify-center p-6 text-center">
 				<h1 class="text-xl font-display font-semibold tracking-tight">JavaScript requerido</h1>
-				<p class="mt-2 text-muted-foreground">El dashboard necesita JavaScript para funcionar. Actívalo en tu navegador.</p>
+				<p class="mt-2 text-content-tertiary">El dashboard necesita JavaScript para funcionar. Actívalo en tu navegador.</p>
 			</div>
 		</noscript>
 
 		<DashboardClient client:only="react">
-			<div slot="fallback" class="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center text-foreground">
-				<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2 border border-white/[0.08]">
-					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-foreground"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+			<div slot="fallback" class="flex min-h-dvh flex-col items-center justify-center gap-4 bg-canvas p-6 text-center text-content">
+				<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-raised border border-white/[0.09]">
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-content"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
 				</div>
-				<div class="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-foreground"></div>
-				<p class="text-sm text-muted-foreground">Cargando dashboard...</p>
+				<div
+					class="motion-essential h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-foreground"
+				>
+				</div>
+				<p class="text-sm text-content-tertiary">Cargando dashboard...</p>
 			</div>
 		</DashboardClient>
 	</body>

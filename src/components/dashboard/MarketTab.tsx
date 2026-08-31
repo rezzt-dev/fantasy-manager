@@ -21,7 +21,6 @@ import SectionHeader from '../shared/SectionHeader';
 import SignalChips from '../shared/SignalChips';
 import EmptyState from '../shared/EmptyState';
 import FilterBar from '../shared/FilterBar';
-import { StaggerContainer, StaggerItem } from '../ui/motion';
 import { ShoppingCart, TrendingDown, TrendingUp, Percent, Gavel, Table2, LayoutGrid, Users } from 'lucide-react';
 import { positionShortName, positionBgClass, getPositionName, statusText } from '../../lib/format';
 import { starterScoreFromLastSeason } from '../../lib/analysis/starter-score';
@@ -171,10 +170,10 @@ export default function MarketTab({ league }: MarketTabProps) {
           const owner = resolveMarketOwner(row.original, ownerMap);
           return (
             <div className="min-w-0">
-              <div className="truncate font-semibold text-foreground">{p.nickname}</div>
-              <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              <div className="truncate font-semibold text-content">{p.nickname}</div>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs text-content-tertiary">
                 {p.team?.name && <span className="truncate">{p.team.name}</span>}
-                <span className={owner.type === 'team' ? 'text-amber-400' : 'text-emerald-400'}>{owner.label}</span>
+                <span className={owner.type === 'team' ? 'text-caution-text' : 'text-positive-text'}>{owner.label}</span>
               </div>
               {signals && signals.length > 0 && <SignalChips signals={signals} max={2} />}
             </div>
@@ -231,7 +230,7 @@ export default function MarketTab({ league }: MarketTabProps) {
         accessorKey: 'playerMaster.marketValue',
         header: 'Valor mercado',
         meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
-        cell: ({ row }) => <Currency value={row.original.playerMaster.marketValue} className="text-muted-foreground" />,
+        cell: ({ row }) => <Currency value={row.original.playerMaster.marketValue} className="text-content-tertiary" />,
       },
       {
         accessorKey: 'numberOfBids',
@@ -260,19 +259,19 @@ export default function MarketTab({ league }: MarketTabProps) {
           return (
             <div className="flex items-center gap-2">
               {isBargain ? (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-positive-text">
                   <TrendingDown className="h-3.5 w-3.5" />
                   <Percent className="h-3 w-3" />
                   {Math.abs(diffPercent).toFixed(0)}%
                 </div>
               ) : isOverpriced ? (
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-400">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-negative-text">
                   <TrendingUp className="h-3.5 w-3.5" />
                   <Percent className="h-3 w-3" />
                   {Math.abs(diffPercent).toFixed(0)}%
                 </div>
               ) : (
-                <span className="text-xs text-muted-foreground">Ajustado</span>
+                <span className="text-xs text-content-tertiary">Ajustado</span>
               )}
               {canAfford && (
                 <Badge variant="success" className="text-[10px]">
@@ -288,13 +287,22 @@ export default function MarketTab({ league }: MarketTabProps) {
   );
 
   if (isLoading) return <MarketSkeleton />;
-  if (error) return <ErrorState title="Error cargando mercado" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido leer el mercado"
+        description="El mercado se renueva cada 24 h y la API a veces tarda en responder durante ese cambio. Reintenta en unos segundos."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Mercado"
-        description={`${market.length} jugadores en venta en ${league.name}`}
+        as="h1"
+        eyebrow="Mercado"
+        title="Quién está en venta ahora"
+        description={`${market.length} jugadores disponibles en ${league.name}. El mercado se renueva cada 24 h.`}
         action={
           <Toggle
             pressed={viewMode === 'table'}
@@ -309,56 +317,56 @@ export default function MarketTab({ league }: MarketTabProps) {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
+          <div className="flex items-center gap-2 text-xs text-content-tertiary">
             <Users className="h-4 w-4" />
             En venta
           </div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">{market.length}</div>
+          <div className="mt-2 text-2xl font-bold font-display text-content">{market.length}</div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
+          <div className="flex items-center gap-2 text-xs text-content-tertiary">
             <ShoppingCart className="h-4 w-4" />
             Precio medio
           </div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+          <div className="mt-2 text-2xl font-bold font-display text-content">
             <Currency value={Math.round(avgPrice)} />
           </div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
+          <div className="flex items-center gap-2 text-xs text-content-tertiary">
             <TrendingDown className="h-4 w-4" />
             Oportunidades
           </div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">{bargainsCount}</div>
+          <div className="mt-2 text-2xl font-bold font-display text-content">{bargainsCount}</div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
+          <div className="flex items-center gap-2 text-xs text-content-tertiary">
             <Gavel className="h-4 w-4" />
             A tu alcance
           </div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+          <div className="mt-2 text-2xl font-bold font-display text-content">
             {market.filter((m) => m.salePrice <= ownMoney).length}
           </div>
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
-          <div className="flex items-center gap-2 text-xs text-emerald-400">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
+          <div className="flex items-center gap-2 text-xs text-positive-text">
             <Users className="h-4 w-4" />
             Mercado oficial
           </div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+          <div className="mt-2 text-2xl font-bold font-display text-content">
             {market.filter((m) => resolveMarketOwner(m, ownerMap).type === 'official').length}
           </div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
-          <div className="flex items-center gap-2 text-xs text-amber-400">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
+          <div className="flex items-center gap-2 text-xs text-caution-text">
             <ShoppingCart className="h-4 w-4" />
             En venta por equipo
           </div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+          <div className="mt-2 text-2xl font-bold font-display text-content">
             {market.filter((m) => resolveMarketOwner(m, ownerMap).type === 'team').length}
           </div>
         </div>
@@ -369,15 +377,15 @@ export default function MarketTab({ league }: MarketTabProps) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
-                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                <ShoppingCart className="h-4 w-4 text-content-tertiary" />
                 Jugadores en venta
               </CardTitle>
               <CardDescription>{filtered.length} coinciden con los filtros</CardDescription>
             </div>
             <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[280px]">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">Precio máximo</span>
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-xs text-content-tertiary">Precio máximo</span>
+                <span className="text-xs font-semibold text-content">
                   {maxPrice >= 100_000_000 ? 'Sin límite' : <Currency value={maxPrice} />}
                 </span>
               </div>
@@ -416,18 +424,20 @@ export default function MarketTab({ league }: MarketTabProps) {
               description="Actualmente no hay jugadores en venta que coincidan con tus filtros."
             />
           ) : (
-            <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.03}>
+            /* Igual que en Plantilla: el mercado se filtra y se ordena, así
+               que no hay un «primero» que la cascada pueda subrayar. Entra con
+               la sección y punto. */
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
               {filtered.map((marketPlayer) => (
-                <StaggerItem key={marketPlayer.id}>
-                  <PlayerCard
-                    player={marketPlayer.playerMaster}
-                    onClick={() => setSelectedPlayer(marketPlayer)}
-                    highlight={marketPlayer.salePrice <= ownMoney}
-                    owner={resolveMarketOwner(marketPlayer, ownerMap)}
-                  />
-                </StaggerItem>
+                <PlayerCard
+                  key={marketPlayer.id}
+                  player={marketPlayer.playerMaster}
+                  onClick={() => setSelectedPlayer(marketPlayer)}
+                  highlight={marketPlayer.salePrice <= ownMoney}
+                  owner={resolveMarketOwner(marketPlayer, ownerMap)}
+                />
               ))}
-            </StaggerContainer>
+            </div>
           )}
         </CardContent>
       </Card>

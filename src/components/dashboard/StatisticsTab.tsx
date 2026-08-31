@@ -1,13 +1,16 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
+import { motionTokens } from '../../lib/motion';
 import fantasyAPI from '../../lib/fantasy/api';
 import type { FantasyLeague } from '../../types/fantasy';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
+import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import ErrorState from '../shared/ErrorState';
+import EmptyState from '../shared/EmptyState';
 import SectionHeader from '../shared/SectionHeader';
 import SummaryCards from '../statistics/SummaryCards';
 import StandingsChart from '../statistics/StandingsChart';
@@ -35,24 +38,44 @@ export default function StatisticsTab({ league }: StatisticsTabProps) {
   });
 
   if (isLoading) return <StatisticsSkeleton />;
-  if (error) return <ErrorState title="Error cargando estadísticas" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido calcular las estadísticas"
+        description="El análisis cruza tu liga entera; si alguna de las plantillas no responde, no se puede completar. Reintenta."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
 
   const analysis = data?.analysis;
   if (!analysis) {
-    return <ErrorState title="Sin datos" description="No se han podido cargar los datos de análisis de la liga." onRetry={refetch} />;
+    return (
+      <EmptyState
+        icon={<BarChart3 />}
+        title="Todavía no hay estadísticas que enseñar"
+        description="El análisis se calcula con las plantillas de todos los managers de la liga. Aparecerá en cuanto la liga tenga al menos una jornada disputada."
+        action={
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            Volver a calcular
+          </Button>
+        }
+      />
+    );
   }
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Estadísticas"
-        description={`Análisis completo de ${league.name}`}
+        as="h1"
+        eyebrow="Estadísticas"
+        title="La temporada en números"
+        description={`Rendimiento, valor y riesgo de todos los equipos de ${league.name}, con el tuyo siempre marcado en el gráfico.`}
       />
 
       <SummaryCards analysis={analysis} />
 
       <Tabs defaultValue="standings" className="space-y-6">
-        <TabsList className="flex w-full items-start gap-1 overflow-x-auto rounded-xl p-1 scrollbar-thin lg:grid lg:grid-cols-7">
+        <TabsList variant="underline">
           <TabsTrigger value="standings" className="shrink-0 gap-1.5">
             <Trophy className="h-3.5 w-3.5" /> Clasificación
           </TabsTrigger>
@@ -136,12 +159,20 @@ export default function StatisticsTab({ league }: StatisticsTabProps) {
   );
 }
 
+/**
+ * Un gráfico tarda en calcularse y en dibujarse. Su entrada existe para tapar
+ * ese salto —el hueco vacío que se llena de golpe—, no para adornar: opacidad
+ * y 12 px, con la duración y la curva del sistema. Antes eran 350 ms con la
+ * curva por defecto del framework, un ritmo que no se parecía al del resto de
+ * la aplicación.
+ */
 function ChartCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+  const t = motionTokens();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: t.move.md }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: t.sec.base, ease: t.ease.out }}
     >
       <Card>
         <CardHeader>

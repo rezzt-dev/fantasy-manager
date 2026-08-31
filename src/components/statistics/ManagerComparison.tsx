@@ -54,21 +54,21 @@ export default function ManagerComparison({ rivals, ownMoney, ownTeamValue }: Ma
           {rows
             .sort((a, b) => b.teamValue - a.teamValue)
             .map((row) => (
-              <TableRow key={row.managerName} className={row.isOwn ? 'bg-surface-2/60' : undefined}>
+              <TableRow key={row.managerName} className={row.isOwn ? 'bg-surface-raised/60' : undefined}>
                 <TableCell>
-                  <div className="font-semibold text-card-foreground">{row.managerName}</div>
+                  <div className="font-semibold text-content">{row.managerName}</div>
                   {row.isOwn && <Badge variant="outline" className="mt-1 text-[10px]">Tú</Badge>}
                 </TableCell>
                 <TableCell className="text-right">
                   <Currency value={row.teamValue} />
                 </TableCell>
-                <TableCell className="text-right text-muted-foreground">
+                <TableCell className="text-right text-content-tertiary">
                   {row.teamMoney === null ? '—' : <Currency value={row.teamMoney} />}
                 </TableCell>
-                <TableCell className="text-right hidden sm:table-cell text-muted-foreground">
+                <TableCell className="text-right hidden sm:table-cell text-content-tertiary">
                   {row.players > 0 ? row.players : '-'}
                 </TableCell>
-                <TableCell className="text-right font-semibold text-card-foreground">
+                <TableCell className="text-right font-semibold text-content">
                   <Currency value={row.teamValue + (row.teamMoney ?? 0)} />
                 </TableCell>
               </TableRow>

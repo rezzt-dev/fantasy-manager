@@ -1,10 +1,26 @@
 'use client';
 
 import * as React from 'react';
+import {
+  LayoutDashboard,
+  Users,
+  ClipboardList,
+  Swords,
+  Store,
+  Gavel,
+  Compass,
+  Trophy,
+  Shield,
+  BarChart3,
+  Target,
+  Radar,
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Sheet, SheetContent } from '../ui/sheet';
 import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
-import { Trophy, LayoutDashboard, Users, CalendarDays, ShoppingCart, Lightbulb, BarChart3, Shield, TrendingUp, Gauge, Swords, Gavel } from 'lucide-react';
+import Logo from '../brand/Logo';
+import { ActiveIndicator } from '../ui/motion';
+import type { FantasyLeague } from '../../types/fantasy';
 
 export type DashboardTab =
   | 'overview'
@@ -22,41 +38,190 @@ export type DashboardTab =
 
 interface NavSection {
   label: string;
-  items: { id: DashboardTab; label: string; icon: React.ElementType; badge?: number }[];
+  items: { id: DashboardTab; label: string; icon: React.ElementType; hint: string }[];
 }
 
+/**
+ * Los tres grupos responden a las tres preguntas que se hace un manager, en
+ * orden: «¿cómo voy?», «¿qué muevo?», «¿qué va a pasar?». No son categorías
+ * administrativas.
+ *
+ * Cada icono se elige por su relación con el contenido —un mazo para los
+ * clausulazos, un radar para las predicciones— y no por rellenar la fila.
+ */
 const navigation: NavSection[] = [
   {
-    label: 'Principal',
+    label: 'Mi jornada',
     items: [
-      { id: 'overview', label: 'Resumen', icon: LayoutDashboard },
-      { id: 'team', label: 'Mi Equipo', icon: Users },
-      { id: 'lineup', label: 'Alineación', icon: CalendarDays },
-      { id: 'matches', label: 'Partidos', icon: Swords },
+      { id: 'overview', label: 'Resumen', icon: LayoutDashboard, hint: 'Estado general de la jornada' },
+      { id: 'team', label: 'Plantilla', icon: Users, hint: 'Tus jugadores y su valor' },
+      { id: 'lineup', label: 'Alineación', icon: ClipboardList, hint: 'Once titular y capitán' },
+      { id: 'matches', label: 'Partidos', icon: Swords, hint: 'Marcadores en vivo' },
     ],
   },
   {
-    label: 'Mercado',
+    label: 'Movimientos',
     items: [
-      { id: 'market', label: 'Mercado', icon: ShoppingCart },
-      { id: 'clause-market', label: 'Clausulazos', icon: Gavel },
-      { id: 'recommendations', label: 'Centro Estrategia', icon: Lightbulb },
+      { id: 'market', label: 'Mercado', icon: Store, hint: 'Jugadores en venta' },
+      { id: 'clause-market', label: 'Clausulazos', icon: Gavel, hint: 'Fichajes por cláusula' },
+      { id: 'recommendations', label: 'Centro Estrategia', icon: Compass, hint: 'Qué hacer esta jornada' },
     ],
   },
   {
-    label: 'Análisis',
+    label: 'La liga',
     items: [
-      { id: 'standings', label: 'Clasificación', icon: Trophy },
-      { id: 'rivals', label: 'Rivales', icon: Shield },
-      { id: 'statistics', label: 'Estadísticas', icon: BarChart3 },
-      { id: 'score-predictions', label: 'Puntuación', icon: Gauge },
+      { id: 'standings', label: 'Clasificación', icon: Trophy, hint: 'Tabla de la liga' },
+      { id: 'rivals', label: 'Rivales', icon: Shield, hint: 'Plantillas de tus rivales' },
+      { id: 'statistics', label: 'Estadísticas', icon: BarChart3, hint: 'Análisis de la temporada' },
+      { id: 'score-predictions', label: 'Predicción', icon: Radar, hint: 'Puntos esperados por equipo' },
+      { id: 'track-record', label: 'Acierto del motor', icon: Target, hint: 'Cuánto acierta el modelo' },
     ],
-  },
-  {
-    label: 'Motor',
-    items: [{ id: 'track-record', label: 'Track Record', icon: TrendingUp }],
   },
 ];
+
+interface NavContentProps {
+  activeTab: DashboardTab;
+  onChangeTab: (tab: DashboardTab) => void;
+  onItemClick?: () => void;
+  alertCount?: number;
+  collapsed?: boolean;
+  /**
+   * Identidad del filete de sección activa. El raíl de escritorio y el panel
+   * deslizante de móvil dibujan la misma navegación y pueden estar montados a
+   * la vez; si compartieran identificador, Motion intentaría animar UNA barra
+   * entre dos árboles y la haría saltar de un panel al otro.
+   */
+  indicatorGroup: string;
+}
+
+function NavContent({
+  activeTab,
+  onChangeTab,
+  onItemClick,
+  alertCount,
+  collapsed = false,
+  indicatorGroup,
+}: NavContentProps) {
+  return (
+    <nav aria-label="Secciones del panel" className={cn('flex flex-col gap-6 p-3 [.density-dense_&]:gap-4', collapsed && 'px-2')}>
+      {navigation.map((section) => (
+        <div key={section.label}>
+          {collapsed ? (
+            <div className="mx-2 mb-2 h-px bg-white/[0.09]" role="presentation" />
+          ) : (
+            <h2 className="eyebrow mb-2 px-3 [.density-dense_&]:mb-1">{section.label}</h2>
+          )}
+
+          <ul className="flex flex-col gap-0.5">
+            {section.items.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              const badge = item.id === 'recommendations' && alertCount ? alertCount : 0;
+
+              return (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChangeTab(item.id);
+                      onItemClick?.();
+                    }}
+                    aria-current={isActive ? 'page' : undefined}
+                    title={collapsed ? `${item.label} — ${item.hint}` : undefined}
+                    className={cn(
+                      'group relative flex w-full items-center gap-3 rounded-md py-2.5 text-sm',
+                      'transition-colors duration-fast ease-out',
+                      '[.density-dense_&]:py-2',
+                      collapsed ? 'justify-center px-0' : 'px-3',
+                      isActive
+                        ? 'bg-white/[0.05] font-semibold text-content'
+                        : 'font-medium text-content-tertiary hover:bg-white/[0.05] hover:text-content',
+                    )}
+                  >
+                    {/* La sección activa se marca con un filete de acento a la
+                        izquierda: posición + color, no solo color.
+
+                        Es un único filete compartido por toda la lista: al
+                        cambiar de sección se DESLIZA hasta la nueva en lugar de
+                        apagarse aquí y encenderse allá. Ese recorrido es lo que
+                        dice «te has movido dentro del mismo sitio»; dos
+                        parpadeos de color no dicen nada. Se coloca con `top`
+                        calculado y no con `-translate-y-1/2` porque Motion
+                        gobierna la transformada de este nodo. */}
+                    <ActiveIndicator
+                      groupId={indicatorGroup}
+                      active={isActive}
+                      className="absolute left-0 top-[calc(50%-10px)] h-5 w-0.5 rounded-r-full bg-accent"
+                    />
+                    <Icon
+                      className={cn(
+                        'h-[18px] w-[18px] shrink-0 transition-colors',
+                        isActive ? 'text-content' : 'text-content-tertiary group-hover:text-content-secondary',
+                      )}
+                      aria-hidden="true"
+                    />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+
+                    {badge > 0 && (
+                      <span
+                        className={cn(
+                          'numeral flex h-5 min-w-[20px] items-center justify-center rounded-full bg-accent px-1.5 text-[11px] font-bold text-accent-fg',
+                          collapsed ? 'absolute -right-0.5 -top-0.5 h-4 min-w-[16px] text-[9px]' : 'ml-auto',
+                        )}
+                      >
+                        {badge > 9 ? '9+' : badge}
+                        <span className="sr-only"> avisos pendientes</span>
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+/**
+ * Pie del panel: en lugar de un consejo genérico, el dato que el manager mira
+ * de reojo cada vez que entra —dónde va en la liga y cuánto vale su plantilla—.
+ */
+function LeagueFoot({ league }: { league: FantasyLeague | null }) {
+  if (!league) return null;
+
+  const value = new Intl.NumberFormat('es-ES', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(league.team.teamValue ?? 0);
+
+  return (
+    <div className="border-t border-white/[0.09] p-3">
+      <div className="rounded-md bg-surface-raised p-3 [.density-dense_&]:p-2.5">
+        <p className="truncate text-xs font-medium text-content-secondary" title={league.name}>
+          {league.name}
+        </p>
+        <div className="mt-2 flex items-end justify-between gap-3">
+          <div>
+            <p className="eyebrow text-[10px]">Posición</p>
+            <p className="numeral text-base font-semibold leading-none text-content">
+              {league.team.position ?? '—'}
+              <span className="ml-0.5 text-xs font-medium text-content-tertiary">º</span>
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="eyebrow text-[10px]">Valor</p>
+            <p className="numeral whitespace-nowrap text-base font-semibold leading-none text-content">
+              {value}
+              <span className="ml-0.5 text-xs font-medium text-content-tertiary">€</span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface SidebarProps {
   activeTab: DashboardTab;
@@ -64,142 +229,72 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   alertCount?: number;
+  league?: FantasyLeague | null;
 }
 
-function NavContent({ activeTab, onChangeTab, onItemClick, alertCount, collapsed = false }: { activeTab: DashboardTab; onChangeTab: (tab: DashboardTab) => void; onItemClick?: () => void; alertCount?: number; collapsed?: boolean }) {
-  return (
-    <nav className={cn('flex flex-col gap-6 px-3 py-4 [.density-dense_&]:gap-4', collapsed && 'px-2')}>
-      {navigation.map((section) => (
-        <div key={section.label}>
-          {collapsed ? (
-            <div className="mx-3 mb-2 border-t border-white/[0.08]" />
-          ) : (
-            <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground [.density-dense_&]:mb-1.5">
-              {section.label}
-            </div>
-          )}
-          <div className="flex flex-col gap-1 [.density-dense_&]:gap-0.5">
-            {section.items.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              const badgeCount = item.id === 'recommendations' && alertCount && alertCount > 0 ? alertCount : item.badge;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onChangeTab(item.id);
-                    onItemClick?.();
-                  }}
-                  title={collapsed ? item.label : undefined}
-                  aria-label={collapsed ? item.label : undefined}
-                  className={cn(
-                    'group relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all [.density-dense_&]:py-2',
-                    collapsed && 'justify-center px-0',
-                    isActive
-                      ? 'bg-white/[0.08] text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-white/[0.04] hover:text-foreground',
-                  )}
-                >
-                  {isActive && (
-                    <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-foreground" />
-                  )}
-                  <span
-                    className={cn(
-                      'relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors [.density-dense_&]:h-7 [.density-dense_&]:w-7',
-                      isActive
-                        ? 'border-white/[0.10] bg-white/[0.06] text-foreground'
-                        : 'border-transparent bg-white/[0.03] text-muted-foreground group-hover:text-foreground',
-                    )}
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                    {collapsed && badgeCount ? (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-foreground px-1 text-[9px] font-bold text-background">
-                        {badgeCount > 9 ? '9+' : badgeCount}
-                      </span>
-                    ) : null}
-                  </span>
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                  {!collapsed && badgeCount ? (
-                    <span className="ml-auto flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-foreground px-1.5 text-[10px] font-bold text-background">
-                      {badgeCount > 9 ? '9+' : badgeCount}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
-    </nav>
-  );
-}
-
-export default function Sidebar({ activeTab, onChangeTab, isOpen, onClose, alertCount }: SidebarProps) {
+export default function Sidebar({
+  activeTab,
+  onChangeTab,
+  isOpen,
+  onClose,
+  alertCount,
+  league = null,
+}: SidebarProps) {
   const { collapsed } = useSidebarCollapsed();
 
   return (
     <>
-      {/* Desktop sidebar */}
+      {/* Panel de escritorio */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-30 hidden flex-col overflow-hidden border-r border-white/[0.06] bg-surface-2/40 backdrop-blur-xl transition-[width] duration-300 ease-in-out lg:flex',
-          collapsed ? 'w-[76px]' : 'w-[260px]',
+          'fixed inset-y-0 left-0 z-nav hidden flex-col border-r border-white/[0.09] bg-surface',
+          'transition-[width] duration-slow ease-out lg:flex',
+          collapsed ? 'w-[72px]' : 'w-[248px]',
         )}
       >
         <div
           className={cn(
-            'flex h-16 items-center gap-2.5 border-b border-white/[0.06] px-5 [.density-dense_&]:h-14',
-            collapsed && 'justify-center px-2',
+            'flex h-16 shrink-0 items-center border-b border-white/[0.09] [.density-dense_&]:h-14',
+            collapsed ? 'justify-center px-2' : 'px-4',
           )}
         >
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/[0.10] bg-surface-3">
-            <Trophy className="h-[18px] w-[18px] text-foreground" />
-          </div>
-          {!collapsed && (
-            <span className="whitespace-nowrap font-display text-base font-semibold tracking-tight text-foreground">
-              Fantasy<span className="text-brand-muted">Manager</span>
-            </span>
-          )}
+          <a href="/dashboard" className="rounded-sm" aria-label="Fantasy Manager — ir al resumen">
+            <Logo markOnly={collapsed} size="sm" />
+          </a>
         </div>
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 scrollbar-thin">
-          <NavContent activeTab={activeTab} onChangeTab={onChangeTab} alertCount={alertCount} collapsed={collapsed} />
+        <div className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden">
+          <NavContent
+            activeTab={activeTab}
+            onChangeTab={onChangeTab}
+            alertCount={alertCount}
+            collapsed={collapsed}
+            indicatorGroup="sidebar-rail-indicator"
+          />
         </div>
 
-        {!collapsed && (
-          <div className="border-t border-white/[0.06] p-4 [.density-dense_&]:p-3">
-            <div className="rounded-xl border border-white/[0.06] bg-surface-3/60 p-4 [.density-dense_&]:p-3">
-              <div className="text-xs font-semibold text-foreground">Consejo</div>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Revisa las recomendaciones antes de cada jornada para no perder puntos.
-              </p>
-            </div>
-          </div>
-        )}
+        {!collapsed && <LeagueFoot league={league} />}
       </aside>
 
-      {/* Mobile sidebar as sheet */}
+      {/* Panel móvil */}
       <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <SheetContent side="left" className="w-[280px] border-r border-white/[0.06] bg-surface-2 p-0 sm:max-w-sm">
-          <div className="flex h-16 items-center gap-2.5 border-b border-white/[0.06] px-5 [.density-dense_&]:h-14">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.10] bg-surface-3">
-              <Trophy className="h-[18px] w-[18px] text-foreground" />
-            </div>
-            <span className="font-display text-base font-semibold tracking-tight text-foreground">
-              Fantasy<span className="text-brand-muted">Manager</span>
-            </span>
+        <SheetContent
+          side="left"
+          className="flex w-[276px] flex-col border-r border-white/[0.09] bg-surface p-0 sm:max-w-sm"
+        >
+          <div className="flex h-16 shrink-0 items-center border-b border-white/[0.09] px-4">
+            <Logo size="sm" />
           </div>
-          <div className="overflow-y-auto py-4 scrollbar-thin">
-            <NavContent activeTab={activeTab} onChangeTab={onChangeTab} onItemClick={onClose} alertCount={alertCount} />
+          <div className="scrollbar-thin flex-1 overflow-y-auto">
+            <NavContent
+              activeTab={activeTab}
+              onChangeTab={onChangeTab}
+              onItemClick={onClose}
+              alertCount={alertCount}
+              indicatorGroup="sidebar-sheet-indicator"
+            />
           </div>
-          <div className="border-t border-white/[0.06] p-4 [.density-dense_&]:p-3">
-            <div className="rounded-xl border border-white/[0.06] bg-surface-3/60 p-4 [.density-dense_&]:p-3">
-              <div className="text-xs font-semibold text-foreground">Consejo</div>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                Revisa las recomendaciones antes de cada jornada.
-              </p>
-            </div>
-          </div>
+          <LeagueFoot league={league} />
         </SheetContent>
       </Sheet>
     </>

@@ -13,8 +13,8 @@ test('debug: dashboard loading state', async ({ page }) => {
   // Login real por la UI (el flujo del usuario).
   await page.goto('http://localhost:4321/login');
   await page.getByRole('tab', { name: 'Email' }).click();
-  await page.locator('input#username').fill(email);
-  await page.locator('input#password, input[type="password"]').first().fill(password);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: /entrar/i }).click();
 
   await page.waitForTimeout(20000);

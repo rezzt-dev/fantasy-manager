@@ -30,18 +30,18 @@ export default function RecommendationPanel({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-card p-5">
-        <h3 className="mb-3 text-base font-semibold text-foreground">Recomendaciones</h3>
-        <div className="py-4 text-sm text-muted-foreground">Analizando tu equipo y el mercado...</div>
+      <div className="rounded-lg border border-white/[0.09] bg-surface p-5">
+        <h3 className="mb-3 text-base font-semibold text-content">Recomendaciones</h3>
+        <div className="py-4 text-sm text-content-tertiary">Analizando tu equipo y el mercado...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-destructive/20 bg-card p-5 text-destructive">
+      <div className="rounded-lg border border-negative/30 bg-surface p-5 text-negative-text">
         <h3 className="mb-2 text-base font-semibold">Recomendaciones</h3>
-        <p className="text-sm text-muted-foreground">No se han podido generar las recomendaciones: {error.message}</p>
+        <p className="text-sm text-content-tertiary">No se han podido generar las recomendaciones: {error.message}</p>
       </div>
     );
   }
@@ -57,23 +57,23 @@ export default function RecommendationPanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-white/[0.08] bg-card p-5">
+      <div className="rounded-lg border border-white/[0.09] bg-surface p-5">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-base font-semibold text-foreground">Recomendaciones</h3>
+          <h3 className="text-base font-semibold text-content">Recomendaciones</h3>
           {money && (
-            <span className="text-sm text-muted-foreground">
-              Dinero disponible: <strong className="text-foreground">{formatCurrency(money.teamMoney)}</strong>
+            <span className="text-sm text-content-tertiary">
+              Dinero disponible: <strong className="text-content">{formatCurrency(money.teamMoney)}</strong>
             </span>
           )}
         </div>
 
         {recommendations.length === 0 ? (
-          <div className="rounded-lg border border-white/[0.06] bg-surface-2 p-4 text-foreground">
+          <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4 text-content">
             <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-muted-foreground" />
+              <Trophy className="h-5 w-5 text-content-tertiary" />
               <span className="font-medium">Tu equipo está bien equilibrado</span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">No hay recomendaciones urgentes para esta jornada.</p>
+            <p className="mt-1 text-sm text-content-tertiary">No hay recomendaciones urgentes para esta jornada.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -98,9 +98,9 @@ function RecommendationCard({ recommendation: rec }: { recommendation: Recommend
   const { icon, label, variant } = typeMeta(rec.type);
 
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-surface p-4 transition-colors hover:bg-surface-2">
+    <div className="rounded-lg border border-white/[0.09] bg-surface p-4 transition-colors hover:bg-surface-raised">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-muted-foreground">
+        <div className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-raised text-content-tertiary">
           {icon}
         </div>
         <div className="min-w-0 flex-1">
@@ -109,24 +109,24 @@ function RecommendationCard({ recommendation: rec }: { recommendation: Recommend
               {label}
             </Badge>
             {rec.priority === 'high' && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+              <span className="inline-flex items-center gap-1 rounded-full bg-negative-quiet px-2 py-0.5 text-xs font-medium text-negative-text">
                 <AlertTriangle className="h-3 w-3" /> Prioridad alta
               </span>
             )}
           </div>
-          <h4 className="font-semibold text-foreground">{rec.player.nickname}</h4>
-          <p className="text-sm text-muted-foreground">{rec.reason}</p>
-          {rec.details && <p className="mt-1 text-xs text-brand-subtle">{rec.details}</p>}
+          <h4 className="font-semibold text-content">{rec.player.nickname}</h4>
+          <p className="text-sm text-content-tertiary">{rec.reason}</p>
+          {rec.details && <p className="mt-1 text-xs text-content-tertiary">{rec.details}</p>}
           {typeof rec.riskScore === 'number' && (
-            <p className="mt-1 text-xs font-medium text-destructive">Riesgo de clausulazo: {rec.riskScore}/100</p>
+            <p className="mt-1 text-xs font-medium text-negative-text">Riesgo de clausulazo: {rec.riskScore}/100</p>
           )}
           {typeof rec.recommendedClause === 'number' && rec.recommendedClause > 0 && (
-            <p className="mt-1 text-xs font-medium text-foreground">
+            <p className="mt-1 text-xs font-medium text-content">
               Cláusula recomendada: {formatCurrency(rec.recommendedClause)}
             </p>
           )}
           {typeof rec.suggestedBidPrice === 'number' && rec.suggestedBidPrice > 0 && (
-            <p className="mt-1 text-xs font-medium text-emerald-400">
+            <p className="mt-1 text-xs font-medium text-positive-text">
               Puja sugerida: {formatCurrency(rec.suggestedBidPrice)}
             </p>
           )}
@@ -134,7 +134,7 @@ function RecommendationCard({ recommendation: rec }: { recommendation: Recommend
             <SignalChips signals={rec.externalSignals} />
           )}
           {rec.suggestedAction && (
-            <p className="mt-2 text-sm font-medium text-foreground">{rec.suggestedAction}</p>
+            <p className="mt-2 text-sm font-medium text-content">{rec.suggestedAction}</p>
           )}
         </div>
       </div>
@@ -174,12 +174,12 @@ function CountCard({
   count: number;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="rounded-lg border border-white/[0.09] bg-surface p-4">
+      <div className="flex items-center gap-2 text-content-tertiary">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <div className="mt-2 text-2xl font-semibold text-foreground">{count}</div>
+      <div className="mt-2 text-2xl font-semibold text-content">{count}</div>
     </div>
   );
 }

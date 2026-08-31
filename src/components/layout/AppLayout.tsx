@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { Toaster } from 'sonner';
-import Header from './Header';
-import Sidebar from './Sidebar';
+import Header, { type HeaderAlert } from './Header';
+import Sidebar, { type DashboardTab } from './Sidebar';
 import MobileNav from './MobileNav';
 import { cn } from '../../lib/utils';
+import { MotionProvider } from '../ui/motion';
 import { useSidebarCollapsed } from '../../hooks/useSidebarCollapsed';
 import type { FantasyLeague } from '../../types/fantasy';
-import type { DashboardTab } from './Sidebar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -23,7 +23,7 @@ interface AppLayoutProps {
   dense?: boolean;
   onToggleDensity?: (dense: boolean) => void;
   alertCount?: number;
-  alerts?: { id: string; type: 'warning' | 'danger' | 'info'; title: string; description?: string }[];
+  alerts?: HeaderAlert[];
   onMarkAllNotificationsAsRead?: () => void;
 }
 
@@ -46,54 +46,87 @@ export default function AppLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { collapsed } = useSidebarCollapsed();
 
+  /* `MotionProvider` monta un único `MotionConfig reducedMotion="user"` para
+     todo el panel: cualquier animación de Motion que cuelgue de aquí respeta la
+     preferencia del sistema sin que cada componente tenga que preguntarlo, y sin
+     que se pueda olvidar en el siguiente componente que se escriba. Motion anula
+     por su cuenta las transformadas y deja pasar la opacidad, que es exactamente
+     la reducción que buscamos. */
   return (
-    <div className="relative min-h-screen bg-background text-foreground">
-      <Sidebar
-        activeTab={activeTab}
-        onChangeTab={onChangeTab}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        alertCount={alertCount}
-      />
+    <MotionProvider>
+      <div className="min-h-dvh bg-canvas text-content">
+        {/* Primer tabulador de la página: saltar la navegación. */}
+        <a href="#contenido" className="skip-link">
+          Saltar al contenido
+        </a>
 
-      <div
-        className={cn(
-          'flex min-h-screen flex-col transition-[padding] duration-300 ease-in-out',
-          collapsed ? 'lg:pl-[76px]' : 'lg:pl-[260px]',
-        )}
-      >
-        <Header
-          leagues={leagues}
-          selectedLeague={selectedLeague}
-          onSelectLeague={onSelectLeague}
-          onToggleSidebar={() => setSidebarOpen(true)}
-          onOpenCommand={onOpenCommand}
-          onRefresh={onRefresh}
-          isRefreshing={isRefreshing}
-          dense={dense}
-          onToggleDensity={onToggleDensity}
+        <Sidebar
+          activeTab={activeTab}
+          onChangeTab={onChangeTab}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
           alertCount={alertCount}
-          alerts={alerts}
-          onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
+          league={selectedLeague}
         />
 
-        <main className="flex-1 overflow-x-hidden p-4 sm:p-5 lg:p-6 [.density-dense_&]:p-3 [.density-dense_&]:sm:p-4 [.density-dense_&]:lg:p-5">
-          <div className="mx-auto max-w-7xl">{children}</div>
-        </main>
+        <div
+          className={cn(
+            'flex min-h-dvh flex-col transition-[padding-left] duration-slow ease-out',
+            collapsed ? 'lg:pl-[72px]' : 'lg:pl-[248px]',
+          )}
+        >
+          <Header
+            leagues={leagues}
+            selectedLeague={selectedLeague}
+            onSelectLeague={onSelectLeague}
+            onToggleSidebar={() => setSidebarOpen(true)}
+            onOpenCommand={onOpenCommand}
+            onRefresh={onRefresh}
+            isRefreshing={isRefreshing}
+            dense={dense}
+            onToggleDensity={onToggleDensity}
+            alertCount={alertCount}
+            alerts={alerts}
+            onMarkAllNotificationsAsRead={onMarkAllNotificationsAsRead}
+          />
 
-        <MobileNav activeTab={activeTab} onChangeTab={onChangeTab} dense={dense} onToggleDensity={onToggleDensity} />
+          <main
+            id="contenido"
+            tabIndex={-1}
+            className={cn(
+              'flex-1 px-4 py-6 sm:px-6 lg:px-8',
+              // Deja sitio a la barra inferior en móvil.
+              'pb-24 lg:pb-10',
+              '[.density-dense_&]:px-3 [.density-dense_&]:py-4 [.density-dense_&]:sm:px-4 [.density-dense_&]:lg:px-6',
+            )}
+          >
+            {/* El contenido no se estira sin fin: por encima de ~1360 px las
+                tablas se vuelven ilegibles de tan anchas. */}
+            <div className="mx-auto w-full max-w-[1360px]">{children}</div>
+          </main>
+
+          <MobileNav
+            activeTab={activeTab}
+            onChangeTab={onChangeTab}
+            dense={dense}
+            onToggleDensity={onToggleDensity}
+          />
+        </div>
+
+        <Toaster
+          position="bottom-right"
+          offset={16}
+          toastOptions={{
+            classNames: {
+              toast:
+                'group !bg-surface-overlay !border !border-white/[0.09] !text-content !rounded-lg !shadow-3 !font-sans',
+              title: '!text-sm !font-semibold',
+              description: '!text-xs !text-content-tertiary',
+              actionButton: '!bg-accent !text-accent-fg',
+            },
+          }}
+        />
       </div>
-
-      <Toaster
-        position="bottom-right"
-        toastOptions={{
-          style: {
-            background: 'rgba(28, 28, 28, 0.95)',
-            border: '1px solid rgba(236, 236, 236, 0.08)',
-            color: '#ececec',
-          },
-        }}
-      />
-    </div>
+    </MotionProvider>
   );
 }

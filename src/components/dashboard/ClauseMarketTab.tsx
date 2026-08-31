@@ -131,10 +131,10 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
           const target = row.original;
           return (
             <div className="min-w-0">
-              <div className="truncate font-semibold text-foreground">{target.player.nickname}</div>
-              <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+              <div className="truncate font-semibold text-content">{target.player.nickname}</div>
+              <div className="flex flex-wrap items-center gap-x-2 text-xs text-content-tertiary">
                 {target.player.team?.name && <span className="truncate">{target.player.team.name}</span>}
-                <span className="truncate text-amber-400">{target.owner.managerName}</span>
+                <span className="truncate text-caution-text">{target.owner.managerName}</span>
               </div>
             </div>
           );
@@ -149,7 +149,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
           const discount = Math.round((1 - target.clauseRatio) * 100);
           return (
             <div className="space-y-1">
-              <Currency value={target.clause} className="font-semibold text-foreground" />
+              <Currency value={target.clause} className="font-semibold text-content" />
               <div className="flex items-center gap-1.5">
                 {discount >= 5 ? (
                   <Badge variant="success" className="text-[10px]">
@@ -160,7 +160,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
                     <TrendingUp className="mr-1 h-3 w-3" />+{Math.abs(discount)}% s/ valor
                   </Badge>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground">Ajustada a su valor</span>
+                  <span className="text-[11px] text-content-tertiary">Ajustada a su valor</span>
                 )}
               </div>
             </div>
@@ -174,8 +174,8 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
         meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
         cell: ({ row }) => (
           <div className="space-y-1">
-            <div className="font-display text-base font-bold text-foreground">{row.original.expectedPoints.toFixed(1)}</div>
-            <div className="text-[11px] text-muted-foreground">{row.original.starterLabel}</div>
+            <div className="font-display text-base font-bold text-content">{row.original.expectedPoints.toFixed(1)}</div>
+            <div className="text-[11px] text-content-tertiary">{row.original.starterLabel}</div>
           </div>
         ),
       },
@@ -187,11 +187,11 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
           const target = row.original;
           return (
             <div className="space-y-0.5">
-              <div className={cn('font-display text-base font-bold', target.xiGain > 0 ? 'text-emerald-400' : 'text-muted-foreground')}>
+              <div className={cn('font-display text-base font-bold', target.xiGain > 0 ? 'text-positive-text' : 'text-content-tertiary')}>
                 {target.xiGain > 0 ? `+${target.xiGain.toFixed(1)}` : '—'}
               </div>
               {target.replaces && (
-                <div className="truncate text-[11px] text-muted-foreground">por {target.replaces.nickname}</div>
+                <div className="truncate text-[11px] text-content-tertiary">por {target.replaces.nickname}</div>
               )}
             </div>
           );
@@ -230,7 +230,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
                 Faltan <Currency value={target.missingBudget} className="ml-1" />
               </Badge>
               {target.funding?.feasible && (
-                <div className="text-[11px] text-emerald-400">Financiable vendiendo {target.funding.players.length}</div>
+                <div className="text-[11px] text-positive-text">Financiable vendiendo {target.funding.players.length}</div>
               )}
             </div>
           );
@@ -241,14 +241,25 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
   );
 
   if (isLoading) return <LoadingSection titleWidth="w-56" cardCount={4} rows={6} />;
-  if (error) return <ErrorState title="Error cargando clausulazos" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido leer las cláusulas de tu liga"
+        description="El cálculo de clausulazos necesita el catálogo de jugadores y las plantillas de tus rivales. Reintenta; si insiste, prueba dentro de unos minutos."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
   if (!clauseMarket) {
-    return <EmptyState title="Sin datos de clausulazos" description="No se ha podido calcular el mercado de cláusulas." />;
+    return <EmptyState
+        icon={<Gavel />}
+        title="No hay nada que clausular"
+        description="Ahora mismo ningún jugador de tus rivales está fuera de su periodo de protección. Los blindajes duran unos días desde el fichaje."
+      />;
   }
 
   if (!clauseMarket.enabled) {
     return (
-      <div className="space-y-6 pb-20 lg:pb-0">
+      <div className="space-y-6">
         <SectionHeader title="Clausulazos" description="Cláusulas de rescisión de los equipos de tu liga." />
         <EmptyState
           icon={<Lock className="h-6 w-6" />}
@@ -262,10 +273,12 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
   const { budget, stats, recommended, combos, upcoming, owners: exposures, baseline, notes } = clauseMarket;
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Clausulazos"
-        description={`${stats.available} jugadores rivales con la cláusula libre · ${stats.affordable} a tu alcance · jornada ${data?.week ?? '-'}`}
+        as="h1"
+        eyebrow={`Clausulazos · jornada ${data?.week ?? '—'}`}
+        title="A quién puedes robarle un jugador hoy"
+        description={`${stats.available} jugadores rivales tienen la cláusula libre y ${stats.affordable} entran en tu presupuesto. Ordenados por lo que mejorarían tu once.`}
         action={
           <Badge variant="outline-muted" className="gap-1.5">
             <Sparkles className="h-3 w-3" />
@@ -306,13 +319,16 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
       {recommended.length > 0 ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <Target className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-display text-base font-semibold text-foreground">Recomendados para tu equipo</h3>
+            <Target className="h-4 w-4 text-content-tertiary" />
+            <h3 className="font-display text-base font-semibold text-content">Recomendados para tu equipo</h3>
             <Badge variant="outline-muted" className="text-[10px]">
               Ordenados por encaje
             </Badge>
           </div>
-          <StaggerContainer className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3" stagger={0.04}>
+          {/* La etiqueta lo dice: «ordenados por encaje». La cascada es la
+              versión temporal de ese mismo orden —el primero que aparece es el
+              que más mejora el once— y por eso aquí sí se escalona. */}
+          <StaggerContainer className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3" tone="base" count={recommended.length}>
             {recommended.map((target) => (
               <StaggerItem key={target.playerId}>
                 <TargetCard target={target} onSelect={() => setSelected(target)} />
@@ -330,7 +346,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
       )}
 
       <Tabs defaultValue="targets">
-        <TabsList className="h-auto flex-wrap gap-1">
+        <TabsList variant="underline" className="flex-wrap">
           <TabsTrigger value="targets">Objetivos ({targets.length})</TabsTrigger>
           <TabsTrigger value="combos">Combos ({combos.length})</TabsTrigger>
           <TabsTrigger value="upcoming">Próximamente ({upcoming.length})</TabsTrigger>
@@ -343,15 +359,15 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <Gavel className="h-4 w-4 text-muted-foreground" />
+                    <Gavel className="h-4 w-4 text-content-tertiary" />
                     Jugadores clausulables
                   </CardTitle>
                   <CardDescription>{filtered.length} coinciden con tus filtros</CardDescription>
                 </div>
                 <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[300px]">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-muted-foreground">Cláusula máxima</span>
-                    <span className="text-xs font-semibold text-foreground">
+                    <span className="text-xs text-content-tertiary">Cláusula máxima</span>
+                    <span className="text-xs font-semibold text-content">
                       {effectiveMaxClause >= clauseCeiling ? 'Sin límite' : <Currency value={effectiveMaxClause} />}
                     </span>
                   </div>
@@ -423,7 +439,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Layers className="h-4 w-4 text-muted-foreground" />
+                <Layers className="h-4 w-4 text-content-tertiary" />
                 Combos dentro del presupuesto
               </CardTitle>
               <CardDescription>
@@ -453,7 +469,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <Clock className="h-4 w-4 text-content-tertiary" />
                 Próximamente disponibles
               </CardTitle>
               <CardDescription>
@@ -491,7 +507,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-content-tertiary" />
                 Exposición de cada rival
               </CardTitle>
               <CardDescription>Cuánta plantilla rival tiene la cláusula al aire y cuánta puedes pagar tú.</CardDescription>
@@ -525,7 +541,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
         <Card>
           <CardContent className="space-y-2 p-4">
             {notes.map((note, index) => (
-              <div key={index} className="flex items-start gap-2 text-xs text-muted-foreground">
+              <div key={index} className="flex items-start gap-2 text-xs text-content-tertiary">
                 <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>{note}</span>
               </div>
@@ -559,11 +575,11 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
           <PlayerAvatar player={target.player} size="md" showPosition />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="truncate font-display text-base font-semibold text-foreground">{target.player.nickname}</span>
+              <span className="truncate font-display text-base font-semibold text-content">{target.player.nickname}</span>
               <PlayerStatusBadge status={target.player.playerStatus} />
             </div>
-            <div className="truncate text-xs text-muted-foreground">
-              {target.player.team?.name} · de <span className="text-amber-400">{target.owner.managerName}</span>
+            <div className="truncate text-xs text-content-tertiary">
+              {target.player.team?.name} · de <span className="text-caution-text">{target.owner.managerName}</span>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-1.5">
               <Badge variant={meta.variant} className="text-[10px]" title={meta.hint}>
@@ -592,8 +608,8 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
         {target.reasons.length > 0 && (
           <ul className="space-y-1">
             {target.reasons.slice(0, 3).map((reason, index) => (
-              <li key={index} className="flex items-start gap-1.5 text-xs text-muted-foreground">
-                <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
+              <li key={index} className="flex items-start gap-1.5 text-xs text-content-tertiary">
+                <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0 text-positive-text" />
                 <span>{reason}</span>
               </li>
             ))}
@@ -603,7 +619,7 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
         {target.warnings.length > 0 && (
           <ul className="space-y-1">
             {target.warnings.slice(0, 2).map((warning, index) => (
-              <li key={index} className="flex items-start gap-1.5 text-xs text-amber-400/90">
+              <li key={index} className="flex items-start gap-1.5 text-xs text-caution-text/90">
                 <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
                 <span>{warning}</span>
               </li>
@@ -614,10 +630,10 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
         {target.signals.length > 0 && <SignalChips signals={target.signals} max={2} className="mt-0" />}
 
         {target.alsoOnMarket && (
-          <div className="flex items-center gap-1.5 rounded-lg border border-white/[0.06] bg-surface-2/60 px-2.5 py-1.5 text-[11px] text-muted-foreground">
+          <div className="flex items-center gap-1.5 rounded-lg border border-white/[0.09] bg-surface-raised/60 px-2.5 py-1.5 text-[11px] text-content-tertiary">
             <Coins className="h-3 w-3" />
-            También está en el mercado por <Currency value={target.alsoOnMarket.salePrice} className="font-semibold text-foreground" />
-            {target.alsoOnMarket.salePrice < target.clause && <span className="text-emerald-400">· más barato pujando</span>}
+            También está en el mercado por <Currency value={target.alsoOnMarket.salePrice} className="font-semibold text-content" />
+            {target.alsoOnMarket.salePrice < target.clause && <span className="text-positive-text">· más barato pujando</span>}
           </div>
         )}
 
@@ -625,7 +641,7 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
           <FundingPlanBox target={target} />
         )}
 
-        <div className="flex items-center justify-between gap-2 border-t border-white/[0.06] pt-3">
+        <div className="flex items-center justify-between gap-2 border-t border-white/[0.09] pt-3">
           <UrgencyBadge target={target} />
           <Button variant="glass" size="xs" onClick={onSelect} className="gap-1">
             <Flame className="h-3.5 w-3.5" /> Ver y clausular
@@ -641,13 +657,13 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
 function FundingPlanBox({ target }: { target: ClauseTarget }) {
   const funding = target.funding!;
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-surface-2/60 p-3">
-      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="rounded-lg border border-white/[0.09] bg-surface-raised/60 p-3">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-content-tertiary">
         <PiggyBank className="h-3.5 w-3.5" />
         Cómo financiarlo
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Te faltan <Currency value={target.missingBudget} className="font-semibold text-foreground" />.{' '}
+      <p className="mt-1 text-xs text-content-tertiary">
+        Te faltan <Currency value={target.missingBudget} className="font-semibold text-content" />.{' '}
         {funding.feasible
           ? `Vendiendo ${funding.players.length} jugador${funding.players.length === 1 ? '' : 'es'} lo cubres.`
           : `Aun vendiendo lo que menos aporta seguirían faltando ${new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(funding.shortfall)}.`}
@@ -656,10 +672,10 @@ function FundingPlanBox({ target }: { target: ClauseTarget }) {
         <ul className="mt-2 space-y-1">
           {funding.players.map((p) => (
             <li key={p.id} className="flex items-center justify-between gap-2 text-xs">
-              <span className="truncate text-foreground">
-                {p.nickname} <span className="text-muted-foreground">· {p.positionName}</span>
+              <span className="truncate text-content">
+                {p.nickname} <span className="text-content-tertiary">· {p.positionName}</span>
               </span>
-              <span className="shrink-0 text-muted-foreground">
+              <span className="shrink-0 text-content-tertiary">
                 <Currency value={p.marketValue} /> · {p.expectedPoints.toFixed(1)} xP
               </span>
             </li>
@@ -672,13 +688,13 @@ function FundingPlanBox({ target }: { target: ClauseTarget }) {
 
 function ComboCard({ combo, rank }: { combo: ClauseCombo; rank: number }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-surface-2 p-4">
+    <div className="rounded-lg border border-white/[0.09] bg-surface-raised p-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.08] bg-surface-3 text-[11px] font-bold text-foreground">
+          <span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/[0.09] bg-surface-overlay text-[11px] font-bold text-content">
             {rank}
           </span>
-          <span className="text-sm font-semibold text-foreground">
+          <span className="text-sm font-semibold text-content">
             {combo.targets.length === 2 ? 'Doble golpe' : 'Triple golpe'}
           </span>
         </div>
@@ -690,20 +706,20 @@ function ComboCard({ combo, rank }: { combo: ClauseCombo; rank: number }) {
       <ul className="mt-3 space-y-1.5">
         {combo.targets.map((t) => (
           <li key={t.playerId} className="flex items-center justify-between gap-2 text-xs">
-            <span className="truncate text-foreground">
-              {t.nickname} <span className="text-muted-foreground">· {t.positionName}</span>
+            <span className="truncate text-content">
+              {t.nickname} <span className="text-content-tertiary">· {t.positionName}</span>
             </span>
-            <Currency value={t.clause} className="shrink-0 text-muted-foreground" />
+            <Currency value={t.clause} className="shrink-0 text-content-tertiary" />
           </li>
         ))}
       </ul>
 
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/[0.06] pt-3 text-xs">
-        <span className="text-muted-foreground">
-          Coste total <Currency value={combo.totalCost} className="font-semibold text-foreground" />
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/[0.09] pt-3 text-xs">
+        <span className="text-content-tertiary">
+          Coste total <Currency value={combo.totalCost} className="font-semibold text-content" />
         </span>
-        <span className="text-muted-foreground">
-          Te quedan <Currency value={combo.remainingBudget} className="font-semibold text-foreground" />
+        <span className="text-content-tertiary">
+          Te quedan <Currency value={combo.remainingBudget} className="font-semibold text-content" />
         </span>
       </div>
     </div>
@@ -717,17 +733,17 @@ function UpcomingRow({ entry }: { entry: UpcomingClauseTarget }) {
         <div className="flex items-center gap-2">
           <PlayerAvatar player={entry.player} size="sm" />
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-foreground">{entry.player.nickname}</div>
-            <div className="truncate text-[11px] text-muted-foreground">{entry.player.team?.name}</div>
+            <div className="truncate text-sm font-semibold text-content">{entry.player.nickname}</div>
+            <div className="truncate text-[11px] text-content-tertiary">{entry.player.team?.name}</div>
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-sm text-amber-400">{entry.owner.managerName}</TableCell>
+      <TableCell className="text-sm text-caution-text">{entry.owner.managerName}</TableCell>
       <TableCell>
-        <Currency value={entry.clause} className="text-sm text-foreground" />
-        {entry.affordable && <div className="text-[11px] text-emerald-400">Podrías pagarla</div>}
+        <Currency value={entry.clause} className="text-sm text-content" />
+        {entry.affordable && <div className="text-[11px] text-positive-text">Podrías pagarla</div>}
       </TableCell>
-      <TableCell className="hidden md:table-cell text-sm text-foreground">{entry.expectedPoints.toFixed(1)}</TableCell>
+      <TableCell className="hidden md:table-cell text-sm text-content">{entry.expectedPoints.toFixed(1)}</TableCell>
       <TableCell>
         {entry.status === 'shielded' ? (
           <Badge variant="info" className="gap-1 text-[10px]">
@@ -752,11 +768,11 @@ function OwnerRow({ owner }: { owner: OwnerExposure }) {
   return (
     <TableRow>
       <TableCell>
-        <div className="text-sm font-semibold text-foreground">{owner.managerName}</div>
-        <div className="text-[11px] text-muted-foreground">{owner.squadSize} jugadores</div>
+        <div className="text-sm font-semibold text-content">{owner.managerName}</div>
+        <div className="text-[11px] text-content-tertiary">{owner.squadSize} jugadores</div>
       </TableCell>
-      <TableCell className="text-sm text-foreground">{owner.availableCount}</TableCell>
-      <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
+      <TableCell className="text-sm text-content">{owner.availableCount}</TableCell>
+      <TableCell className="hidden sm:table-cell text-sm text-content-tertiary">
         {owner.lockedCount} bloq. · {owner.shieldedCount} blind.
       </TableCell>
       <TableCell>
@@ -764,7 +780,7 @@ function OwnerRow({ owner }: { owner: OwnerExposure }) {
           {owner.affordableCount}
         </Badge>
         {owner.cheapestClause !== null && (
-          <div className="mt-1 text-[11px] text-muted-foreground">
+          <div className="mt-1 text-[11px] text-content-tertiary">
             desde <Currency value={owner.cheapestClause} />
           </div>
         )}
@@ -772,20 +788,20 @@ function OwnerRow({ owner }: { owner: OwnerExposure }) {
       <TableCell className="hidden lg:table-cell">
         {owner.bestTarget ? (
           <div className="text-xs">
-            <div className="truncate text-foreground">{owner.bestTarget.nickname}</div>
-            <div className="text-[11px] text-muted-foreground">
+            <div className="truncate text-content">{owner.bestTarget.nickname}</div>
+            <div className="text-[11px] text-content-tertiary">
               {owner.bestTarget.xiGain > 0 ? `+${owner.bestTarget.xiGain.toFixed(1)} pts · ` : ''}
               <Currency value={owner.bestTarget.clause} />
             </div>
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-content-tertiary">—</span>
         )}
       </TableCell>
       <TableCell className="min-w-[110px]">
         <div className="flex items-center gap-2">
           <Progress value={owner.exposureScore} className="h-1.5 w-16" />
-          <span className="text-xs text-muted-foreground">{owner.exposureScore}</span>
+          <span className="text-xs text-content-tertiary">{owner.exposureScore}</span>
         </div>
       </TableCell>
     </TableRow>
@@ -795,21 +811,21 @@ function OwnerRow({ owner }: { owner: OwnerExposure }) {
 function FitBar({ value, verdict, showLabel }: { value: number; verdict: ClauseVerdict; showLabel?: boolean }) {
   const color =
     verdict === 'top'
-      ? 'bg-emerald-400'
+      ? 'bg-positive'
       : verdict === 'good'
       ? 'bg-foreground'
       : verdict === 'situational'
-      ? 'bg-amber-400'
-      : 'bg-rose-400';
+      ? 'bg-caution'
+      : 'bg-negative';
 
   return (
     <div className="min-w-[90px] space-y-1">
       <div className="flex items-center justify-between gap-2">
-        {showLabel && <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Encaje</span>}
-        <span className="text-xs font-semibold text-foreground">{value}/100</span>
+        {showLabel && <span className="text-[11px] uppercase tracking-wider text-content-tertiary">Encaje</span>}
+        <span className="text-xs font-semibold text-content">{value}/100</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.08]">
-        <div className={cn('h-full rounded-full transition-all', color)} style={{ width: `${value}%` }} />
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.1]">
+        <div className={cn('h-full rounded-full transition-[width] duration-slow ease-out', color)} style={{ width: `${value}%` }} />
       </div>
     </div>
   );
@@ -832,9 +848,9 @@ function UrgencyBadge({ target }: { target: ClauseTarget }) {
 
 function Metric({ label, value, accent }: { label: string; value: React.ReactNode; accent?: boolean }) {
   return (
-    <div className="rounded-lg border border-white/[0.06] bg-surface-2/60 p-2">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className={cn('mt-0.5 truncate font-display text-sm font-bold', accent ? 'text-emerald-400' : 'text-foreground')}>
+    <div className="rounded-lg border border-white/[0.09] bg-surface-raised/60 p-2">
+      <div className="text-[10px] uppercase tracking-wider text-content-tertiary">{label}</div>
+      <div className={cn('mt-0.5 truncate font-display text-sm font-bold', accent ? 'text-positive-text' : 'text-content')}>
         {value}
       </div>
     </div>

@@ -8,19 +8,88 @@ astro dev --background
 
 Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
 
-## Interfaz de usuario (rediseño UX profesional)
+## Interfaz de usuario y sistema de diseño
 
-- El dashboard usa **Astro + React** hidratado con `client:only="react"`. No migrar a Next.js.
-- Animaciones con **Framer Motion** y contadores con **@number-flow/react**.
-- Componentes UI en `src/components/ui/` siguen el patrón shadcn/Radix: `card` (variants `default`, `glass`, `interactive`, `outline`), `button` (variants `default`, `glass`, `pill`, `ghost-accent`, etc.), `badge`, `table`, `tabs`, `dialog`, `sheet`, `command` (cmdk), `popover`, `accordion`, `switch`, `progress`, `toggle`, `slider`, `checkbox`.
-- Tablas profesionales con **@tanstack/react-table** (v8): `src/components/shared/DataTable.tsx` con paginación, sorting, export CSV y modo denso.
-- Componentes compartidos en `src/components/shared/`: `KpiCard`, `TrendBadge`, `PlayerCard`, `PlayerRow`, `PlayerDetailDialog`, `AlertPanel`, `FilterBar`, `LoadingSection`.
-- Layout en `src/components/layout/`: `AppLayout` (sidebar fija + header + mobile nav), `CommandPalette` (Cmd/Ctrl + K, cmdk), `MobileNav`, `NotificationBell`.
-- Hooks: `useDashboardTab` (sync query param), `useDensity` (modo compacto: store global de módulo con `useSyncExternalStore`; persiste en localStorage, aplica la clase `density-dense` en `<html>`, sincroniza entre pestañas del navegador y la restaura al cargar — además del script inline anti-FOUC en `dashboard.astro`). Los componentes reaccionan solos con variantes `[.density-dense_&]:*` (card, `DataTable` por defecto, `KpiCard`, `SectionHeader`, `PlayerCard`/`PlayerRow`, `Sidebar`, `Header`, `AppLayout`); no pasar props de densidad salvo override puntual. `useSidebarCollapsed` (panel lateral plegable en escritorio: mismo patrón de store de módulo con persistencia en localStorage y sync entre pestañas; la sidebar pasa de 260px a un raíl de iconos de 76px y el contenido ajusta su padding con transición; toggle con icono en el Header y acción en la paleta de comandos).
-- Atajos de teclado: `Cmd/Ctrl + K` (buscar), `Cmd/Ctrl + R` o `R` (recargar datos), `D` (alternar modo compacto), `B` (plegar/desplegar panel lateral), `Cmd/Ctrl + 1-9` y `Cmd/Ctrl + 0` (navegar pestañas).
+El sistema completo vive en `src/styles/global.css` (tokens) y
+`tailwind.config.mjs` (puente). **Ningún componente define un color, una
+sombra, un radio o una duración propios**: si un valor no existe, se añade
+primero como token.
+
+### Tokens (tres capas: primitivo → semántico → componente)
+
+- **Rampa neutra `--ink-000..900`**. Cada peldaño es un nivel de elevación.
+  `--ink-050` es el lienzo `#151515` y `--ink-900` la tinta `#ECECEC`: los dos
+  valores de marca, inmutables.
+- **Acento «Verde Campo» `--lime-100..900`** (base `hsl(74 84% 55%)`).
+  Reservado a tres cosas: la ÚNICA acción primaria de cada pantalla, el anillo
+  de foco y la voz del motor de recomendaciones (capitán, jugada sugerida,
+  serie propia en los gráficos). No es decorativo; si aparece en dos sitios de
+  la misma vista compitiendo, sobra uno.
+- **Estado**: `--positive` (158°), `--negative` (354°), `--caution` (32°),
+  `--info` (199°). Separados ≥40° entre sí y del acento. **Nunca van solos**:
+  siempre con icono o con signo, porque el color no puede ser la única señal.
+- **Demarcaciones** `--pos-gk/df/mf/fw/co`, siempre acompañadas de la sigla.
+- **Escalas fijas**: opacidad (`.05 .1 .2 .4 .6 .8`), radios (`--r-xs..xl`),
+  cinco elevaciones (`--elev-1..5`), duraciones (`--dur-instant..slow`),
+  curvas (`--ease-out/in/spring`) y capas (`--z-raised..toast`).
+- **Contraste**: `--ink-600` (bordes de control) cumple 3:1 y `--ink-700`
+  (texto terciario) cumple 4,5:1 **contra la superficie más clara en la que
+  aparecen** (`--ink-300`), no solo contra el lienzo. Si se tocan esos tres
+  grises hay que volver a medir.
+
+### Tipografía
+
+Par real, no un solo tipo en dos pesos: **Archivo** para titulares
+(`font-display`, tracking negativo que se cierra al crecer el cuerpo),
+**Inter** para interfaz y **JetBrains Mono** para toda cifra que se compare en
+columna. Cualquier número escaneable lleva la utilidad `.numeral` (cifras
+tabulares); sin ella las columnas bailan al ordenar una tabla.
+
+### Piezas
+
+- `src/components/ui/`: primitivos shadcn/Radix. `button` (variantes por
+  JERARQUÍA: `default`, `accent`, `secondary`, `outline`, `ghost`, `danger`,
+  `link`; prop `loading`), `card` (variantes por elevación: `sunken`, `flat`,
+  `default`, `raised`, `interactive`, `accent`, `critical`), `badge` (acepta
+  `icon`), `input` + `Field` (etiqueta visible, ayuda persistente, error
+  debajo con `role="alert"`), `tabs` (`segmented` | `underline`), `stat`
+  (cifra tabular con signo), `motion` (respeta `prefers-reduced-motion`).
+- `src/components/brand/Logo.tsx`: marca propia (línea de medio campo +
+  círculo central + punto de acento). No usar un icono de librería como logo.
+- `src/lib/chart-theme.ts`: tema único de Recharts. Las series se distinguen
+  por luminosidad y por trazo (continuo / discontinuo), no solo por tono.
+- `src/components/shared/`: `KpiCard`, `TrendBadge`, `PlayerCard`,
+  `PlayerRow`, `PlayerAvatar`, `PlayerDetailDialog`, `AlertPanel`,
+  `FilterBar`, `DataTable`, `EmptyState`, `ErrorState`, `LoadingSection`,
+  `SectionHeader`.
+- `src/components/layout/`: `AppLayout` (enlace de salto + panel + cabecera +
+  barra inferior), `Sidebar` (raíl de 248 px / 72 px plegado), `Header`,
+  `MobileNav` (4 destinos + «Más»), `CommandPalette`.
+
+### Reglas que no se saltan
+
+- El foco lo pinta `:focus-visible` en `global.css`. **No** añadir
+  `focus:ring-*` ni `focus-visible:outline-none` en componentes.
+- El atajo `⌘/Ctrl + K` lo registra **solo** `DashboardContainer`. Registrarlo
+  también en `CommandPalette` provoca dos alternancias por pulsación y la
+  paleta no llega a abrirse.
+- Cada pantalla diseña sus cuatro estados: carga (silueta del contenido real,
+  no una ruleta), vacío (con salida), error (causa + cómo arreglarlo +
+  reintentar) y el camino feliz.
+- Toda superficie táctil ≥44 px (`size="touch"` / `icon-touch`).
+- Mensajes de error: nunca `error.message` como descripción. La descripción
+  explica qué se ha caído y qué hacer; el texto crudo va en `detail`, plegado.
+- El hueco inferior para la barra móvil lo pone `AppLayout`; las pestañas no
+  añaden `pb-*`.
+- Modo compacto: los componentes reaccionan solos con variantes
+  `[.density-dense_&]:*`; no pasar props de densidad salvo override puntual.
+- Atajos: `⌘K` (buscar), `R` (recargar), `D` (compacto), `B` (plegar panel),
+  `C` (clausulazos), `⌘1-9` y `⌘0` (pestañas).
 - Notificaciones globales con **sonner** (`Toaster` en `AppLayout`).
-- El fondo base es `#151515` y el acento `#ECECEC`; no introducir colores claros que rompan el contraste.
-- Respetar `prefers-reduced-motion` (media query en `src/styles/global.css`).
+- Animaciones con **Framer Motion**, contadores con **@number-flow/react**,
+  tablas con **@tanstack/react-table**.
+- El dashboard es **Astro + React** hidratado con `client:only="react"`. No
+  migrar a Next.js.
 
 ## Motor de recomendaciones (Fase 0)
 

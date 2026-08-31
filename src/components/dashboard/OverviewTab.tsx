@@ -15,6 +15,7 @@ import Currency from '../shared/Currency';
 import SignalChips from '../shared/SignalChips';
 import SectionHeader from '../shared/SectionHeader';
 import AlertPanel from '../shared/AlertPanel';
+import ErrorState from '../shared/ErrorState';
 import EmptyState from '../shared/EmptyState';
 import NextMatchdayCard from './NextMatchdayCard';
 import LeagueActivityFeed from './LeagueActivityFeed';
@@ -92,10 +93,21 @@ export default function OverviewTab({ league }: OverviewTabProps) {
 
   if (hasError) {
     return (
-      <AlertPanel
-        level="danger"
-        title="Error cargando datos"
-        description="No se han podido cargar los datos de la liga."
+      <ErrorState
+        title="No hemos podido montar tu resumen"
+        description="El resumen junta plantilla, saldo, mercado y recomendaciones: si una de esas piezas falla, no se puede dibujar entero. Reintenta o entra directamente en la sección que necesites."
+        detail={
+          [teamQuery.error, moneyQuery.error, marketQuery.error, recommendationsQuery.error]
+            .filter(Boolean)
+            .map((e) => (e as Error).message)
+            .join('\n') || undefined
+        }
+        onRetry={() => {
+          teamQuery.refetch();
+          moneyQuery.refetch();
+          marketQuery.refetch();
+          recommendationsQuery.refetch();
+        }}
       />
     );
   }
@@ -143,13 +155,19 @@ export default function OverviewTab({ league }: OverviewTabProps) {
   }, {});
 
   return (
-    <div className="space-y-6 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
+        as="h1"
+        eyebrow="Resumen"
         title={league.name}
-        description="Resumen general de tu equipo, mercado y próxima jornada."
+        description="Cómo llegas a la jornada: saldo, plantilla, mercado y lo que el motor considera urgente."
       />
 
-      <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" stagger={0.06}>
+      {/* Cuatro cifras, y su orden es el que responde a «¿cómo llego?»: qué
+          tengo, qué valgo, con cuántos cuento, qué se mueve. La cascada suelta
+          (70 ms) traza esa lectura de izquierda a derecha una sola vez, al
+          abrir el panel. */}
+      <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" tone="loose" count={4}>
         <StaggerItem>
           <KpiCard
             icon={<Wallet className="h-5 w-5" />}
@@ -222,8 +240,8 @@ export default function OverviewTab({ league }: OverviewTabProps) {
                       <RechartsTooltip
                         formatter={(value: number, name: string) => [value, name]}
                         contentStyle={{
-                          backgroundColor: 'rgba(28,28,28,0.95)',
-                          border: '1px solid rgba(236,236,236,0.08)',
+                          backgroundColor: 'hsl(var(--surface-overlay))',
+                          border: '1px solid hsl(var(--ink-400))',
                           borderRadius: '0.75rem',
                         }}
                       />
@@ -234,14 +252,14 @@ export default function OverviewTab({ league }: OverviewTabProps) {
                   {chartData.map((item) => (
                     <div key={item.name} className="flex items-center gap-1.5 text-xs">
                       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-muted-foreground">{item.name}:</span>
+                      <span className="text-content-tertiary">{item.name}:</span>
                       <span className="font-medium">{item.value}</span>
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div className="text-sm text-muted-foreground">Sin datos de posiciones.</div>
+              <div className="text-sm text-content-tertiary">Sin datos de posiciones.</div>
             )}
           </CardContent>
         </Card>
@@ -262,12 +280,14 @@ export default function OverviewTab({ league }: OverviewTabProps) {
             {highPriority.length === 0 ? (
               <EmptyState
                 compact
-                title="Tu equipo está bien equilibrado"
-                description="No hay acciones urgentes para esta jornada."
+                title="Nada urgente esta jornada"
+                description="El motor no encuentra ningún movimiento que mejore claramente tu once. Puedes revisar el Centro Estrategia para las oportunidades de segundo nivel."
                 icon={<Trophy className="h-5 w-5" />}
               />
             ) : (
-              <StaggerContainer className="grid gap-3 sm:grid-cols-2" stagger={0.05}>
+              /* La cascada aquí es la voz del motor: la lista llega ORDENADA
+                  por urgencia y el escalonado dice cuál mirar primero. */
+              <StaggerContainer className="grid gap-3 sm:grid-cols-2" tone="base" count={highPriority.length}>
                 {highPriority.map((rec) => (
                   <StaggerItem key={rec.id}>
                     <PriorityRow recommendation={rec} />
@@ -322,19 +342,19 @@ function PriorityRow({ recommendation: rec }: { recommendation: Recommendation }
     <ArrowRight className="h-4 w-4" />;
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-white/[0.08] bg-card p-3 transition-colors hover:bg-surface-2">
+    <div className="flex items-center gap-4 rounded-lg border border-white/[0.09] bg-surface p-3 transition-colors hover:bg-surface-raised">
       <PlayerAvatar player={rec.player} size="md" showPosition />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate font-semibold text-card-foreground">{rec.player.nickname}</span>
+          <span className="truncate font-semibold text-content">{rec.player.nickname}</span>
           <Badge variant="muted" className="text-[10px]">
             {rec.type === 'buy' ? 'Comprar' : rec.type === 'sell' ? 'Vender' : rec.type === 'increase_clause' ? 'Cláusula' : 'Alineación'}
           </Badge>
         </div>
-        <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">{rec.reason}</p>
+        <p className="mt-0.5 text-sm text-content-tertiary line-clamp-2">{rec.reason}</p>
         {rec.externalSignals && rec.externalSignals.length > 0 && <SignalChips signals={rec.externalSignals} />}
       </div>
-      <div className="mt-0.5 shrink-0 text-muted-foreground">{icon}</div>
+      <div className="mt-0.5 shrink-0 text-content-tertiary">{icon}</div>
     </div>
   );
 }

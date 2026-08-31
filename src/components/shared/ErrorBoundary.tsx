@@ -36,19 +36,19 @@ export default class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-screen items-center justify-center p-6">
-          <div className="w-full max-w-lg rounded-2xl border border-destructive/20 bg-card p-6">
+        <div className="flex min-h-dvh items-center justify-center p-6">
+          <div className="w-full max-w-lg rounded-lg border border-negative/30 bg-surface p-6">
             <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-negative-quiet text-negative-text">
                 <AlertCircle className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="text-lg font-semibold text-card-foreground">Algo ha fallado</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <h2 className="text-lg font-semibold text-content">Algo ha fallado</h2>
+                <p className="mt-1 text-sm text-content-tertiary">
                   Se ha producido un error inesperado al cargar el dashboard.
                 </p>
                 {this.state.error && (
-                  <div className="mt-3 max-h-32 overflow-auto rounded-lg bg-muted p-3 text-xs font-mono text-muted-foreground">
+                  <div className="mt-3 max-h-32 overflow-auto rounded-lg bg-muted p-3 text-xs font-mono text-content-tertiary">
                     {this.state.error.message}
                   </div>
                 )}

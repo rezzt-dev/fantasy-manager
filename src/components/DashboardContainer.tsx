@@ -27,8 +27,11 @@ import MatchesTab from './dashboard/MatchesTab';
 import ErrorBoundary from './shared/ErrorBoundary';
 import ErrorState from './shared/ErrorState';
 import EmptyState from './shared/EmptyState';
+import { PageTransition } from './ui/motion';
 import { Trophy } from 'lucide-react';
-import { motion } from 'framer-motion';
+import LoadingSection from './shared/LoadingSection';
+import LazyLottie from './shared/LazyLottie';
+import { LogoMark } from './brand/Logo';
 import type { TeamPlayer } from '../types/fantasy';
 
 export default function DashboardContainer() {
@@ -209,11 +212,12 @@ export default function DashboardContainer() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-md">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-6">
+        <div className="w-full max-w-lg">
           <ErrorState
-            title="No se han podido cargar las ligas"
-            description={error.message}
+            title="No hemos podido leer tus ligas"
+            description="La sesión puede haber caducado o la API oficial no responde. Reintenta; si sigue fallando, vuelve a conectar tu cuenta."
+            detail={error.message}
             onRetry={() => refetch()}
           />
         </div>
@@ -223,11 +227,20 @@ export default function DashboardContainer() {
 
   if (!leagues || leagues.length === 0) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-md">
+      <div className="flex min-h-dvh items-center justify-center bg-canvas p-6">
+        <div className="w-full max-w-lg">
+          {/* El único Lottie del producto. Esta pantalla ocupa la ventana
+              entera, es un callejón sin salida —no hay nada que pulsar aquí
+              dentro— y el usuario puede quedarse mirándola preguntándose si la
+              aplicación ha fallado. Una ilustración de marca que se dibuja sola
+              dice «esto funciona, es que no hay nada que enseñar», que es
+              justo el mensaje. El reproductor se descarga solo al llegar aquí. */}
           <EmptyState
-            title="No tienes ligas activas"
-            description="Parece que aún no participas en ninguna liga de LALIGA FANTASY."
+            illustration={
+              <LazyLottie src="/lottie/pitch-search.json" className="h-40 w-40" />
+            }
+            title="Todavía no juegas ninguna liga"
+            description="Esta cuenta no participa en ninguna liga de LALIGA FANTASY. Únete a una desde la aplicación oficial y vuelve aquí: el panel la detectará sola."
           />
         </div>
       </div>
@@ -256,8 +269,9 @@ export default function DashboardContainer() {
         ) : (
           <div className="flex min-h-[60vh] items-center justify-center">
             <EmptyState
-              title="Selecciona una liga"
-              description="Elige una liga desde el menú superior para empezar a gestionar tu equipo."
+              icon={<Trophy />}
+              title="Elige con qué liga trabajar"
+              description="Selecciona una liga en el menú de la barra superior para que el motor calcule tu jornada."
             />
           </div>
         )}
@@ -279,12 +293,6 @@ export default function DashboardContainer() {
 }
 
 function TabContent({ league, tab }: { league: FantasyLeague; tab: string }) {
-  const variants = {
-    hidden: { opacity: 0, y: 12 },
-    visible: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -8 },
-  };
-
   let content: React.ReactNode;
   switch (tab) {
     case 'overview':
@@ -330,36 +338,48 @@ function TabContent({ league, tab }: { league: FantasyLeague; tab: string }) {
   return (
     <ErrorBoundary
       fallback={
-        <div className="rounded-2xl border border-destructive/20 bg-card p-6 text-center">
-          <h3 className="text-lg font-semibold text-destructive">Error cargando pestaña</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            No se ha podido cargar la sección {tab}. Prueba a recargar la página.
-          </p>
-        </div>
+        <ErrorState
+          title="Esta sección ha fallado al dibujarse"
+          description="El resto del panel sigue funcionando. Recarga la página o cambia de sección; si vuelve a pasar, avisa con el nombre de la sección."
+          detail={`Sección: ${tab}`}
+          onRetry={() => window.location.reload()}
+        />
       }
     >
-      <motion.div
-        key={tab}
-        variants={variants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
-        transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-      >
-        {content}
-      </motion.div>
+      <PageTransition viewKey={tab}>{content}</PageTransition>
     </ErrorBoundary>
   );
 }
 
+/**
+ * Arranque del panel.
+ *
+ * Silueta del layout real en lugar de una ruleta centrada: al llegar los datos
+ * nada se recoloca, y el usuario ve desde el primer instante dónde va a estar
+ * cada cosa.
+ */
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-2 border border-white/[0.08]">
-        <Trophy className="h-6 w-6 text-foreground" />
+    <div className="min-h-dvh bg-canvas" role="status" aria-busy="true">
+      <span className="sr-only">Cargando tu panel…</span>
+
+      <div className="fixed inset-y-0 left-0 hidden w-[248px] flex-col border-r border-white/[0.09] bg-surface lg:flex">
+        <div className="flex h-16 items-center gap-2.5 border-b border-white/[0.09] px-4">
+          <LogoMark className="motion-essential h-5 w-5 animate-pulse" />
+          <span className="font-display text-sm font-semibold tracking-[-0.03em] text-content-tertiary">
+            Fantasy Manager
+          </span>
+        </div>
       </div>
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/20 border-t-foreground" />
-      <p className="text-sm text-muted-foreground">Cargando dashboard...</p>
+
+      <div className="lg:pl-[248px]">
+        <div className="h-16 border-b border-white/[0.09]" />
+        <div className="px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1360px]">
+            <LoadingSection cardCount={4} rows={3} label="Cargando tu panel" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

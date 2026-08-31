@@ -1,34 +1,126 @@
 ---
 import '../styles/global.css';
+import Logo from '../components/brand/Logo';
 import LoginForm from '../components/auth/LoginForm';
-import { Trophy } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Zap, EyeOff } from 'lucide-react';
+
+/**
+ * Pantalla de acceso.
+ *
+ * Composición partida en lugar de una tarjeta flotando en el centro: la
+ * columna izquierda responde a la pregunta que frena a la gente ante un
+ * formulario que pide su cuenta —«¿qué vais a hacer con esto?»— y la derecha
+ * se dedica solo a la tarea. En móvil la izquierda se reduce a la marca.
+ */
+
+const assurances = [
+	{
+		Icon: EyeOff,
+		title: 'Tu contraseña no se guarda',
+		body: 'Se usa una vez para pedir el token a LALIGA y se descarta. La sesión vive en una cookie de tu navegador.',
+	},
+	{
+		Icon: ShieldCheck,
+		title: 'Solo lectura de tu liga',
+		body: 'La aplicación consulta tu plantilla, tu mercado y tu clasificación. No hace fichajes ni pujas por ti.',
+	},
+	{
+		Icon: Zap,
+		title: 'Listo en cuanto entras',
+		body: 'No hay que configurar nada: el motor lee tu equipo y calcula la jornada en el primer arranque.',
+	},
+];
 ---
 
 <html lang="es">
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Iniciar sesión | Fantasy Manager</title>
+		<meta name="robots" content="noindex" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<title>Conectar cuenta | Fantasy Manager</title>
 	</head>
-	<body>
-		<div class="relative flex min-h-screen flex-col items-center justify-center bg-background p-4 sm:p-6">
-			<div class="relative z-10 mb-8 text-center animate-fade-up">
-				<a href="/" class="inline-flex items-center justify-center gap-2.5 text-2xl font-semibold tracking-tight text-foreground">
-					<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-2 border border-white/[0.08]">
-						<Trophy className="h-5 w-5 text-foreground" />
-					</div>
-					<span class="font-display tracking-tight">Fantasy<span class="text-brand-muted">Manager</span></span>
-				</a>
-				<p class="mt-2 text-sm text-muted-foreground">Inicia sesión para gestionar tus equipos.</p>
-			</div>
 
-			<LoginForm client:only="react">
-				<div slot="fallback" class="w-full max-w-md rounded-2xl border border-white/[0.08] bg-card p-8 text-center text-sm text-muted-foreground">
-					Cargando formulario...
+	<body class="bg-canvas text-content">
+		<div class="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+			<!-- Columna de contexto -->
+			<section class="pitch-weave relative flex flex-col justify-between border-white/[0.09] p-6 sm:p-10 lg:border-r">
+				<div class="flex items-center justify-between gap-4">
+					<a href="/" class="rounded-sm" aria-label="Fantasy Manager — inicio">
+						<Logo size="md" draw />
+					</a>
+					<a
+						href="/"
+						class="group inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-sm font-medium text-content-tertiary transition-colors duration-fast hover:text-content"
+					>
+						<!-- La flecha retrocede 3 px: el mismo gesto que el del botón de
+							avanzar, pero al revés, porque va hacia atrás. -->
+						<ArrowLeft className="nudge-back h-4 w-4" aria-hidden="true" />
+						Volver
+					</a>
 				</div>
-			</LoginForm>
+
+				<div class="hidden max-w-lg py-16 lg:block">
+					<h1 class="font-display text-4xl font-bold tracking-[-0.04em] text-content">
+						Enlaza tu liga y mira tu jornada resuelta
+					</h1>
+					<p class="measure mt-5 text-base leading-relaxed text-content-secondary">
+						Fantasy Manager no tiene cuentas propias: entra con la misma cuenta con la que juegas y
+						lee tu liga desde la API oficial.
+					</p>
+
+					<ul class="mt-10 space-y-6">
+						{
+							assurances.map(({ Icon, title, body }) => (
+								<li class="flex gap-4">
+									<Icon className="mt-0.5 h-[18px] w-[18px] shrink-0 text-accent" aria-hidden="true" />
+									<div>
+										<h2 class="text-sm font-semibold text-content">{title}</h2>
+										<p class="measure mt-1 text-sm leading-relaxed text-content-tertiary">{body}</p>
+									</div>
+								</li>
+							))
+						}
+					</ul>
+				</div>
+
+				<p class="hidden text-xs text-content-tertiary lg:block">
+					Proyecto personal sin vinculación con LALIGA ni con LFP.
+				</p>
+			</section>
+
+			<!-- Columna de formulario -->
+			<main class="flex items-center justify-center bg-surface-sunken p-6 sm:p-10">
+				<LoginForm client:only="react">
+					<div
+						slot="fallback"
+						class="w-full max-w-md rounded-lg border border-white/[0.09] bg-surface p-8"
+						role="status"
+						aria-busy="true"
+					>
+						<div class="motion-essential h-6 w-40 animate-pulse rounded-md bg-white/[0.05]"></div>
+						<div class="motion-essential mt-3 h-4 w-full animate-pulse rounded-sm bg-white/[0.05]"></div>
+						<div class="motion-essential mt-8 h-11 w-full animate-pulse rounded-md bg-white/[0.05]"></div>
+						<div class="motion-essential mt-6 h-10 w-full animate-pulse rounded-md bg-white/[0.05]"></div>
+						<div class="motion-essential mt-4 h-11 w-full animate-pulse rounded-md bg-white/[0.05]"></div>
+						<span class="sr-only">Cargando el formulario de acceso…</span>
+					</div>
+				</LoginForm>
+			</main>
 		</div>
+
+		<!--
+			Aquí NO se monta Lenis. Esta pantalla no narra nada al bajar: es un
+			formulario, y el scroll suave solo añadiría retardo entre la rueda y el
+			campo que se quiere alcanzar. Lo único que se anima es el símbolo de
+			marca, y para eso basta con el módulo de Anime.js.
+		-->
+		<script>
+			import { drawLogoMarks } from '../lib/motion-brand';
+			void drawLogoMarks();
+		</script>
 	</body>
 </html>

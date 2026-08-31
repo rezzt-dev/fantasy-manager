@@ -71,7 +71,7 @@ export default function PlayerStatsTable({ teamPlayers, ownPlayerIds }: PlayerSt
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-content-tertiary" />
         <Input
           placeholder="Buscar jugador, equipo o posición..."
           value={query}
@@ -102,13 +102,13 @@ export default function PlayerStatsTable({ teamPlayers, ownPlayerIds }: PlayerSt
           </TableBody>
         </Table>
       </div>
-      {filtered.length === 0 && <div className="py-8 text-center text-sm text-muted-foreground">No se encuentran jugadores.</div>}
+      {filtered.length === 0 && <div className="py-8 text-center text-sm text-content-tertiary">No se encuentran jugadores.</div>}
     </div>
   );
 
   function sortArrow(key: SortKey) {
-    if (sortKey !== key) return <span className="text-muted-foreground">↕</span>;
-    return <span className="text-foreground">{sortDesc ? '↓' : '↑'}</span>;
+    if (sortKey !== key) return <span className="text-content-tertiary">↕</span>;
+    return <span className="text-content">{sortDesc ? '↓' : '↑'}</span>;
   }
 }
 
@@ -142,12 +142,12 @@ function PlayerRow({
       </TableCell>
       <TableCell className="font-semibold">{points}</TableCell>
       <TableCell>
-        <Currency value={player.marketValue} className="text-muted-foreground" />
+        <Currency value={player.marketValue} className="text-content-tertiary" />
       </TableCell>
       <TableCell>
         <Currency value={buyoutClause} />
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">{player.team?.name || '-'}</TableCell>
+      <TableCell className="text-sm text-content-tertiary">{player.team?.name || '-'}</TableCell>
       <TableCell>
         {isOwn && (
           <Badge variant="outline" className="text-xs">

@@ -1,0 +1,144 @@
+---
+import { ArrowUpRight, Gavel, Crown, TriangleAlert } from 'lucide-react';
+
+/**
+ * Muestra de producto de la portada.
+ *
+ * No es una captura ni un mockup pintado: está construida con los mismos
+ * tokens y las mismas piezas que el dashboard real, así que lo que se ve aquí
+ * es exactamente lo que se ve dentro. Va rotulada como ejemplo porque los
+ * datos son ilustrativos, no una jornada real.
+ */
+
+const rows = [
+	{
+		verdict: 'Fichar por cláusula',
+		Icon: Gavel,
+		tone: 'accent',
+		player: 'Nico Williams',
+		position: 'DEL',
+		club: 'Athletic Club',
+		delta: '+3,4',
+		note: 'Titular en el once probable y su rival encaja 1,8 goles de media fuera.',
+	},
+	{
+		verdict: 'Capitán de la jornada',
+		Icon: Crown,
+		tone: 'neutral',
+		player: 'Vinícius Jr.',
+		position: 'DEL',
+		club: 'Real Madrid',
+		delta: '+6,1',
+		note: 'Mejor xP del once una vez doblada la puntuación.',
+	},
+	{
+		verdict: 'Sentar en el banquillo',
+		Icon: TriangleAlert,
+		tone: 'caution',
+		player: 'Robin Le Normand',
+		position: 'DEF',
+		club: 'Atlético de Madrid',
+		delta: '−1,2',
+		note: 'Duda física sin confirmar a 40 h del cierre.',
+	},
+];
+
+const toneClass = {
+	accent: 'border-accent/30 bg-accent-quiet text-accent-300',
+	neutral: 'border-white/[0.09] bg-white/[0.05] text-content-secondary',
+	caution: 'border-caution/25 bg-caution-quiet text-caution-text',
+} as const;
+---
+
+<div class="relative">
+	<!-- Sombra proyectada del panel: da profundidad sin recurrir a un degradado -->
+	<div
+		class="pointer-events-none absolute -inset-x-6 -bottom-6 top-8 rounded-xl bg-ink-0/60 blur-2xl"
+		aria-hidden="true"
+	>
+	</div>
+
+	<div
+		class="relative overflow-hidden rounded-lg border border-white/[0.14] bg-surface shadow-5"
+	>
+		<!-- Cabecera del panel -->
+		<div
+			class="flex items-center justify-between gap-3 border-b border-white/[0.09] bg-surface-raised px-4 py-3"
+		>
+			<div class="min-w-0">
+				<p class="eyebrow text-[10px]">Centro Estrategia</p>
+				<p class="mt-0.5 font-display text-sm font-semibold tracking-[-0.015em] text-content">
+					Jornada 3 · cierra en 41 h
+				</p>
+			</div>
+			<span
+				class="shrink-0 rounded-full border border-white/[0.09] bg-white/[0.05] px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-content-tertiary"
+			>
+				Ejemplo
+			</span>
+		</div>
+
+		<!-- Filas de recomendación -->
+		<ul class="divide-y divide-white/[0.09]">
+			{
+				rows.map(({ verdict, Icon, tone, player, position, club, delta, note }) => (
+					<li class="flex gap-3 px-4 py-3.5">
+						<span
+							class:list={[
+								'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border',
+								toneClass[tone as keyof typeof toneClass],
+							]}
+							aria-hidden="true"
+						>
+							<Icon className="h-3.5 w-3.5" />
+						</span>
+
+						<div class="min-w-0 flex-1">
+							<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+								<span class="font-display text-sm font-semibold text-content">{player}</span>
+								<span class="numeral text-[10px] uppercase tracking-wider text-content-tertiary">
+									{position} · {club}
+								</span>
+							</div>
+							<p class="mt-1 text-xs leading-relaxed text-content-tertiary">{note}</p>
+							<p
+								class:list={[
+									'mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium',
+									toneClass[tone as keyof typeof toneClass],
+								]}
+							>
+								{verdict}
+							</p>
+						</div>
+
+						<div class="shrink-0 text-right">
+							<p
+								class:list={[
+									'numeral text-lg font-semibold leading-none',
+									delta.startsWith('−') ? 'text-negative-text' : 'text-accent-300',
+								]}
+							>
+								{delta}
+							</p>
+							<p class="mt-1 text-[10px] uppercase tracking-wider text-content-tertiary">xP once</p>
+						</div>
+					</li>
+				))
+			}
+		</ul>
+
+		<!-- Pie: el presupuesto real que condiciona todo lo de arriba -->
+		<div
+			class="flex items-center justify-between gap-3 border-t border-white/[0.09] bg-surface-sunken px-4 py-3"
+		>
+			<div>
+				<p class="eyebrow text-[10px]">Presupuesto operativo</p>
+				<p class="numeral mt-0.5 text-sm font-semibold text-content">14,2 M €</p>
+			</div>
+			<span class="inline-flex items-center gap-1 text-xs font-medium text-accent-300">
+				Ver plan completo
+				<ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+			</span>
+		</div>
+	</div>
+</div>

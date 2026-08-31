@@ -28,15 +28,15 @@ export default function PositionDistributionChart({ distribution }: PositionDist
             <Tooltip
               formatter={(value: number, name: string) => [value, name]}
               contentStyle={{
-                backgroundColor: '#1C1C1C',
-                border: '1px solid rgba(255,255,255,0.08)',
+                backgroundColor: 'hsl(var(--surface-overlay))',
+                border: '1px solid hsl(var(--ink-400))',
                 borderRadius: 8,
-                color: '#ECECEC',
+                color: 'hsl(var(--text-primary))',
               }}
-              itemStyle={{ color: '#ECECEC' }}
-              labelStyle={{ color: '#9A9A9A' }}
+              itemStyle={{ color: 'hsl(var(--text-primary))' }}
+              labelStyle={{ color: 'hsl(var(--text-tertiary))' }}
             />
-            <Legend wrapperStyle={{ color: '#9A9A9A' }} />
+            <Legend wrapperStyle={{ color: 'hsl(var(--text-tertiary))' }} />
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -44,13 +44,13 @@ export default function PositionDistributionChart({ distribution }: PositionDist
         {data.map((item) => (
           <div
             key={item.name}
-            className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-surface-2 p-3"
+            className="flex items-center justify-between rounded-lg border border-white/[0.09] bg-surface-raised p-3"
           >
             <div className="flex items-center gap-2">
               <span className="inline-block h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-              <span className="text-sm font-medium text-card-foreground">{item.name}</span>
+              <span className="text-sm font-medium text-content">{item.name}</span>
             </div>
-            <span className="text-sm font-bold text-brand">{item.count}</span>
+            <span className="text-sm font-bold text-content">{item.count}</span>
           </div>
         ))}
       </div>

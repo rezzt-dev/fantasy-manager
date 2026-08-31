@@ -22,7 +22,6 @@ import FilterBar from '../shared/FilterBar';
 import { Toggle } from '../ui/toggle';
 import { LayoutGrid, Table2, Users } from 'lucide-react';
 import { positionShortName, positionBgClass, getPositionName } from '../../lib/format';
-import { StaggerContainer, StaggerItem } from '../ui/motion';
 import { useDensity } from '../../hooks/useDensity';
 
 interface TeamTabProps {
@@ -121,8 +120,8 @@ export default function TeamTab({ league }: TeamTabProps) {
         header: 'Jugador',
         cell: ({ row }) => (
           <div>
-            <div className="font-semibold text-foreground">{row.original.playerMaster.nickname}</div>
-            <div className="text-xs text-muted-foreground">{row.original.playerMaster.team?.name || 'Sin equipo'}</div>
+            <div className="font-semibold text-content">{row.original.playerMaster.nickname}</div>
+            <div className="text-xs text-content-tertiary">{row.original.playerMaster.team?.name || 'Sin equipo'}</div>
           </div>
         ),
       },
@@ -173,7 +172,7 @@ export default function TeamTab({ league }: TeamTabProps) {
         accessorKey: 'playerMaster.points',
         header: 'Puntos',
         cell: ({ row }) => (
-          <span className="font-display text-sm font-semibold text-foreground">
+          <span className="font-display text-sm font-semibold text-content">
             {row.original.playerMaster.points || row.original.playerMaster.lastSeasonPoints || 0}
           </span>
         ),
@@ -182,7 +181,7 @@ export default function TeamTab({ league }: TeamTabProps) {
         accessorKey: 'playerMaster.marketValue',
         header: 'Valor mercado',
         meta: { headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell' },
-        cell: ({ row }) => <Currency value={row.original.playerMaster.marketValue} className="text-sm text-muted-foreground" />,
+        cell: ({ row }) => <Currency value={row.original.playerMaster.marketValue} className="text-sm text-content-tertiary" />,
       },
       {
         accessorKey: 'buyoutClause',
@@ -190,7 +189,7 @@ export default function TeamTab({ league }: TeamTabProps) {
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
             <Currency value={row.original.buyoutClause} className="text-sm" />
-            {row.original.isShielded && <span className="text-[10px] text-muted-foreground">(B)</span>}
+            {row.original.isShielded && <span className="text-[10px] text-content-tertiary">(B)</span>}
           </div>
         ),
       },
@@ -199,17 +198,26 @@ export default function TeamTab({ league }: TeamTabProps) {
   );
 
   if (isLoading) return <TeamSkeleton />;
-  if (error) return <ErrorState title="Error cargando plantilla" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido leer tu plantilla"
+        description="La API oficial no ha devuelto tu equipo. Suele ser temporal; si se repite, vuelve a conectar tu cuenta desde la pantalla de acceso."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
 
   const totalValue = players.reduce((sum, p) => sum + p.playerMaster.marketValue, 0);
   const totalPoints = players.reduce((sum, p) => sum + (p.playerMaster.points || 0), 0);
   const healthyCount = players.filter((p) => p.playerMaster.playerStatus === 'ok').length;
 
   return (
-    <div className="space-y-4 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Mi Equipo"
-        description="Plantilla completa con estado, valor y cláusulas."
+        as="h1"
+        eyebrow="Plantilla"
+        title="Tus jugadores, uno a uno"
+        description="Estado físico, valor de mercado y cláusula de cada ficha. Pulsa una fila para vender, blindar o subir su cláusula."
         action={
           <div className="flex items-center gap-2">
             <Toggle
@@ -226,23 +234,23 @@ export default function TeamTab({ league }: TeamTabProps) {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
-          <div className="text-xs text-muted-foreground">Jugadores</div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">{players.length}</div>
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+          <div className="text-xs text-content-tertiary">Jugadores</div>
+          <div className="mt-2 text-2xl font-bold font-display text-content">{players.length}</div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
-          <div className="text-xs text-muted-foreground">Disponibles</div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">{healthyCount}</div>
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+          <div className="text-xs text-content-tertiary">Disponibles</div>
+          <div className="mt-2 text-2xl font-bold font-display text-content">{healthyCount}</div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
-          <div className="text-xs text-muted-foreground">Valor total</div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+          <div className="text-xs text-content-tertiary">Valor total</div>
+          <div className="mt-2 text-2xl font-bold font-display text-content">
             <Currency value={totalValue} />
           </div>
         </div>
-        <div className="rounded-xl border border-white/[0.08] bg-surface-2/40 p-4">
-          <div className="text-xs text-muted-foreground">Puntos totales</div>
-          <div className="mt-2 text-2xl font-bold font-display text-foreground">{totalPoints}</div>
+        <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+          <div className="text-xs text-content-tertiary">Puntos totales</div>
+          <div className="mt-2 text-2xl font-bold font-display text-content">{totalPoints}</div>
         </div>
       </div>
 
@@ -251,7 +259,7 @@ export default function TeamTab({ league }: TeamTabProps) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-content-tertiary" />
                 Jugadores
               </CardTitle>
               <CardDescription>{filteredPlayers.length} de {players.length} jugadores</CardDescription>
@@ -275,18 +283,22 @@ export default function TeamTab({ league }: TeamTabProps) {
               dense={dense}
             />
           ) : (
-            <StaggerContainer className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3" stagger={0.03}>
+            /* Sin cascada, a propósito. La plantilla no tiene un orden que
+               signifique nada —el usuario la filtra y la ordena a su gusto— y
+               escalonar veinticinco tarjetas convertía cada cambio de filtro
+               en una reconstrucción de la pantalla. La sección ya entra una
+               vez con la transición de vista; repetirlo aquí dentro es ruido. */
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
               {filteredPlayers.map((player) => (
-                <StaggerItem key={player.playerTeamId}>
-                  <PlayerCard
-                    player={player.playerMaster}
-                    buyoutClause={player.buyoutClause}
-                    isShielded={player.isShielded}
-                    onClick={() => setSelectedPlayer(player)}
-                  />
-                </StaggerItem>
+                <PlayerCard
+                  key={player.playerTeamId}
+                  player={player.playerMaster}
+                  buyoutClause={player.buyoutClause}
+                  isShielded={player.isShielded}
+                  onClick={() => setSelectedPlayer(player)}
+                />
               ))}
-            </StaggerContainer>
+            </div>
           )}
         </CardContent>
       </Card>

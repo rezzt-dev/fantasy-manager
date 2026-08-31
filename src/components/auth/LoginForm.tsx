@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { loginWithExtension, persistTokens } from '../../lib/auth/extension-bridge';
 import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Input } from '../ui/input';
-import { AlertCircle, Mail, KeyRound, ArrowRight, Loader2 } from 'lucide-react';
+import { Input, Field } from '../ui/input';
+import { Mail, KeyRound, ArrowRight, Eye, EyeOff, OctagonAlert, Info } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
+/** Logo de Google: colores de marca de un tercero, exentos del sistema propio. */
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -29,40 +30,63 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+/** Aviso de formulario. `role="alert"` lo anuncia sin que el usuario tenga que buscarlo. */
+function FormAlert({ children, tone = 'danger' }: { children: React.ReactNode; tone?: 'danger' | 'info' }) {
+  const Icon = tone === 'danger' ? OctagonAlert : Info;
+  return (
+    <p
+      role={tone === 'danger' ? 'alert' : 'status'}
+      className={cn(
+        'flex items-start gap-2 rounded-md border p-3 text-sm leading-relaxed',
+        tone === 'danger'
+          ? 'border-negative/30 bg-negative-quiet text-content-secondary'
+          : 'border-info/25 bg-info-quiet text-content-secondary',
+      )}
+    >
+      <Icon
+        className={cn('mt-0.5 h-4 w-4 shrink-0', tone === 'danger' ? 'text-negative-text' : 'text-info-text')}
+        aria-hidden="true"
+      />
+      <span>{children}</span>
+    </p>
+  );
+}
+
 export default function LoginForm() {
   const { login, isLoading, error, clearError } = useAuthStore();
   const [mode, setMode] = useState<'password' | 'token'>('password');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [token, setToken] = useState('');
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [tokenLoading, setTokenLoading] = useState(false);
+  const [googleNotice, setGoogleNotice] = useState<string | null>(null);
 
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
+  const ids = useId();
+  const emailId = `${ids}-email`;
+  const passwordId = `${ids}-password`;
+  const tokenId = `${ids}-token`;
 
-  // El login con Google depende de la extensión del navegador, que todavía no
-  // está publicada en las tiendas de Chrome/Firefox. Hasta entonces el botón
-  // queda deshabilitado y sólo muestra el motivo al pulsarlo.
+  // El acceso con Google necesita la extensión del navegador, que todavía no
+  // está publicada en las tiendas. Hasta entonces el botón explica el motivo en
+  // lugar de fallar en silencio.
   const googleDisabled = true;
 
   const handleGoogle = async () => {
     if (googleDisabled) {
-      setGoogleError(
-        'El acceso con Google está temporalmente deshabilitado: la extensión del navegador que completa el login aún no está publicada en las tiendas oficiales. Mientras tanto, entra con email y contraseña o con un token.',
+      setGoogleNotice(
+        'El acceso con Google necesita la extensión del navegador, que aún no está publicada en las tiendas de Chrome y Firefox. Mientras tanto entra con email y contraseña, o pegando tu token.',
       );
       return;
     }
-    setGoogleError(null);
-    setGoogleLoading(true);
+    setGoogleNotice(null);
     try {
       const tokens = await loginWithExtension();
       await persistTokens(tokens);
       window.location.href = '/dashboard';
     } catch (err) {
-      setGoogleError(err instanceof Error ? err.message : 'El login no se ha completado');
-    } finally {
-      setGoogleLoading(false);
+      setGoogleNotice(err instanceof Error ? err.message : 'El login no se ha completado.');
     }
   };
 
@@ -70,9 +94,7 @@ export default function LoginForm() {
     e.preventDefault();
     clearError();
     const ok = await login(username, password);
-    if (ok) {
-      window.location.href = '/dashboard';
-    }
+    if (ok) window.location.href = '/dashboard';
   };
 
   const handleTokenSubmit = async (e: React.FormEvent) => {
@@ -88,185 +110,183 @@ export default function LoginForm() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setTokenError(data.error || 'No se ha podido guardar el token');
+        setTokenError(data.error || 'El token no es válido o ha caducado. Cópialo de nuevo desde la web oficial.');
         return;
       }
       window.location.href = '/dashboard';
     } catch (err) {
-      setTokenError(err instanceof Error ? err.message : 'Error de red');
+      setTokenError(
+        err instanceof Error
+          ? `No se ha podido contactar con el servidor (${err.message}). Revisa tu conexión y vuelve a intentarlo.`
+          : 'No se ha podido contactar con el servidor.',
+      );
     } finally {
       setTokenLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md border border-white/[0.08] bg-card shadow-none animate-fade-in">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-display tracking-tight">Bienvenido de nuevo</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          Elige cómo quieres conectar tu cuenta de LALIGA FANTASY.
-        </CardDescription>
-      </CardHeader>
+    <div className="w-full max-w-md rounded-lg border border-white/[0.09] bg-surface p-6 shadow-3 sm:p-8">
+      <h1 className="font-display text-xl font-semibold tracking-[-0.025em] text-content">
+        Conecta tu cuenta
+      </h1>
+      <p className="mt-1.5 text-sm leading-relaxed text-content-tertiary">
+        Usamos tu propia sesión de LALIGA FANTASY para leer tu liga. No guardamos tu contraseña.
+      </p>
 
-      <CardContent className="space-y-5 pt-0">
-        <div className="space-y-3">
-          {googleError && (
-            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>{googleError}</span>
-            </div>
-          )}
+      {/* Acceso con Google */}
+      <div className="mt-6 space-y-3">
+        <Button
+          variant="secondary"
+          size="touch"
+          className="w-full"
+          onClick={handleGoogle}
+          aria-disabled={googleDisabled}
+          aria-describedby={`${ids}-google-note`}
+        >
+          <GoogleIcon className="h-[18px] w-[18px]" />
+          Entrar con Google
+        </Button>
+        <p id={`${ids}-google-note`} className="text-xs leading-relaxed text-content-tertiary">
+          Requiere la extensión del navegador, todavía no publicada.
+        </p>
+        {googleNotice && <FormAlert tone="info">{googleNotice}</FormAlert>}
+      </div>
 
-          <Button
-            className="w-full opacity-60"
-            onClick={handleGoogle}
-            aria-disabled="true"
-            title="El acceso con Google no está disponible todavía"
-          >
-            <GoogleIcon className="mr-2 h-4 w-4" />
-            Entrar con Google
-          </Button>
+      {/* Separador */}
+      <div className="my-6 flex items-center gap-3" role="presentation">
+        <span className="h-px flex-1 bg-white/[0.09]" />
+        <span className="eyebrow text-[10px]">o con tus datos</span>
+        <span className="h-px flex-1 bg-white/[0.09]" />
+      </div>
 
-          <p className="text-center text-xs text-muted-foreground">
-            El acceso con Google está deshabilitado temporalmente hasta que se publique la extensión del navegador. Usa
-            email y contraseña o un token.
-          </p>
-        </div>
+      <Tabs value={mode} onValueChange={(v) => setMode(v as 'password' | 'token')}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="password">
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            Email
+          </TabsTrigger>
+          <TabsTrigger value="token">
+            <KeyRound className="h-4 w-4" aria-hidden="true" />
+            Token
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-white/[0.08]" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-card px-2 text-xs uppercase tracking-wide text-muted-foreground">o</span>
-          </div>
-        </div>
+        {/* ── Email y contraseña ─────────────────────────────────────────── */}
+        <TabsContent value="password">
+          <form onSubmit={handlePasswordSubmit} className="space-y-4" noValidate>
+            {error && <FormAlert>{error}</FormAlert>}
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as 'password' | 'token')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="password" className="gap-2">
-              <Mail className="h-4 w-4" />
-              Email
-            </TabsTrigger>
-            <TabsTrigger value="token" className="gap-2">
-              <KeyRound className="h-4 w-4" />
-              Token
-            </TabsTrigger>
-          </TabsList>
+            <p className="text-xs leading-relaxed text-content-tertiary">
+              Solo funciona con cuentas creadas con email y contraseña. Si te registraste con Google,
+              usa el token.
+            </p>
 
-          <TabsContent value="password" className="mt-4 space-y-4">
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              {error && (
-                <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+            <Field label="Email" htmlFor={emailId} required>
+              <Input
+                id={emailId}
+                type="email"
+                inputMode="email"
+                autoComplete="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="tu@email.com"
+                invalid={!!error}
+                required
+              />
+            </Field>
 
-              <p className="text-xs text-muted-foreground">
-                Sólo funciona con cuentas creadas con email y contraseña. Si te registraste con Google, usa el botón de
-                arriba.
-              </p>
-
-              <div className="space-y-2">
-                <label htmlFor="username" className="text-sm font-medium text-foreground">
-                  Email
-                </label>
+            <Field label="Contraseña" htmlFor={passwordId} required>
+              <div className="relative">
                 <Input
-                  id="username"
-                  type="email"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="tu@email.com"
-                  className="bg-surface-2"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">
-                  Contraseña
-                </label>
-                <Input
-                  id="password"
-                  type="password"
+                  id={passwordId}
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-surface-2"
+                  className="pr-12"
+                  invalid={!!error}
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 rounded-md p-2 text-content-tertiary transition-colors duration-fast hover:text-content"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
+            </Field>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Iniciando sesión...
-                  </>
-                ) : (
-                  <>
-                    Entrar
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </form>
-          </TabsContent>
+            <Button
+              type="submit"
+              variant="accent"
+              size="touch"
+              className="w-full"
+              loading={isLoading}
+              loadingText="Comprobando…"
+            >
+              Entrar
+              <ArrowRight aria-hidden="true" />
+            </Button>
+          </form>
+        </TabsContent>
 
-          <TabsContent value="token" className="mt-4 space-y-4">
-            <form onSubmit={handleTokenSubmit} className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Método manual, para cuando no puedes instalar la extensión. Inicia sesión en la web oficial y ejecuta esto
-                en la consola del navegador:
-                <code className="mt-2 block rounded-lg bg-surface-2 border border-white/[0.06] px-3 py-2 text-xs font-mono text-foreground">
-                  localStorage.getItem('fz-accessToken')
-                </code>
-                <span className="mt-2 block text-xs">
-                  Pega el resultado completo: si incluye el <code className="font-mono">refresh_token</code>, la sesión se
-                  renovará sola y no tendrás que repetirlo.
-                </span>
+        {/* ── Token manual ───────────────────────────────────────────────── */}
+        <TabsContent value="token">
+          <form onSubmit={handleTokenSubmit} className="space-y-4" noValidate>
+            {tokenError && <FormAlert>{tokenError}</FormAlert>}
+
+            <div className="rounded-md border border-white/[0.09] bg-surface-sunken p-3">
+              <p className="text-xs leading-relaxed text-content-tertiary">
+                Inicia sesión en la web oficial de LALIGA FANTASY, abre la consola del navegador y
+                ejecuta:
               </p>
+              <code className="mt-2 block overflow-x-auto rounded-sm bg-canvas px-2.5 py-2 font-mono text-xs text-content">
+                localStorage.getItem('fz-accessToken')
+              </code>
+            </div>
 
-              {tokenError && (
-                <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>{tokenError}</span>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <label htmlFor="token" className="text-sm font-medium text-foreground">
-                  Access token
-                </label>
-                <textarea
-                  id="token"
-                  value={token}
-                  onChange={(e) => setToken(e.target.value)}
-                  rows={4}
-                  placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs..."
-                  className="flex min-h-[80px] w-full rounded-lg border border-white/[0.10] bg-surface-2 px-3 py-2 text-sm font-mono text-foreground ring-offset-background placeholder:text-muted-foreground transition-colors focus-visible:outline-none focus-visible:border-white/[0.20] focus-visible:ring-2 focus-visible:ring-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={tokenLoading}>
-                {tokenLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Guardando token...
-                  </>
-                ) : (
-                  <>
-                    Entrar con token
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
+            <Field
+              label="Access token"
+              htmlFor={tokenId}
+              hint="Pega el resultado completo. Si incluye el refresh_token, la sesión se renovará sola."
+              required
+            >
+              <textarea
+                id={tokenId}
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                rows={4}
+                aria-describedby={`${tokenId}-hint`}
+                spellCheck={false}
+                placeholder="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIs…"
+                className={cn(
+                  'block min-h-[92px] w-full resize-y rounded-md border bg-surface-raised px-3 py-2',
+                  'font-mono text-xs leading-relaxed text-content',
+                  'transition-colors duration-fast placeholder:text-content-tertiary hover:border-ink-700',
+                  tokenError ? 'border-negative' : 'border-ink-600',
                 )}
-              </Button>
-            </form>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+                required
+              />
+            </Field>
+
+            <Button
+              type="submit"
+              variant="accent"
+              size="touch"
+              className="w-full"
+              loading={tokenLoading}
+              loadingText="Guardando token…"
+            >
+              Entrar con token
+              <ArrowRight aria-hidden="true" />
+            </Button>
+          </form>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

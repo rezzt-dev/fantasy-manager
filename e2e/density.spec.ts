@@ -10,8 +10,8 @@ test('modo compacto: toggle, densidad real, persistencia y atajo de teclado', as
   // Login con credenciales reales (mismo patrón que responsive.spec.ts)
   await page.goto('http://localhost:4321/login');
   await page.getByRole('tab', { name: 'Email' }).click();
-  await page.locator('input#username').fill(email);
-  await page.locator('input#password, input[type="password"]').first().fill(password);
+  await page.getByLabel('Email', { exact: true }).fill(email);
+  await page.getByLabel('Contraseña').fill(password);
   await page.getByRole('button', { name: /entrar/i }).click();
   await page.waitForTimeout(15000);
 

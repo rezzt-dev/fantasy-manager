@@ -36,11 +36,11 @@ export default function LeagueSummary({ league }: { league: FantasyLeague }) {
   const hasError = teamQuery.error || moneyQuery.error || lineupQuery.error || marketQuery.error;
 
   if (isLoading) {
-    return <div className="py-4 text-sm text-muted-foreground">Cargando datos de la liga...</div>;
+    return <div className="py-4 text-sm text-content-tertiary">Cargando datos de la liga...</div>;
   }
 
   if (hasError) {
-    return <div className="rounded-lg border border-destructive/20 bg-card p-4 text-sm text-destructive">Error cargando datos de la liga.</div>;
+    return <div className="rounded-lg border border-negative/30 bg-surface p-4 text-sm text-negative-text">Error cargando datos de la liga.</div>;
   }
 
   const teamPlayers = teamQuery.data?.players || [];
@@ -58,35 +58,35 @@ export default function LeagueSummary({ league }: { league: FantasyLeague }) {
     <div className="space-y-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryCard
-          icon={<Wallet className="h-5 w-5 text-muted-foreground" />}
+          icon={<Wallet className="h-5 w-5 text-content-tertiary" />}
           label="Dinero disponible"
           value={money ? formatCurrency(money.teamMoney) : '-'}
         />
         <SummaryCard
-          icon={<EuroIcon className="h-5 w-5 text-muted-foreground" />}
+          icon={<EuroIcon className="h-5 w-5 text-content-tertiary" />}
           label="Valor del equipo"
           value={formatCurrency(league.team.teamValue)}
         />
         <SummaryCard
-          icon={<Users className="h-5 w-5 text-muted-foreground" />}
+          icon={<Users className="h-5 w-5 text-content-tertiary" />}
           label="Jugadores"
           value={`${league.team.playersNumber}`}
           sub={`${teamPlayers.length} en plantilla`}
         />
         <SummaryCard
-          icon={<TrendingUp className="h-5 w-5 text-muted-foreground" />}
+          icon={<TrendingUp className="h-5 w-5 text-content-tertiary" />}
           label="En mercado"
           value={`${marketCount}`}
         />
       </div>
 
-      <div className="rounded-xl border border-white/[0.08] bg-card p-5">
-        <h3 className="mb-3 text-base font-semibold text-foreground">Plantilla por posición</h3>
+      <div className="rounded-lg border border-white/[0.09] bg-surface p-5">
+        <h3 className="mb-3 text-base font-semibold text-content">Plantilla por posición</h3>
         <div className="flex flex-wrap gap-2">
           {Object.entries(playersByPosition).map(([position, count]) => (
             <span
               key={position}
-              className="rounded-full border border-white/[0.08] bg-surface-2 px-3 py-1 text-sm font-medium text-foreground"
+              className="rounded-full border border-white/[0.09] bg-surface-raised px-3 py-1 text-sm font-medium text-content"
             >
               {position}: {count}
             </span>
@@ -95,20 +95,20 @@ export default function LeagueSummary({ league }: { league: FantasyLeague }) {
       </div>
 
       {formation && (
-        <div className="rounded-xl border border-white/[0.08] bg-card p-5">
-          <h3 className="mb-3 text-base font-semibold text-foreground">Alineación actual</h3>
-          <div className="grid gap-2 text-sm text-muted-foreground">
+        <div className="rounded-lg border border-white/[0.09] bg-surface p-5">
+          <h3 className="mb-3 text-base font-semibold text-content">Alineación actual</h3>
+          <div className="grid gap-2 text-sm text-content-tertiary">
             {formation.goalkeeper?.length > 0 && (
-              <p><span className="font-medium text-foreground">Porteros:</span> {formation.goalkeeper.length}</p>
+              <p><span className="font-medium text-content">Porteros:</span> {formation.goalkeeper.length}</p>
             )}
             {formation.defender?.length > 0 && (
-              <p><span className="font-medium text-foreground">Defensas:</span> {formation.defender.length}</p>
+              <p><span className="font-medium text-content">Defensas:</span> {formation.defender.length}</p>
             )}
             {formation.midfielder?.length > 0 && (
-              <p><span className="font-medium text-foreground">Centrocampistas:</span> {formation.midfielder.length}</p>
+              <p><span className="font-medium text-content">Centrocampistas:</span> {formation.midfielder.length}</p>
             )}
             {formation.attacker?.length > 0 && (
-              <p><span className="font-medium text-foreground">Delanteros:</span> {formation.attacker.length}</p>
+              <p><span className="font-medium text-content">Delanteros:</span> {formation.attacker.length}</p>
             )}
           </div>
         </div>
@@ -130,13 +130,13 @@ function SummaryCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-card p-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
+    <div className="rounded-lg border border-white/[0.09] bg-surface p-4">
+      <div className="flex items-center gap-2 text-content-tertiary">
         {icon}
         <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
       </div>
-      <div className="mt-2 text-2xl font-semibold text-foreground">{value}</div>
-      {sub && <div className="text-xs text-muted-foreground">{sub}</div>}
+      <div className="mt-2 text-2xl font-semibold text-content">{value}</div>
+      {sub && <div className="text-xs text-content-tertiary">{sub}</div>}
     </div>
   );
 }

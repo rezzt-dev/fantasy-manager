@@ -1,10 +1,10 @@
 {
-  "computedAt": "2026-08-31T12:05:13.121Z",
+  "computedAt": "2026-08-31T19:27:10.168Z",
   "leagueId": "017832595",
   "week": 3,
-  "samples": 36,
-  "maeLegacy": 2.85,
-  "maeV1": 2.83,
+  "samples": 29,
+  "maeLegacy": 2.71,
+  "maeV1": 2.68,
   "weeks": [
     3
   ],

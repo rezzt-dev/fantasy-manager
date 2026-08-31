@@ -60,13 +60,24 @@ export default function RivalsTab({ league }: RivalsTabProps) {
   );
 
   if (isLoading) return <RivalsSkeleton />;
-  if (error) return <ErrorState title="Error cargando rivales" description={error.message} onRetry={refetch} />;
+  if (error) return (
+      <ErrorState
+        title="No hemos podido leer las plantillas rivales"
+        description="Se consulta el equipo de cada manager por separado; si uno falla, el análisis se detiene. Reintenta."
+        detail={error.message}
+        onRetry={refetch}
+      />
+    );
 
   if (rivals.length === 0) {
     return (
-      <div className="space-y-4 pb-20 lg:pb-0">
+      <div className="space-y-6">
         <SectionHeader title="Rivales" description="Plantillas de los otros miembros de la liga." />
-        <EmptyState title="Sin rivales" description="No se han podido cargar las plantillas de los rivales." />
+        <EmptyState
+          icon={<Shield />}
+          title="Esta liga no tiene más managers"
+          description="La comparativa de rivales necesita al menos otro equipo en la liga. En cuanto se una alguien más, sus plantillas aparecerán aquí."
+        />
       </div>
     );
   }
@@ -81,10 +92,12 @@ export default function RivalsTab({ league }: RivalsTabProps) {
     : 0;
 
   return (
-    <div className="space-y-4 pb-20 lg:pb-0">
+    <div className="space-y-6">
       <SectionHeader
-        title="Rivales"
-        description="Plantillas de la liga y disponibilidad para clausulazo."
+        as="h1"
+        eyebrow="Rivales"
+        title="Qué tiene cada manager"
+        description="Plantilla, valor y protección de cláusula de tus rivales. Sirve para saber a quién puedes clausular y quién puede clausularte a ti."
       />
 
       <Card>
@@ -92,7 +105,7 @@ export default function RivalsTab({ league }: RivalsTabProps) {
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <Users className="h-4 w-4 text-content-tertiary" />
                 {selectedRival?.managerName || 'Rival'}
               </CardTitle>
               <CardDescription>
@@ -122,8 +135,8 @@ export default function RivalsTab({ league }: RivalsTabProps) {
         </CardHeader>
         <CardContent className="p-0">
           <Tabs defaultValue="squad" className="w-full">
-            <div className="border-b border-white/[0.06] px-4">
-              <TabsList className="h-10 w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0 scrollbar-thin">
+            <div className="border-b border-white/[0.09] px-4">
+              <TabsList variant="underline">
                 <TabsTrigger value="squad" className="rounded-none border-b-2 border-transparent px-4 pb-2 pt-1 data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:shadow-none">
                   Plantilla
                 </TabsTrigger>
@@ -178,23 +191,23 @@ export default function RivalsTab({ league }: RivalsTabProps) {
                     return (
                       <div
                         key={player.playerTeamId}
-                        className="flex items-center gap-4 rounded-xl border border-white/[0.08] bg-surface-2/50 p-3"
+                        className="flex items-center gap-4 rounded-lg border border-white/[0.09] bg-surface-raised/50 p-3"
                       >
                         <PlayerAvatar player={player.playerMaster} size="md" showPosition />
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-foreground">{player.playerMaster.nickname}</div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="font-semibold text-content">{player.playerMaster.nickname}</div>
+                          <div className="text-xs text-content-tertiary">
                             {positionShortName(player.playerMaster.position, player.playerMaster.positionId)} ·{' '}
                             {player.playerMaster.team?.name}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-muted-foreground">Cláusula</div>
+                          <div className="text-xs text-content-tertiary">Cláusula</div>
                           <Currency value={player.buyoutClause} className="font-semibold" />
                         </div>
                         <div className="text-right">
-                          <div className="text-xs text-muted-foreground">Diferencial</div>
-                          <span className={`font-semibold ${diff > 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                          <div className="text-xs text-content-tertiary">Diferencial</div>
+                          <span className={`font-semibold ${diff > 0 ? 'text-positive-text' : 'text-negative-text'}`}>
                             {diff > 0 ? '+' : ''}
                             <Currency value={diff} />
                           </span>
@@ -208,37 +221,37 @@ export default function RivalsTab({ league }: RivalsTabProps) {
             <TabsContent value="summary" className="p-4">
               {selectedRival && (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-content-tertiary">
                       <TrendingUp className="h-4 w-4" />
                       Valor de plantilla
                     </div>
-                    <div className="mt-2 text-xl font-bold text-foreground">
+                    <div className="mt-2 text-xl font-bold text-content">
                       <Currency value={selectedRival.teamValue} />
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-content-tertiary">
                       <Wallet className="h-4 w-4" />
                       Dinero disponible
                     </div>
-                    <div className="mt-2 text-xl font-bold text-foreground">
+                    <div className="mt-2 text-xl font-bold text-content">
                       {selectedRival.teamMoney !== null ? <Currency value={selectedRival.teamMoney} /> : '—'}
                     </div>
                   </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-content-tertiary">
                       <Shield className="h-4 w-4" />
                       Clausulables
                     </div>
-                    <div className="mt-2 text-xl font-bold text-foreground">{availableCount}</div>
+                    <div className="mt-2 text-xl font-bold text-content">{availableCount}</div>
                   </div>
-                  <div className="rounded-xl border border-white/[0.08] bg-surface-2/50 p-4">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/50 p-4">
+                    <div className="flex items-center gap-2 text-xs text-content-tertiary">
                       <Gavel className="h-4 w-4" />
                       A tu alcance
                     </div>
-                    <div className="mt-2 text-xl font-bold text-foreground">{buyoutableCount}</div>
+                    <div className="mt-2 text-xl font-bold text-content">{buyoutableCount}</div>
                   </div>
                 </div>
               )}
@@ -282,8 +295,8 @@ function RivalPlayerRow({
         <PlayerAvatar player={p} size="md" showPosition />
       </TableCell>
       <TableCell className="py-2 px-2 sm:px-4">
-        <div className="font-semibold text-foreground">{p.nickname}</div>
-        <div className="text-xs text-muted-foreground">{p.team?.name || 'Sin equipo'}</div>
+        <div className="font-semibold text-content">{p.nickname}</div>
+        <div className="text-xs text-content-tertiary">{p.team?.name || 'Sin equipo'}</div>
       </TableCell>
       <TableCell className="py-2 px-2 sm:px-4">
         <Badge variant="secondary" className={`font-display font-bold tracking-wide text-white ${posColor} border-0`}>
@@ -293,9 +306,9 @@ function RivalPlayerRow({
       <TableCell className="py-2 px-2 sm:px-4">
         <PlayerStatusBadge status={p.playerStatus} />
       </TableCell>
-      <TableCell className="py-2 px-2 sm:px-4 text-right font-display text-sm font-semibold text-foreground">{points}</TableCell>
+      <TableCell className="py-2 px-2 sm:px-4 text-right font-display text-sm font-semibold text-content">{points}</TableCell>
       <TableCell className="py-2 px-2 sm:px-4 text-right">
-        <Currency value={p.marketValue} className="text-muted-foreground" />
+        <Currency value={p.marketValue} className="text-content-tertiary" />
       </TableCell>
       <TableCell className="py-2 px-2 sm:px-4 text-right">
         <div className="flex items-center justify-end gap-2">
