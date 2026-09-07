@@ -1,8 +1,15 @@
 import type { Match, PlayerMaster } from '../../types/fantasy';
-import type { ExternalSignal, StarterInfo } from '../../types/analysis';
+import type { ExternalSignal, FixtureOutlook, StarterInfo } from '../../types/analysis';
 import { categoryEvidence } from '../recommendations/external-intelligence';
 import { recentForm } from './form';
-import { fixtureMultiplierFromElo } from './features/fixture';
+import { fixtureAdjustment, toFixtureOutlook } from './features/fixture';
+import { leagueMeanElo } from './features/match-model';
+import {
+  poolShares,
+  priorSharesForPosition,
+  sharesFromPointsPer90,
+  type ComponentShares,
+} from './features/fixture-components';
 import { estimateMinutes } from './features/minutes';
 import { partialPool, priorForPlayer } from './features/shrinkage';
 import { getEngineParams, type EngineParams } from './params';
@@ -49,6 +56,12 @@ export interface PredictionContext {
   shrinkagePriors?: Map<string, number>;
   /** teamId -> tier 1-5 desde Elo (shrinkage §4.5). */
   teamTiers?: Map<number, number>;
+  /**
+   * positionId -> reparto observado de puntos por componente de fixture. Es el
+   * prior hacia el que se encoge el reparto de cada jugador; sin él se usan
+   * las cuotas estructurales por posición.
+   */
+  fixtureShares?: Map<number, ComponentShares>;
   /** Cobertura de noticias: fuentes RSS activas / totales (§4.6). */
   newsCoverage?: { feedsOk: number; feedsTotal: number };
   /** teamId -> alineación confirmada (Sofascore, solo cerca del partido). */
@@ -69,6 +82,11 @@ export interface PlayerPrediction {
   /** Desviación típica de puntos por jornada (null sin histórico). */
   pointsStdDev: number | null;
   source: PredictionSource;
+  /**
+   * Emparejamiento de la jornada y su efecto sobre el xP. null si el equipo
+   * descansa o si no hay ratings Elo para modelar el partido.
+   */
+  fixture: FixtureOutlook | null;
   dataQuality: { level: 'high' | 'medium' | 'low'; notes: string[] };
 }
 
@@ -103,6 +121,7 @@ export function predictPlayerPoints(
       pStarter: 0,
       pointsStdDev: null,
       source: 'bye-week',
+      fixture: null,
       dataQuality: { level: 'high', notes: ['Su equipo descansa esta jornada.'] },
     };
   }
@@ -116,11 +135,15 @@ export function predictPlayerPoints(
   const stats = context?.playerStats?.[player.id];
   let weeksUsed = 0;
   let pointsStdDev: number | null = null;
+  // Reparto observado de puntos por acción: es lo que permite ajustar el
+  // emparejamiento componente a componente en vez de con un factor plano.
+  let observedShares: ComponentShares | null = null;
   if (stats && stats.length > 0) {
     const form = recentForm(stats, context?.weekNumber);
     weeksUsed = form.weeksUsed;
     pointsStdDev = form.pointsStdDev;
     expectedMinutes = form.expectedMinutes;
+    observedShares = form.pointsPer90ByStat ? sharesFromPointsPer90(form.pointsPer90ByStat) : null;
     if (form.pointsPer90 !== null && form.expectedMinutes !== null) {
       base = form.pointsPer90;
       source = 'components';
@@ -204,22 +227,45 @@ export function predictPlayerPoints(
   }
 
   // Factores de contexto (una única aplicación).
-  // Fixture: con Elo real (ClubElo) la fuerza relativa y la localía van en un
-  // solo factor; sin Elo, fallback a los factores heredados (localía simple +
-  // proxy de valor de mercado).
+  // Emparejamiento: con Elo real (ClubElo) se modela el partido (goles a favor
+  // y en contra, resultado, portería a cero) y se ajusta cada componente de la
+  // puntuación del jugador con su propia elasticidad; la localía va dentro,
+  // nunca como factor aparte. Sin Elo, fallback a los factores heredados.
   const opponentId = homeMatch ? homeMatch.visitorId : awayMatch ? awayMatch.localId : undefined;
   const eloOwn = teamId !== undefined ? context?.teamElos?.get(teamId) : undefined;
   const eloOpponent = opponentId !== undefined ? context?.teamElos?.get(opponentId) : undefined;
-  if (eloOwn !== undefined && eloOpponent !== undefined) {
-    base *= fixtureMultiplierFromElo(eloOwn, eloOpponent, Boolean(homeMatch), context?.paramOverrides?.eloDiffDivisor);
-    notes.push('Fixture: Elo ClubElo.');
+  const eloLeagueMean = context?.teamElos ? leagueMeanElo(context.teamElos) : null;
+  let fixture: FixtureOutlook | null = null;
+
+  if (eloOwn !== undefined && eloOpponent !== undefined && eloLeagueMean !== null && teamId !== undefined && opponentId !== undefined) {
+    // El reparto por componentes de un jugador con pocas jornadas es ruido
+    // (dos goles en tres partidos convierten a un defensa en delantero), así
+    // que se encoge hacia el de su posición con el mismo k que §4.5.
+    const positionPrior = context?.fixtureShares?.get(Number(player.positionId)) ?? priorSharesForPosition(Number(player.positionId));
+    const shares = observedShares ? poolShares(observedShares, weeksUsed, positionPrior, shrinkageK) : positionPrior;
+
+    const adjustment = fixtureAdjustment({
+      eloOwn,
+      eloOpponent,
+      eloLeagueMean,
+      isHome: Boolean(homeMatch),
+      shares,
+      eloDivisor: context?.paramOverrides?.fixtureEloDivisor,
+      dampening: context?.paramOverrides?.fixtureDampening,
+    });
+    base *= adjustment.multiplier;
+    fixture = toFixtureOutlook(teamId, opponentId, Boolean(homeMatch), adjustment);
+    notes.push(
+      `Emparejamiento ${adjustment.label.toLowerCase()} (${adjustment.difficulty}/100): ` +
+        `${formatPercentDelta(adjustment.multiplier)} sobre sus puntos esperados.`,
+    );
   } else {
     if (homeMatch) base *= HOME_MULTIPLIER;
     else if (awayMatch) base *= AWAY_MULTIPLIER;
     if (opponentId !== undefined && context?.teamStrength) {
       base *= context.teamStrength.get(opponentId) ?? 1;
     }
-    notes.push('Fixture: proxy por valor de mercado (sin Elo).');
+    notes.push('Emparejamiento: proxy por valor de mercado (sin ratings Elo).');
   }
 
   if (player.playerStatus !== 'ok') base *= BAD_STATUS_MULTIPLIER;
@@ -243,7 +289,14 @@ export function predictPlayerPoints(
   // Penalización por riesgo (§5.2): xP − λ·σ cuando hay σ del histórico.
   const riskLambda = context?.paramOverrides?.riskLambda ?? params.riskLambda;
   const riskAdjustedXp = pointsStdDev !== null ? Math.max(0, xp - riskLambda * pointsStdDev) : xp;
-  return { xp, riskAdjustedXp, expectedMinutes, pStarter, pointsStdDev, source, dataQuality: { level, notes } };
+  return { xp, riskAdjustedXp, expectedMinutes, pStarter, pointsStdDev, source, fixture, dataQuality: { level, notes } };
+}
+
+/** "+12%" / "−8%" / "sin efecto" para las notas de dataQuality. */
+function formatPercentDelta(multiplier: number): string {
+  const pct = Math.round((multiplier - 1) * 100);
+  if (pct === 0) return 'sin efecto';
+  return `${pct > 0 ? '+' : '−'}${Math.abs(pct)}%`;
 }
 
 /** teamId del jugador sea cual sea la forma de la respuesta de la API. */

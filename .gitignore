@@ -72,3 +72,6 @@ coverage/
 
 # Paquetes de la extensión para las stores
 dist-extension/
+
+# Documentación local de agentes (no se versiona)
+agent-docs/

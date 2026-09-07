@@ -11,6 +11,7 @@ import type {
   Recommendation,
   MatchesResponse,
   TeamCatalogEntry,
+  FixtureOutlook,
 } from '../../types/fantasy';
 import type {
   CaptainRecommendation,
@@ -40,7 +41,7 @@ export interface TrackRecordResponse {
   calibration: {
     status: 'ok' | 'insufficient-data';
     samples?: number;
-    best?: { shrinkageK: number; eloDiffDivisor: number; mae: number };
+    best?: { shrinkageK: number; fixtureDampening: number; mae: number };
     note?: string;
   } | null;
   notes: string[];
@@ -163,6 +164,8 @@ export const fantasyAPI = {
       captainEnabled?: boolean;
       tacticalScheme?: TacticalScheme;
       multiWeekPlan?: MultiWeekPlan | null;
+      /** Emparejamiento de la jornada por equipo real (§4.3). */
+      fixtures?: FixtureOutlook[];
       league: FantasyLeague;
       money: TeamMoney;
       week: WeekInfo;

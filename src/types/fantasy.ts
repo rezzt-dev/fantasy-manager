@@ -182,6 +182,38 @@ export interface TeamCatalogEntry {
   badgeWhite: string;
 }
 
+/** Bandas de dificultad del emparejamiento (§4.3). */
+export type FixtureDifficultyLabel = 'Muy favorable' | 'Favorable' | 'Equilibrado' | 'Difícil' | 'Muy difícil';
+
+/**
+ * Pronóstico del partido de la jornada para un equipo: lo que el modelo de
+ * goles (Elo → Poisson bivariante Dixon-Coles) dice del emparejamiento y el
+ * efecto que tiene sobre los puntos esperados.
+ */
+export interface FixtureOutlook {
+  teamId: number;
+  opponentTeamId: number;
+  isHome: boolean;
+  /** 0-100, 100 = emparejamiento más duro. */
+  difficulty: number;
+  label: FixtureDifficultyLabel;
+  pWin: number;
+  pDraw: number;
+  pLoss: number;
+  expectedGoalsFor: number;
+  expectedGoalsAgainst: number;
+  /** Probabilidad de que el equipo deje la portería a cero. */
+  pCleanSheet: number;
+  /**
+   * Multiplicador sobre los puntos esperados. En la vista de un jugador es el
+   * suyo; en la vista de equipo, la media de las cuatro demarcaciones.
+   */
+  multiplier: number;
+  /** positionId (1-4) -> multiplicador: el mismo partido afecta distinto. */
+  multiplierByPosition?: Record<number, number>;
+  source: 'elo' | 'baseline';
+}
+
 export interface Match {
   id: string;
   matchDate: string;
@@ -368,6 +400,8 @@ export interface Recommendation {
   impactScore?: number;
   /** Origen de la oportunidad: plantilla propia, mercado o plantilla rival. */
   source?: 'squad' | 'market' | 'rival';
+  /** Emparejamiento de la jornada del equipo real del jugador (§4.3). */
+  fixture?: FixtureOutlook | null;
 }
 
 export interface LeagueData {

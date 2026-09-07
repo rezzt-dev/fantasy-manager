@@ -9,8 +9,11 @@ import type {
   Match,
   WeekInfo,
   TeamPlayer,
+  FixtureOutlook,
 } from './fantasy';
 import type { LeagueActivityEvent } from '../lib/fantasy/activity';
+
+export type { FixtureDifficultyLabel, FixtureOutlook } from './fantasy';
 
 export type NewsCategory =
   | 'injury'
@@ -79,6 +82,8 @@ export interface CaptainCandidate {
   pStarter: number | null;
   /** null cuando su equipo no juega esta jornada. */
   isHome: boolean | null;
+  /** Emparejamiento de la jornada; null si descansa o no hay Elo. */
+  fixture: FixtureOutlook | null;
   /** false en jornada de descanso: el brazalete se perdería. */
   hasFixture: boolean;
   isHealthy: boolean;
@@ -333,6 +338,8 @@ export interface ClauseTarget {
   expectedMinutes: number | null;
   starterLabel: string;
   dataQuality: 'high' | 'medium' | 'low';
+  /** Emparejamiento de la jornada de su equipo real. */
+  fixture?: FixtureOutlook | null;
   /** ΔxP frente al nivel medio de tu plantilla en esa posición. */
   deltaXp: number;
   /** ΔxP real del once titular si lo fichas (con la mejor formación posible). */

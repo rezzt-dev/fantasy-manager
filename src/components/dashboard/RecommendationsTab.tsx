@@ -18,6 +18,7 @@ import ErrorState from '../shared/ErrorState';
 import SectionHeader from '../shared/SectionHeader';
 import KpiCard from '../shared/KpiCard';
 import SignalChips from '../shared/SignalChips';
+import FixtureChip from '../shared/FixtureChip';
 import EmptyState from '../shared/EmptyState';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
 import CaptainCard from '../shared/CaptainCard';
@@ -69,6 +70,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
 
   const recommendations = data?.recommendations || [];
   const captain = data?.captain ?? undefined;
+  const fixtures = data?.fixtures;
   const money = data?.money;
   const ownMoney = money?.teamMoney ?? 0;
   const teamPlayers = teamDataQuery?.players || [];
@@ -89,6 +91,20 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
   const sellRecommendations = useMemo(() => recommendations.filter((r) => r.type === 'sell'), [recommendations]);
   const buyRecommendations = useMemo(() => recommendations.filter((r) => r.type === 'buy' || r.type === 'buyout'), [recommendations]);
   const futurePlans = useMemo(() => recommendations.filter((r) => r.type === 'watch' || r.type === 'wait' || r.type === 'protect_clause' || r.type === 'increase_clause'), [recommendations]);
+
+  // Emparejamiento por equipo real: el mismo dato que ya trae cada
+  // recomendación, indexado para el diálogo de detalle de cualquier jugador.
+  const fixtureByTeamId = useMemo(() => new Map((fixtures ?? []).map((f) => [f.teamId, f])), [fixtures]);
+  const fixtureFor = (player: PlayerMaster | null) => {
+    if (!player) return null;
+    // El catálogo devuelve `teamId` numérico y la plantilla solo `team.id`
+    // (string): hay que probar los dos, igual que hace `resolveTeamId`.
+    const teamId = Number(player.teamId) || Number(player.team?.id);
+    const outlook = Number.isFinite(teamId) && teamId > 0 ? fixtureByTeamId.get(teamId) : undefined;
+    if (!outlook) return null;
+    const positionMultiplier = outlook.multiplierByPosition?.[Number(player.positionId)];
+    return positionMultiplier === undefined ? outlook : { ...outlook, multiplier: positionMultiplier };
+  };
 
   // Order all opportunities by impactScore for highlights
   const highlightedOpportunities = useMemo(() => {
@@ -261,6 +277,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                       )}
                     </div>
                     <div className="font-bold text-sm text-content mt-1 truncate">{rec.player.nickname}</div>
+                    {rec.fixture && <FixtureChip fixture={rec.fixture} showEffect className="mt-1.5" />}
                     <p className="text-xs text-content-tertiary mt-1 line-clamp-2 leading-relaxed">{rec.reason}</p>
 
                     {/* Action buttons inside highlight card */}
@@ -333,6 +350,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                     <div className="min-w-0 flex-1">
                       <div className="font-bold text-sm text-content truncate">{rec.player.nickname}</div>
                       <div className="text-xs text-content-tertiary">Valor: <Currency value={rec.player.marketValue} /> · xP: {(rec.impactScore || 0).toFixed(1)}</div>
+                      {rec.fixture && <FixtureChip fixture={rec.fixture} showEffect className="mt-1.5" />}
                     </div>
                     {rec.priority === 'high' && (
                       <Badge variant="destructive" className="text-[10px] bg-negative-quiet text-negative-text border-negative/25 font-bold">ALTA</Badge>
@@ -387,6 +405,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                     <div className="min-w-0 flex-1">
                       <div className="font-bold text-sm text-content truncate">{rec.player.nickname}</div>
                       <div className="text-xs text-content-tertiary">Valor: <Currency value={rec.player.marketValue} /> · xP: {(rec.impactScore || 0).toFixed(1)}</div>
+                      {rec.fixture && <FixtureChip fixture={rec.fixture} showEffect className="mt-1.5" />}
                     </div>
                     {rec.type === 'buyout' ? (
                       <Badge className="text-[10px] bg-caution-quiet text-caution-text border-caution/25 font-bold">RIVAL</Badge>
@@ -516,6 +535,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
         player={selectedDetailPlayer}
         open={!!selectedDetailPlayer}
         onOpenChange={(open) => !open && setSelectedDetailPlayer(null)}
+        fixture={fixtureFor(selectedDetailPlayer)}
         league={league}
         onActionSuccess={refetch}
       />

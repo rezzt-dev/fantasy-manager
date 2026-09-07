@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
+import FixtureChip from '../shared/FixtureChip';
 import { Crown, AlertTriangle, Home, Plane, Lock, Sparkles } from 'lucide-react';
 import { positionShortName } from '../../lib/format';
 
@@ -82,7 +83,7 @@ export default function CaptainCard({ captain, onSelectPlayer, description, clas
               <span className="font-display font-semibold">
                 {positionShortName(cap.player.position, cap.player.positionId)}
               </span>
-              {cap.hasFixture && cap.isHome !== null && (
+              {cap.hasFixture && !cap.fixture && cap.isHome !== null && (
                 <>
                   <span>·</span>
                   <span className="inline-flex items-center gap-1">
@@ -93,6 +94,9 @@ export default function CaptainCard({ captain, onSelectPlayer, description, clas
               )}
               <PlayerStatusBadge status={cap.player.playerStatus} />
             </div>
+            {/* Contra quién juega: el brazalete duplica puntos, así que el
+                emparejamiento es la mitad de la decisión. */}
+            {cap.fixture && <FixtureChip fixture={cap.fixture} showEffect className="mt-1.5" />}
             <p className="mt-2 text-xs leading-relaxed text-content-tertiary">{cap.reasoning}</p>
           </div>
 
@@ -164,7 +168,10 @@ export default function CaptainCard({ captain, onSelectPlayer, description, clas
                   </span>
                   <PlayerAvatar player={alt.player} size="sm" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold text-content">{alt.player.nickname}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate text-sm font-semibold text-content">{alt.player.nickname}</span>
+                      {alt.fixture && <FixtureChip fixture={alt.fixture} />}
+                    </div>
                     <div className="truncate text-[11px] text-content-tertiary">
                       {alt.risks[0] ?? alt.reasoning}
                     </div>

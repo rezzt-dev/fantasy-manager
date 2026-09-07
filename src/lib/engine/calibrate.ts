@@ -9,8 +9,14 @@ import type { PlayerWeekStat } from './player-stats';
 /**
  * Calibración automática de pesos por backtesting walk-forward (§8, Fase 3):
  * búsqueda en rejilla sobre los parámetros calibrables del motor (k de
- * shrinkage × divisor Elo) minimizando el MAE de las predicciones jugador-
- * jornada, prediciendo cada jornada SOLO con información anterior a ella.
+ * shrinkage × amortiguador de emparejamiento) minimizando el MAE de las
+ * predicciones jugador-jornada, prediciendo cada jornada SOLO con información
+ * anterior a ella.
+ *
+ * El amortiguador de emparejamiento es el lever correcto para el backtesting:
+ * el modelo de goles ya deriva su divisor Elo de la coherencia con la propia
+ * fórmula Elo (§4.3), así que lo que queda por medir con datos propios es
+ * cuánto de ese efecto teórico se traduce de verdad en puntos de fantasy.
  *
  * La replay usa exactamente `predictPlayerPoints` (el código de producción
  * con overrides de parámetros): lo que se evalúa es lo que se ejecuta.
@@ -22,15 +28,15 @@ import type { PlayerWeekStat } from './player-stats';
 
 const MIN_SAMPLES = 30;
 const GRID_SHRINKAGE_K = [3, 5, 8, 12];
-const GRID_ELO_DIVISOR = [600, 1000, 1400];
+const GRID_FIXTURE_DAMPENING = [0.5, 0.75, 1, 1.25];
 const CALIBRATION_FILE = 'calibration-latest.json';
 
 export interface CalibrationResult {
   status: 'ok' | 'insufficient-data';
   samples: number;
-  best?: { shrinkageK: number; eloDiffDivisor: number; mae: number };
+  best?: { shrinkageK: number; fixtureDampening: number; mae: number };
   baselineMae?: number;
-  grid?: { shrinkageK: number; eloDiffDivisor: number; mae: number }[];
+  grid?: { shrinkageK: number; fixtureDampening: number; mae: number }[];
   note?: string;
   computedAt: string;
 }
@@ -83,7 +89,7 @@ export async function calibrateEngine(input: {
   // Rejilla de parámetros: MAE de la replay walk-forward por combinación.
   const grid: CalibrationResult['grid'] = [];
   for (const shrinkageK of GRID_SHRINKAGE_K) {
-    for (const eloDiffDivisor of GRID_ELO_DIVISOR) {
+    for (const fixtureDampening of GRID_FIXTURE_DAMPENING) {
       const errors: number[] = [];
       for (const sample of samples) {
         const prediction = predictPlayerPoints(
@@ -93,24 +99,24 @@ export async function calibrateEngine(input: {
             ...context,
             playerStats: { [sample.player.id]: sample.priorStats },
             weekNumber: sample.week,
-            paramOverrides: { shrinkageK, eloDiffDivisor },
+            paramOverrides: { shrinkageK, fixtureDampening },
           },
         );
         errors.push(Math.abs(prediction.xp - sample.actualPoints));
       }
       const mae = errors.reduce((sum, e) => sum + e, 0) / Math.max(errors.length, 1);
-      grid.push({ shrinkageK, eloDiffDivisor, mae: Math.round(mae * 1000) / 1000 });
+      grid.push({ shrinkageK, fixtureDampening, mae: Math.round(mae * 1000) / 1000 });
     }
   }
 
   const best = grid!.reduce((a, b) => (b.mae < a.mae ? b : a));
-  const baseline = grid!.find((g) => g.shrinkageK === currentParams.shrinkageK && g.eloDiffDivisor === currentParams.eloDiffDivisor);
+  const baseline = grid!.find((g) => g.shrinkageK === currentParams.shrinkageK && g.fixtureDampening === currentParams.fixtureDampening);
   const baselineMae = baseline?.mae ?? null;
 
   // Solo se aplican si MEJORAN a los parámetros en producción (nunca empeorar).
   let applied = false;
   if (baselineMae !== null && best.mae < baselineMae) {
-    await saveEngineParams({ ...currentParams, shrinkageK: best.shrinkageK, eloDiffDivisor: best.eloDiffDivisor });
+    await saveEngineParams({ ...currentParams, shrinkageK: best.shrinkageK, fixtureDampening: best.fixtureDampening });
     applied = true;
   }
 

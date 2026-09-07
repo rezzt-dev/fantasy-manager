@@ -81,8 +81,13 @@ test('LaLiga Fantasy Actions API Layer Tests', async (t) => {
       return new Response(JSON.stringify({ formation: {} }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     });
 
+    // `getCurrentLineup` normaliza la alineación: rellena las cuatro líneas
+    // (más el entrenador) y traduce `midfield`/`striker` de la API oficial a
+    // `midfielder`/`attacker`, que es lo que usa el resto del proyecto.
     const res = await LaLigaFantasyClient.getCurrentLineup(123);
-    assert.deepStrictEqual(res, { formation: {} });
+    assert.deepStrictEqual(res, {
+      formation: { goalkeeper: [], defender: [], midfielder: [], attacker: [], coach: [] },
+    });
   });
 
   await t.test('8. guardar alineación con formato oficial corregido', async () => {

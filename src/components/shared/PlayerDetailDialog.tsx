@@ -18,8 +18,9 @@ import { Input } from '../ui/input';
 import PlayerAvatar from './PlayerAvatar';
 import PlayerStatusBadge from './PlayerStatusBadge';
 import SignalChips from './SignalChips';
+import FixturePanel from './FixturePanel';
 import Currency from './Currency';
-import type { PlayerMaster, ExternalSignal, Recommendation, FantasyLeague, MarketPlayer, TeamPlayer } from '../../types/fantasy';
+import type { PlayerMaster, ExternalSignal, FixtureOutlook, Recommendation, FantasyLeague, MarketPlayer, TeamPlayer } from '../../types/fantasy';
 import type { StarterInfo } from '../../types/analysis';
 import { positionShortName, positionBgClass } from '../../lib/format';
 import {
@@ -50,6 +51,8 @@ interface PlayerDetailDialogProps {
   starterInfo?: StarterInfo;
   signals?: ExternalSignal[];
   expectedPoints?: number | null;
+  /** Emparejamiento de la jornada del equipo real del jugador. */
+  fixture?: FixtureOutlook | null;
   recommendation?: Recommendation;
   marketPlayer?: MarketPlayer;
   teamPlayer?: TeamPlayer;
@@ -66,6 +69,7 @@ export default function PlayerDetailDialog({
   starterInfo,
   signals,
   expectedPoints,
+  fixture,
   recommendation,
   marketPlayer,
   teamPlayer,
@@ -441,6 +445,8 @@ export default function PlayerDetailDialog({
               </div>
             </div>
           )}
+
+          <FixturePanel fixture={fixture} />
 
           {(typeof buyoutClause === 'number' || isShielded) && (
             <div className="flex items-center gap-3 rounded-lg border border-white/[0.09] bg-surface-raised/50 p-4">

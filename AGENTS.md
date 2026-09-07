@@ -61,7 +61,7 @@ tabulares); sin ella las columnas bailan al ordenar una tabla.
 - `src/components/shared/`: `KpiCard`, `TrendBadge`, `PlayerCard`,
   `PlayerRow`, `PlayerAvatar`, `PlayerDetailDialog`, `AlertPanel`,
   `FilterBar`, `DataTable`, `EmptyState`, `ErrorState`, `LoadingSection`,
-  `SectionHeader`.
+  `SectionHeader`, `FixtureChip`, `FixturePanel`.
 - `src/components/layout/`: `AppLayout` (enlace de salto + panel + cabecera +
   barra inferior), `Sidebar` (raíl de 248 px / 72 px plegado), `Header`,
   `MobileNav` (4 destinos + «Más»), `CommandPalette`.
@@ -105,6 +105,57 @@ tabulares); sin ella las columnas bailan al ordenar una tabla.
 - Verificación: `pnpm exec tsc --noEmit` limpio + `/api/recommendations` con
   datos reales. `@types/node` es devDependency (persistencia en disco).
 
+## Emparejamiento de la jornada (§4.3, modelo de goles)
+
+El motor ya no ajusta el rival con un multiplicador plano: modela el partido.
+
+- `engine/features/match-model.ts`: Elo (ClubElo) → goles esperados a favor y
+  en contra → distribución de marcadores **Poisson bivariante con corrección
+  Dixon-Coles** (ρ = −0.13) → P(victoria/empate/derrota), P(portería a cero) y
+  puntos esperados del partido. La ventaja de campo vive **solo** en las medias
+  de goles de la liga (1.42 local / 1.13 visitante); nunca se suman puntos Elo
+  al local, que sería contarla dos veces.
+- El divisor Elo→log-goles (`fixtureEloDivisor`, 220) no es una constante
+  inventada: es el valor que hace que el modelo reproduzca la puntuación
+  esperada de la propia fórmula Elo en campo neutral (RMSE 0.005 sobre
+  d ∈ [−350, 350]). Hay un test que lo comprueba.
+- `engine/features/fixture-components.ts`: de qué componente sale cada punto
+  (ataque, participación, goles encajados, portería a cero, paradas, volumen
+  defensivo, disciplina, pérdidas, puntos de medios, neutro) y con qué
+  elasticidad responde cada uno. Una acción del desglose sin clasificar es
+  **neutra**: si LaLiga añade una nueva, el peor caso es no ajustarla.
+- `engine/features/fixture.ts`: combina ambos. El multiplicador de un jugador
+  es la media de los multiplicadores de sus componentes ponderada por lo que
+  cada uno aporta a sus puntos. La referencia es el **rival medio de la liga en
+  campo neutral**, que es la mezcla de rivales sobre la que se han acumulado
+  sus medias por 90' (así no se recuenta la calidad del equipo, que ya está
+  dentro de esas medias).
+- El reparto por componentes sale de `pointsPer90ByStat` y se encoge hacia el
+  de su posición con el mismo partial pooling que §4.5 (`fixtureShares` del
+  contexto, construido con `buildFixtureSharesFromStats`); en pretemporada se
+  usan los priors estructurales de `POSITION_SHARE_PRIORS`.
+- Consecuencia que justifica todo el módulo: contra un rival muy superior el
+  defensa pierde ~35% de xP y el delantero ~29%, pero **el portero se queda
+  igual** porque las paradas compensan los goles encajados. Un factor único no
+  puede expresar eso.
+- Calibración: el parámetro que busca el backtesting walk-forward pasa a ser
+  `fixtureDampening` (cuánto del efecto teórico se traduce en puntos reales),
+  en lugar del antiguo `eloDiffDivisor`, que ya no existe.
+- Salida: `PlayerPrediction.fixture` (`FixtureOutlook`), `fixtures[]` en
+  `/api/recommendations`, `fixture` en cada `Recommendation`, `ClauseTarget` y
+  `CaptainCandidate`. En la interfaz, `shared/FixtureChip` (chip compacto) y
+  `shared/FixturePanel` (ficha completa en `PlayerDetailDialog`).
+- Verificación: `pnpm test:unit` (47 tests, incluidos los de punta a punta
+  sobre `predictPlayerPoints`) + `pnpm exec tsc --noEmit` + `pnpm build`.
+
+## Tests unitarios
+
+`pnpm test:unit` (opcionalmente con un filtro: `pnpm test:unit fixture-model`).
+Node ejecuta TypeScript de forma nativa pero no resuelve los imports sin
+extensión del proyecto, así que `scripts/run-unit-tests.mjs` empaqueta cada
+`src/test/*.test.ts` con el binario de esbuild que ya instala Vite y lo pasa a
+`node --test`. No hace falta añadir ninguna dependencia.
+
 ## Fuentes externas (Fase 1)
 
 - Adaptadores en `src/lib/engine/sources/` con contratos en `types.ts` (§3.5
@@ -114,8 +165,8 @@ tabulares); sin ella las columnas bailan al ordenar una tabla.
   fallback stale si la fuente cae, UA identificable).
 - Cruce de equipos: `team-names.ts` (normalización + alias). Cruce de
   jugadores: slug → nombre completo contenido → apellido único (minutes.ts).
-- `features/fixture.ts`: multiplicador por diferencia Elo con ventaja de campo
-  dentro del factor (rango 0.85-1.15, calibrable). `features/minutes.ts`:
+- `features/fixture.ts`: ajuste por emparejamiento con modelo de goles y
+  elasticidad por componente (ver la sección propia). `features/minutes.ts`:
   xMins v1 (P(titular) ≈ 0.85 en once probable, 0.15 fuera, baja → 0,
   duda → ×0.45).
 - Actividad de liga (`src/lib/fantasy/activity.ts`): liquidez real y

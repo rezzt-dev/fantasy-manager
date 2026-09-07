@@ -18,6 +18,7 @@ import DataTable from '../shared/DataTable';
 import PlayerAvatar from '../shared/PlayerAvatar';
 import PlayerStatusBadge from '../shared/PlayerStatusBadge';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
+import FixtureChip from '../shared/FixtureChip';
 import SignalChips from '../shared/SignalChips';
 import Currency from '../shared/Currency';
 import SectionHeader from '../shared/SectionHeader';
@@ -136,6 +137,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
                 {target.player.team?.name && <span className="truncate">{target.player.team.name}</span>}
                 <span className="truncate text-caution-text">{target.owner.managerName}</span>
               </div>
+              {target.fixture && <FixtureChip fixture={target.fixture} className="mt-1" />}
             </div>
           );
         },
@@ -556,6 +558,7 @@ export default function ClauseMarketTab({ league }: ClauseMarketTabProps) {
         onOpenChange={(open) => !open && setSelected(null)}
         buyoutClause={selected?.clause}
         expectedPoints={selected?.expectedPoints ?? null}
+        fixture={selected?.fixture}
         signals={selected?.signals}
         league={league}
         onActionSuccess={refetch}
@@ -589,6 +592,7 @@ function TargetCard({ target, onSelect }: { target: ClauseTarget; onSelect: () =
                 {target.starterLabel}
                 {target.pStarter !== null ? ` · ${Math.round(target.pStarter * 100)}%` : ''}
               </Badge>
+              {target.fixture && <FixtureChip fixture={target.fixture} showEffect />}
             </div>
           </div>
         </div>

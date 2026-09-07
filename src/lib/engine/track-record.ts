@@ -58,6 +58,10 @@ export interface PredictionRecord {
     teamId?: number;
     opponentTeamId?: number;
     isHome?: boolean;
+    /** Dificultad 0-100 del emparejamiento (§4.3). */
+    fixtureDifficulty?: number;
+    /** Multiplicador de emparejamiento aplicado a este jugador. */
+    fixtureMultiplier?: number;
   };
   actualPoints: number | null;
   settledAt: string | null;

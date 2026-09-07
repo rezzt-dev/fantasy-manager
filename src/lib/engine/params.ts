@@ -14,8 +14,18 @@ const MEM_CACHE_MS = 60 * 1000; // 60 s
 export interface EngineParams {
   /** k del partial pooling (shrinkage §4.5), en partidos. */
   shrinkageK: number;
-  /** Divisor diferencia-Elo → multiplicador de fixture (§4.3). */
-  eloDiffDivisor: number;
+  /**
+   * Divisor Elo → log-goles del modelo de partido (§4.3). Su valor por defecto
+   * no es libre: es el que hace que el modelo Dixon-Coles reproduzca la
+   * puntuación esperada de la propia fórmula Elo en campo neutral.
+   */
+  fixtureEloDivisor: number;
+  /**
+   * Amortiguador del efecto de emparejamiento (0-1+). 1 aplica el ajuste por
+   * componentes entero; por debajo lo encoge hacia 1. Es el parámetro que
+   * decide el backtesting walk-forward.
+   */
+  fixtureDampening: number;
   /** λ de la penalización por riesgo xP − λσ (§5.2). */
   riskLambda: number;
   /** Fricción en puntos por movimiento del planificador multi-jornada (§5.3). */
@@ -29,7 +39,8 @@ export interface EngineParams {
 /** Valores por defecto del diseño (antes de cualquier calibración). */
 export const DEFAULT_ENGINE_PARAMS: EngineParams = {
   shrinkageK: 8,
-  eloDiffDivisor: 1000,
+  fixtureEloDivisor: 220,
+  fixtureDampening: 1,
   riskLambda: 0.3,
   moveFrictionXp: 1.5,
   maxMovesPerWeek: 3,

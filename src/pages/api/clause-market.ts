@@ -7,6 +7,7 @@ import { fetchExternalSignals } from '../../lib/recommendations/external-intelli
 import { fetchStarterInfo, type PlayerDetail } from '../../lib/analysis/starter-status';
 import { buildPositionAverages, buildTeamStrength, type EstimatorContext } from '../../lib/recommendations/points-estimator';
 import { buildShrinkagePriors, buildTeamTiers } from '../../lib/engine/features/shrinkage';
+import { buildFixtureSharesFromStats } from '../../lib/engine/features/fixture-components';
 import { fetchAvailableFormations } from '../../lib/fantasy/formations';
 import { fetchLeagueActivity } from '../../lib/fantasy/activity';
 import { fetchTeamsMaster } from '../../lib/fantasy/teams';
@@ -190,6 +191,10 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       injuryReport: probableData?.injuries,
       shrinkagePriors: buildShrinkagePriors(allPlayers, teamTiers),
       teamTiers,
+      fixtureShares: buildFixtureSharesFromStats(
+        statsUniverse.map((player) => ({ positionId: Number(player.positionId), playerStats: statsMap[player.id] || [] })),
+        currentWeek,
+      ),
       newsCoverage: {
         feedsOk: externalResult.coverage.feedsOk.length,
         feedsTotal: externalResult.coverage.feedsOk.length + externalResult.coverage.feedsFailed.length,

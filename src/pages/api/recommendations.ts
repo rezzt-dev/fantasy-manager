@@ -26,6 +26,8 @@ import { fetchProbableLineups } from '../../lib/engine/sources/jornadaperfecta';
 import { fetchConfirmedLineups } from '../../lib/engine/sources/sofascore';
 import { fetchValueTrends } from '../../lib/engine/sources/futbolfantasy';
 import { buildShrinkagePriors, buildTeamTiers } from '../../lib/engine/features/shrinkage';
+import { buildFixtureSharesFromStats } from '../../lib/engine/features/fixture-components';
+import { buildFixtureOutlooks } from '../../lib/engine/features/fixture';
 import { buildTeamMatcher } from '../../lib/engine/team-names';
 import type { ProbableLineup } from '../../lib/engine/sources/types';
 import {
@@ -48,7 +50,7 @@ import { loadEngineParams } from '../../lib/engine/params';
 import { calibrateEngine, persistCalibration } from '../../lib/engine/calibrate';
 import { fetchCalendarCached } from '../../lib/fantasy/calendar-cache';
 import { enrichMarketPlayers } from '../../lib/fantasy/market-enrich';
-import type { FantasyLeague, TeamData, TeamLineup, TeamMoney, MarketPlayer, StandingEntry, Match, PlayerMaster, WeekInfo } from '../../types/fantasy';
+import type { FantasyLeague, FixtureOutlook, TeamData, TeamLineup, TeamMoney, MarketPlayer, StandingEntry, Match, PlayerMaster, WeekInfo } from '../../types/fantasy';
 
 /** Plantilla + mejores candidatos de mercado y clausulables (acotado para no multiplicar peticiones). */
 const MARKET_STATS_UNIVERSE = 20;
@@ -211,6 +213,13 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     // Priors de shrinkage (§4.5): posición×tier con tiers desde Elo.
     const teamTiers = buildTeamTiers(teamElos?.eloByTeamId ?? new Map());
 
+    // Reparto observado de puntos por componente y posición: es el prior hacia
+    // el que se encoge el de cada jugador al ajustar el emparejamiento (§4.3).
+    const fixtureShares = buildFixtureSharesFromStats(
+      statsUniverse.map((player) => ({ positionId: Number(player.positionId), playerStats: statsMap[player.id] || [] })),
+      currentWeek,
+    );
+
     const estimatorContext: EstimatorContext = {
       teamStrength: buildTeamStrength(allPlayers),
       starterInfo: analysis.starterInfo,
@@ -223,6 +232,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       injuryReport: probableData?.injuries,
       shrinkagePriors: buildShrinkagePriors(allPlayers, teamTiers),
       teamTiers,
+      fixtureShares,
       newsCoverage: {
         feedsOk: externalResult.coverage.feedsOk.length,
         feedsTotal: externalResult.coverage.feedsOk.length + externalResult.coverage.feedsFailed.length,
@@ -230,6 +240,23 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       confirmedLineups,
     };
     analysis.clauseRisks = analyzeClauseRisks(analysis, estimatorContext);
+
+    // Pronóstico de la jornada por equipo: la dificultad del emparejamiento y
+    // su efecto por demarcación, calculado una vez y reutilizado en la
+    // respuesta para explicar cada recomendación sin recalcular nada.
+    const fixtureOutlooks = buildFixtureOutlooks({
+      calendar,
+      eloByTeamId: teamElos?.eloByTeamId ?? new Map(),
+      sharesByPosition: fixtureShares,
+    });
+    const fixtureOfPlayer = (player: PlayerMaster): FixtureOutlook | null => {
+      const playerTeamId = resolveTeamId(player);
+      if (playerTeamId === undefined) return null;
+      const outlook = fixtureOutlooks.get(playerTeamId);
+      if (!outlook) return null;
+      const positionMultiplier = outlook.multiplierByPosition?.[Number(player.positionId)];
+      return positionMultiplier === undefined ? outlook : { ...outlook, multiplier: positionMultiplier };
+    };
 
     const formations = await fetchAvailableFormations(token, league.config?.premiumFeatures?.formations === true);
     const captainEnabled = league.config?.premiumFeatures?.captain === true;
@@ -286,7 +313,9 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       console.warn('[recommendations] multi-week plan failed:', planError instanceof Error ? planError.message : planError);
     }
 
-    const recommendations = generateRecommendations({ analysis, estimatorContext, valueTrends: valueTrends?.trendsByPlayerId });
+    const recommendations = generateRecommendations({ analysis, estimatorContext, valueTrends: valueTrends?.trendsByPlayerId }).map(
+      (recommendation) => ({ ...recommendation, fixture: fixtureOfPlayer(recommendation.player) }),
+    );
     const bestMoves = computeBestMoves(recommendations);
 
     // Track record + snapshot diario (§6.1, §7.2): persistencia local que no
@@ -317,6 +346,8 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
             teamId: playerTeamId,
             opponentTeamId: homeMatch ? homeMatch.visitorId : awayMatch ? awayMatch.localId : undefined,
             isHome: homeMatch ? true : awayMatch ? false : undefined,
+            fixtureDifficulty: prediction.fixture?.difficulty,
+            fixtureMultiplier: prediction.fixture?.multiplier,
           },
           actualPoints: null,
           settledAt: null,
@@ -402,7 +433,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       console.warn('[track-record] persist failed:', persistError instanceof Error ? persistError.message : persistError);
     }
 
-    return new Response(JSON.stringify({ recommendations, bestMoves, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, league, money, week, marketCount: market.length }), {
+    return new Response(JSON.stringify({ recommendations, bestMoves, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, fixtures: [...fixtureOutlooks.values()], league, money, week, marketCount: market.length }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

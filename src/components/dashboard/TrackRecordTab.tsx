@@ -235,7 +235,7 @@ export default function TrackRecordTab({ league }: TrackRecordTabProps) {
           <AccordionContent>
             {calibration?.status === 'ok' && calibration.best ? (
               <p className="text-sm">
-                Mejor configuración: k={calibration.best.shrinkageK}, divisor Elo={calibration.best.eloDiffDivisor} · MAE{' '}
+                Mejor configuración: k={calibration.best.shrinkageK}, efecto de emparejamiento ×{calibration.best.fixtureDampening} · MAE{' '}
                 {calibration.best.mae} ({calibration.samples} muestras)
               </p>
             ) : (

@@ -1,4 +1,4 @@
-import type { MarketPlayer, Match, PlayerMaster, TeamPlayer } from '../../types/fantasy';
+import type { FixtureOutlook, MarketPlayer, Match, PlayerMaster, TeamPlayer } from '../../types/fantasy';
 import type {
   BudgetBreakdown,
   ClauseCombo,
@@ -75,6 +75,7 @@ interface Scored {
   pStarter: number | null;
   expectedMinutes: number | null;
   dataQuality: 'high' | 'medium' | 'low';
+  fixture: FixtureOutlook | null;
   source: string;
   eligible: boolean;
 }
@@ -116,6 +117,7 @@ function scorePlayer(player: PlayerMaster, input: ClauseMarketInput): Scored {
     pStarter: prediction.pStarter,
     expectedMinutes: prediction.expectedMinutes,
     dataQuality: prediction.dataQuality.level,
+    fixture: prediction.fixture,
     source: prediction.source,
     eligible,
   };
@@ -594,6 +596,7 @@ export function buildClauseMarket(input: ClauseMarketInput): ClauseMarketAnalysi
         expectedMinutes: scored.expectedMinutes,
         starterLabel: starterLabelFrom(scored.pStarter, player),
         dataQuality: scored.dataQuality,
+        fixture: scored.fixture,
         deltaXp: round1(deltaXp),
         xiGain,
         replaces,

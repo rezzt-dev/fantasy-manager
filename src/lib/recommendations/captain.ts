@@ -25,6 +25,9 @@ const EV_WEIGHT = 0.7;
 /** Por debajo de esta probabilidad de ser titular, el brazalete es una apuesta. */
 const ROTATION_RISK_PSTARTER = 0.6;
 
+/** A partir de esta dificultad de emparejamiento (0-100) se avisa al usuario. */
+const HARD_FIXTURE_DIFFICULTY = 62;
+
 const STARTER_TEXT: Record<string, string> = {
   Titular: 'titular indiscutible',
   Habitual: 'titular habitual',
@@ -182,6 +185,15 @@ function buildCandidate(player: PlayerMaster, input: CandidateInput): CaptainCan
   const score = EV_WEIGHT * prediction.xp + (1 - EV_WEIGHT) * prediction.riskAdjustedXp;
 
   const risks: string[] = [];
+  // El emparejamiento ya está dentro del xP; aquí solo se explica, porque un
+  // brazalete es una apuesta única y el usuario merece saber contra quién va.
+  const fixture = prediction.fixture;
+  if (fixture && fixture.difficulty >= HARD_FIXTURE_DIFFICULTY) {
+    risks.push(
+      `Emparejamiento ${fixture.label.toLowerCase()}: ${Math.round(fixture.pLoss * 100)}% de derrota y ` +
+        `${Math.round((1 - fixture.multiplier) * 100)}% menos de puntos esperados por el rival.`,
+    );
+  }
   if (!hasFixture) risks.push('Su equipo descansa esta jornada: el brazalete se perdería.');
   if (suspended) risks.push('Está sancionado y no puede jugar.');
   else if (player.playerStatus === 'injured') risks.push('Está lesionado.');
@@ -203,6 +215,7 @@ function buildCandidate(player: PlayerMaster, input: CandidateInput): CaptainCan
     score: round2(score),
     pStarter: prediction.pStarter,
     isHome,
+    fixture: prediction.fixture,
     hasFixture,
     isHealthy,
     confidence: prediction.dataQuality.level,
@@ -226,6 +239,10 @@ function buildReasoning(input: {
   if (!hasFixture) parts.push('su equipo descansa');
   else if (isHome === true) parts.push('juega en casa');
   else if (isHome === false) parts.push('juega fuera');
+
+  if (prediction.fixture) {
+    parts.push(`emparejamiento ${prediction.fixture.label.toLowerCase()} (${prediction.fixture.difficulty}/100)`);
+  }
 
   if (starter) parts.push(STARTER_TEXT[starter.label] ?? starter.label.toLowerCase());
   else if (prediction.pStarter !== null) parts.push(`${Math.round(prediction.pStarter * 100)}% de titularidad`);
