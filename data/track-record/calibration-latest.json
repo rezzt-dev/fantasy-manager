@@ -1,94 +1,94 @@
 {
   "status": "ok",
-  "samples": 69,
+  "samples": 62,
   "best": {
-    "shrinkageK": 5,
-    "fixtureDampening": 1.25,
-    "mae": 2.739
+    "shrinkageK": 12,
+    "fixtureDampening": 0.5,
+    "mae": 3.072
   },
-  "baselineMae": 2.739,
+  "baselineMae": 3.094,
   "grid": [
     {
       "shrinkageK": 3,
       "fixtureDampening": 0.5,
-      "mae": 2.773
+      "mae": 3.13
     },
     {
       "shrinkageK": 3,
       "fixtureDampening": 0.75,
-      "mae": 2.765
+      "mae": 3.126
     },
     {
       "shrinkageK": 3,
       "fixtureDampening": 1,
-      "mae": 2.757
+      "mae": 3.123
     },
     {
       "shrinkageK": 3,
       "fixtureDampening": 1.25,
-      "mae": 2.749
+      "mae": 3.119
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 0.5,
-      "mae": 2.756
+      "mae": 3.097
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 0.75,
-      "mae": 2.75
+      "mae": 3.096
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 1,
-      "mae": 2.744
+      "mae": 3.095
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 1.25,
-      "mae": 2.739
+      "mae": 3.094
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 0.5,
-      "mae": 2.753
+      "mae": 3.082
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 0.75,
-      "mae": 2.748
+      "mae": 3.082
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 1,
-      "mae": 2.744
+      "mae": 3.082
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 1.25,
-      "mae": 2.739
+      "mae": 3.082
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 0.5,
-      "mae": 2.751
+      "mae": 3.072
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 0.75,
-      "mae": 2.747
+      "mae": 3.073
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 1,
-      "mae": 2.743
+      "mae": 3.073
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 1.25,
-      "mae": 2.739
+      "mae": 3.073
     }
   ],
-  "note": "Los parámetros en producción ya son los mejores de la rejilla; sin cambios.",
-  "computedAt": "2026-09-07T14:11:41.820Z"
+  "note": "Parámetros actualizados (MAE 3.094 → 3.072).",
+  "computedAt": "2026-09-07T16:31:06.478Z"
 }
