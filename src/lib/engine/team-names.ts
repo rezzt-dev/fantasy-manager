@@ -28,6 +28,7 @@ const NAME_ALIASES: Record<string, string> = {
   // ClubElo usa nombres de ciudad para estos equipos.
   bilbao: 'athletic',
   santander: 'racing',
+  'racing santander': 'racing',
   depor: 'deportivo',
   // SofaScore / fuentes externas vs. nombres cortos de LaLiga Fantasy.
   'celta vigo': 'celta',

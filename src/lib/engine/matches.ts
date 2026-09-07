@@ -1,10 +1,10 @@
-import { fetchOfficialAPI, CMP } from '../fantasy/api-proxy';
+import { fetchEspnMatches, fetchEspnMatchDetails, type EspnMatch } from './sources/espn';
 import { fetchTeamsCatalog } from '../fantasy/teams';
 import { fetchLaLigaEventsWindow, fetchLaLigaEventsRound, fetchEventDetails, fetchEventIncidents, fetchEventLineups, teamLogoUrl } from './sources/sofascore';
 import { generateMatchSummary, fetchExternalMatchSummary } from './sources/match-summary';
 import { buildTeamMatcher } from './team-names';
 import type { OfficialTeam, TeamMatcher } from './team-names';
-import type { TeamData, WeekInfo, Match, PlayerMaster, EnrichedMatch, MatchEvent, SquadPlayerInMatch, EnrichedMatchTeam, EnrichedMatchStatus, MatchPhase, TeamCatalogEntry } from '../../types/fantasy';
+import type { TeamData, Match, PlayerMaster, EnrichedMatch, MatchEvent, SquadPlayerInMatch, EnrichedMatchTeam, EnrichedMatchStatus, MatchPhase, TeamCatalogEntry } from '../../types/fantasy';
 import type { SofaEvent, SofaIncident } from './sources/sofascore';
 
 const MATCH_WINDOW_HOURS = 48;
@@ -72,9 +72,11 @@ function statusLabel(status: EnrichedMatchStatus, minute: number | null): string
   }
 }
 
-function formatKickoff(timestamp: number): string {
+export function formatKickoff(timestamp: number): string {
+  if (!Number.isFinite(timestamp)) return 'Horario por confirmar';
   const d = new Date(timestamp * 1000);
   return d.toLocaleString('es-ES', {
+    timeZone: 'Europe/Madrid',
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -90,9 +92,9 @@ function computePhase(event: SofaEvent | null): MatchPhase {
 
   if (status === 'finished') return 'finalizado';
   if (status === 'notstarted') return 'pendiente';
-  if (status === 'halftime') return 'descanso';
+  if (status === 'halftime' || event.status?.code === 31) return 'descanso';
   if (status === 'inprogress') {
-    if (period === 'secondHalf') return 'segunda-parte';
+    if (period === 'secondHalf' || event.status?.code === 7) return 'segunda-parte';
     return 'primera-parte';
   }
   if (status === 'postponed') return 'pendiente';
@@ -101,7 +103,7 @@ function computePhase(event: SofaEvent | null): MatchPhase {
 }
 
 function computeMinute(event: SofaEvent): number | null {
-  if (event.status?.type !== 'inprogress') return null;
+  if (event.status?.type !== 'inprogress' || event.status?.code === 31) return null;
 
   if (event.time?.currentMinute !== undefined && event.time.currentMinute !== null) {
     return event.time.currentMinute;
@@ -110,7 +112,7 @@ function computeMinute(event: SofaEvent): number | null {
   const periodStart = event.time?.currentPeriodStartTimestamp;
   if (periodStart) {
     const elapsed = Math.floor((Date.now() / 1000 - periodStart) / 60);
-    const base = event.time?.period === 'secondHalf' ? 45 : 0;
+    const base = (event.time?.period === 'secondHalf' || event.status?.code === 7) ? 45 : 0;
     return Math.max(1, base + elapsed);
   }
 
@@ -179,7 +181,7 @@ function buildSquadPlayers(calendarMatch: Match, ownPlayers: PlayerMaster[]): Sq
   return list;
 }
 
-function findSofaEvent(
+export function findSofaEvent(
   calendarMatch: Match,
   sofaEvents: SofaEvent[],
   teamsById: Map<number, TeamCatalogEntry>,
@@ -211,11 +213,12 @@ function findSofaEvent(
   return best;
 }
 
-async function buildEnrichedMatch(
+export async function buildEnrichedMatch(
   calendarMatch: Match,
   sofaEvent: SofaEvent | null,
   ownPlayers: PlayerMaster[],
   teamsById: Map<number, TeamCatalogEntry>,
+  espnMatch?: EspnMatch,
 ): Promise<{ match: EnrichedMatch; fetchNotes: string[] }> {
   const fetchNotes: string[] = [];
   const squadPlayers = buildSquadPlayers(calendarMatch, ownPlayers);
@@ -223,30 +226,34 @@ async function buildEnrichedMatch(
   let details: SofaEvent | null = null;
   let incidents: SofaIncident[] = [];
   let lineups: EnrichedMatch['lineups'] = undefined;
+  let dataStale = espnMatch?.stale ?? false;
 
-  if (sofaEvent) {
-    try {
-      details = await fetchEventDetails(sofaEvent.id);
-    } catch {
-      fetchNotes.push(`No se pudieron cargar detalles del partido ${calendarMatch.localId}-${calendarMatch.visitorId}.`);
+  if (espnMatch) {
+    const data = await fetchEspnMatchDetails(espnMatch.event.id);
+    details = data?.event ?? espnMatch.event;
+    dataStale = data ? data.stale : espnMatch.stale;
+    if (data && details.time?.currentMinute === undefined && !espnMatch.stale) {
+      details = { ...details, time: { ...details.time, currentMinute: espnMatch.event.time?.currentMinute } };
     }
-
-    try {
-      const incidentData = await fetchEventIncidents(sofaEvent.id);
-      incidents = incidentData?.incidents ?? [];
-    } catch {
-      fetchNotes.push(`No se pudieron cargar incidentes del partido ${calendarMatch.localId}-${calendarMatch.visitorId}.`);
-    }
-
-    try {
-      lineups = (await fetchEventLineups(sofaEvent.id)) ?? undefined;
-    } catch {
-      fetchNotes.push(`No se pudieron cargar alineaciones del partido ${calendarMatch.localId}-${calendarMatch.visitorId}.`);
-    }
+    incidents = data?.incidents ?? [];
+    lineups = data?.lineups;
+    if (!data) fetchNotes.push('No se pudo actualizar el detalle del partido. Reintenta la carga.');
+    else if (!data.incidentsAvailable) fetchNotes.push('La fuente no ha facilitado los eventos del partido.');
+    if (data?.stale || espnMatch.stale) fetchNotes.push('Datos guardados: la fuente no responde. El marcador y el minuto pueden estar desactualizados.');
+  } else if (sofaEvent) {
+    const [event, incidentData, lineupData] = await Promise.all([
+      fetchEventDetails(sofaEvent.id), fetchEventIncidents(sofaEvent.id), fetchEventLineups(sofaEvent.id),
+    ]);
+    details = event;
+    incidents = incidentData?.incidents ?? [];
+    lineups = lineupData ?? undefined;
+    if (!event) fetchNotes.push('No se pudieron actualizar los detalles en SofaScore.');
+    if (!incidentData) fetchNotes.push('No se pudieron cargar los eventos en SofaScore.');
   }
+  if (!lineups) fetchNotes.push('Alineaciones no disponibles todavía. Vuelve a cargar cerca del inicio; si el partido ya empezó, la fuente no las ha facilitado.');
 
   const effectiveEvent = details ?? sofaEvent;
-  const status = mapStatus(effectiveEvent?.status?.type);
+  const status = mapStatus(effectiveEvent?.status?.code === 31 ? 'halftime' : effectiveEvent?.status?.type);
   const minute = effectiveEvent ? computeMinute(effectiveEvent) : null;
   const phase = computePhase(effectiveEvent);
 
@@ -260,8 +267,8 @@ async function buildEnrichedMatch(
     // El escudo oficial es más fiable que la imagen de SofaScore (que puede
     // bloquear el hotlinking); esta última queda como respaldo.
     logoUrl:
-      localTeam?.badgeColor ||
-      (effectiveEvent?.homeTeam.id ? teamLogoUrl(effectiveEvent.homeTeam.id) : ''),
+      localTeam?.badgeColor || espnMatch?.homeLogo ||
+      (!espnMatch && effectiveEvent?.homeTeam.id ? teamLogoUrl(effectiveEvent.homeTeam.id) : ''),
     score: effectiveEvent?.homeScore?.current ?? calendarMatch.localScore ?? null,
   };
 
@@ -270,8 +277,8 @@ async function buildEnrichedMatch(
     name: visitorTeam?.name ?? effectiveEvent?.awayTeam.name ?? String(calendarMatch.visitorId),
     shortName: visitorTeam?.shortName || effectiveEvent?.awayTeam.shortName,
     logoUrl:
-      visitorTeam?.badgeColor ||
-      (effectiveEvent?.awayTeam.id ? teamLogoUrl(effectiveEvent.awayTeam.id) : ''),
+      visitorTeam?.badgeColor || espnMatch?.awayLogo ||
+      (!espnMatch && effectiveEvent?.awayTeam.id ? teamLogoUrl(effectiveEvent.awayTeam.id) : ''),
     score: effectiveEvent?.awayScore?.current ?? calendarMatch.visitorScore ?? null,
   };
 
@@ -282,7 +289,10 @@ async function buildEnrichedMatch(
 
   const match: EnrichedMatch = {
     id: calendarMatch.id,
-    eventId: effectiveEvent?.id ?? null,
+    eventId: espnMatch ? null : effectiveEvent?.id ?? null,
+    dataSource: espnMatch ? 'espn' : sofaEvent ? 'sofascore' : 'official',
+    dataStale,
+    sourceEventId: effectiveEvent ? String(effectiveEvent.id) : undefined,
     status,
     statusLabel: statusLabel(status, minute),
     phase,
@@ -295,12 +305,12 @@ async function buildEnrichedMatch(
     squadPlayerCount: squadPlayers.length,
     events,
     important: squadPlayers.length > 0,
-    notes: [],
+    notes: [...fetchNotes],
     lineups,
   };
 
-  if (!sofaEvent) {
-    match.notes.push('Sin datos en vivo: no se encontró el partido en SofaScore.');
+  if (!sofaEvent && !espnMatch) {
+    match.notes.push('Sin datos en vivo: no se encontró el partido en las fuentes externas. Reintenta la carga.');
   }
 
   try {
@@ -320,10 +330,10 @@ export async function buildMatchesForWeek({ token, teamId, week, calendar, teamD
   const teamsById = new Map(teamsCatalog.map((t) => [t.id, t]));
 
   if (officialTeams.length === 0) {
-    notes.push('No se pudo cargar el catálogo oficial de equipos; el cruce con SofaScore está desactivado.');
+    notes.push('No se pudo cargar el catálogo oficial de equipos; el cruce con fuentes externas está desactivado.');
   }
 
-  const timestamps = calendar.map((m) => new Date(m.matchDate).getTime() / 1000);
+  const timestamps = calendar.map((m) => new Date(m.matchDate).getTime() / 1000).filter(Number.isFinite);
   const minTs = timestamps.length > 0 ? Math.min(...timestamps) : 0;
   const maxTs = timestamps.length > 0 ? Math.max(...timestamps) : 0;
 
@@ -334,7 +344,14 @@ export async function buildMatchesForWeek({ token, teamId, week, calendar, teamD
   // entre la jornada de Fantasy y la ronda de SofaScore).
   const canQuerySofa = officialTeams.length > 0 && calendar.length > 0;
 
-  const [roundEvents, sofaWindow] = canQuerySofa
+  const matchTeam = buildTeamMatcher(officialTeams);
+  const espnMatches = canQuerySofa ? await fetchEspnMatches(minTs - MATCH_WINDOW_HOURS * 3600, maxTs + MATCH_WINDOW_HOURS * 3600) : [];
+  const espnForMatch = (m: Match) => {
+    const event = findSofaEvent(m, espnMatches.map(e => e.event), teamsById, matchTeam);
+    return espnMatches.find(e => e.event.id === event?.id);
+  };
+  const needsSofa = canQuerySofa && calendar.some(m => !espnForMatch(m));
+  const [roundEvents, sofaWindow] = needsSofa
     ? await Promise.all([
         fetchLaLigaEventsRound(week),
         fetchLaLigaEventsWindow(minTs - MATCH_WINDOW_HOURS * 3600, maxTs + MATCH_WINDOW_HOURS * 3600),
@@ -346,21 +363,19 @@ export async function buildMatchesForWeek({ token, teamId, week, calendar, teamD
     sofaEvents.set(event.id, event);
   }
 
-  if (canQuerySofa && sofaEvents.size === 0) {
+  if (needsSofa && sofaEvents.size === 0) {
     notes.push('No se pudieron obtener eventos de SofaScore para la jornada.');
   }
 
   const allSofaEvents = [...sofaEvents.values()];
   // Un único matcher para toda la jornada: construirlo por partido repetía su
   // trabajo (y sus avisos) una vez por encuentro.
-  const matchTeam = buildTeamMatcher(officialTeams);
   const ownPlayers = teamData.players.map((p) => p.playerMaster);
 
   const enrichedMatches: EnrichedMatch[] = [];
 
-  // Cada partido dispara 3-4 peticiones a SofaScore; en serie una jornada
-  // entera se acerca al timeout de la función. Se procesan en tandas para
-  // acortar la espera sin castigar a la fuente.
+  // ESPN entrega todos los detalles en una petición por partido. Limitamos
+  // la concurrencia para acotar la latencia sin saturar las fuentes.
   for (let i = 0; i < calendar.length; i += ENRICH_CONCURRENCY) {
     const chunk = calendar.slice(i, i + ENRICH_CONCURRENCY);
     const results = await Promise.all(
@@ -370,6 +385,7 @@ export async function buildMatchesForWeek({ token, teamId, week, calendar, teamD
           findSofaEvent(calendarMatch, allSofaEvents, teamsById, matchTeam),
           ownPlayers,
           teamsById,
+          espnForMatch(calendarMatch),
         ),
       ),
     );

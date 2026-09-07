@@ -37,23 +37,22 @@ function MatchesSkeleton() {
   );
 }
 
-function useLiveMinute(initialMinute: number | null, status: EnrichedMatchStatus, startTimestamp: number) {
+function useLiveMinute(initialMinute: number | null, status: EnrichedMatchStatus, startTimestamp: number, stale = false) {
   const [minute, setMinute] = useState(initialMinute);
 
   useEffect(() => {
     setMinute(initialMinute);
-    if (status !== 'live') return;
+    if (status !== 'live' || stale) return;
 
     const interval = setInterval(() => {
       setMinute((prev) => {
         if (prev !== null) return prev + 1;
-        const elapsed = Math.floor((Date.now() / 1000 - startTimestamp) / 60);
-        return elapsed;
+        return null;
       });
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, [initialMinute, status, startTimestamp]);
+  }, [initialMinute, status, startTimestamp, stale]);
 
   return minute;
 }
@@ -254,7 +253,7 @@ function LineupSide({ side, isHome }: { side: MatchLineupSide; isHome: boolean }
 }
 
 function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; open: boolean; onClose: () => void }) {
-  const liveMinute = useLiveMinute(match.minute, match.status, match.startTimestamp);
+  const liveMinute = useLiveMinute(match.minute, match.status, match.startTimestamp, match.dataStale);
   const hasLineups = !!match.lineups && match.lineups.home.starters.length > 0 && match.lineups.away.starters.length > 0;
 
   return (
@@ -325,7 +324,7 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                   <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
                     <div className="mb-2 flex items-center gap-2 text-xs font-medium text-content-tertiary">
                       <FileText className="h-3.5 w-3.5" />
-                      Resumen del partido
+                      Resumen del partido{match.dataSource === 'espn' ? ' · ESPN' : match.dataSource === 'sofascore' ? ' · SofaScore' : ''}
                       {match.summary.source === 'generated' && (
                         <span className="ml-auto text-[10px] opacity-70">generado automáticamente</span>
                       )}
@@ -390,7 +389,7 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                     <Users className="mx-auto h-8 w-8 text-content-tertiary" />
                     <p className="mt-2 text-sm font-medium text-content">Alineaciones no disponibles</p>
                     <p className="text-xs text-content-tertiary">
-                      SofaScore solo publica alineaciones confirmadas cerca del inicio del partido.
+                      Las alineaciones suelen publicarse cerca del inicio. Reintenta la carga; si el partido ya empezó, la fuente puede no haberlas facilitado.
                     </p>
                   </div>
                 )}
@@ -403,7 +402,7 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
 }
 
 function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void }) {
-  const liveMinute = useLiveMinute(match.minute, match.status, match.startTimestamp);
+  const liveMinute = useLiveMinute(match.minute, match.status, match.startTimestamp, match.dataStale);
   // Todos los partidos abren detalle: incluso los pendientes tienen ficha
   // (hora, alineaciones probables cuando existen, jugadores de la plantilla).
   const isClickable = true;

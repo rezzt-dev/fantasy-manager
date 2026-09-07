@@ -161,3 +161,24 @@ src/lib/
 - `.env.local` — tokens y config del proxy (no versionar).
 - `.env.credentials` — email/password (no versionar, no lo lee Astro por defecto).
 - `.env.example` — plantilla para crear los anteriores.
+
+## Partidos: corrección serverless (2026-09-07)
+
+La pestaña Partidos usa `engine/sources/espn.ts` como fuente primaria (HTTP
+nativo: scoreboard por fechas y summary por evento). Recupera horarios UTC,
+onces completos, suplentes y eventos para el resumen generado en español.
+SofaScore queda como respaldo de partidos no encontrados: en Vercel usa fetch
+con timeout y circuit breaker, sin asumir que curl está instalado. Los escudos
+y el calendario oficial siguen siendo la referencia para el cruce.
+
+Los horarios se formatean en `Europe/Madrid`. `eventId` conserva su significado
+SofaScore; `dataSource`, `sourceEventId` y `dataStale` son campos aditivos. Los
+fallos y datos caducados se indican en la ficha; un marcador ausente no se
+interpreta como 0–0. El motor de recomendaciones conserva su fuente anterior.
+
+Verificado con tests unitarios, TypeScript, build y una descarga real con
+`VERCEL=1` y `PATH=/nonexistent` (dos onces de 11 jugadores y 21 eventos).
+La prueba autenticada de `/api/matches` queda pendiente porque las sesiones
+locales están caducadas y no se pudieron renovar. No se ha publicado en Vercel.
+`verify:deploy` compila y pasa las rutas, pero falla por los 208 archivos previos
+versionados y a la vez ignorados; no es un fallo de la nueva fuente.

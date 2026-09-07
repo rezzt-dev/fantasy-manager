@@ -18,7 +18,23 @@ import type { MatchLineup, MatchLineupPlayer, MatchLineupSide } from '../../../t
 const execFileAsync = promisify(execFile);
 
 /** Descarga con curl: Sofascore rechaza el cliente HTTP de Node. */
+let blockedUntil = 0;
 async function curlFetch(url: string): Promise<string> {
+  // Los binarios del equipo local no forman parte del runtime de Vercel.
+  // Circuit breaker: un 403 no debe repetirse por cada partido de la jornada.
+  if (process.env.VERCEL) {
+    if (Date.now() < blockedUntil) throw new Error('SofaScore temporalmente no disponible');
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(4000), headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(`SofaScore HTTP ${response.status}`);
+      const text = await response.text();
+      JSON.parse(text);
+      return text;
+    } catch (error) {
+      blockedUntil = Date.now() + 60_000;
+      throw error;
+    }
+  }
   const { stdout } = await execFileAsync(
     'curl',
     ['-sS', '--fail', '--max-time', '15', '-A', 'fantasy-manager/0.1 (analisis fantasy personal)', url],

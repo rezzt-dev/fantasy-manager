@@ -295,7 +295,12 @@ export interface MatchSummary {
 
 export interface EnrichedMatch {
   id: string;
+  /** ID de SofaScore, conservado por compatibilidad. */
   eventId: number | null;
+  dataSource?: 'espn' | 'sofascore' | 'official';
+  /** Datos recuperados de caché caducada por un fallo de la fuente. */
+  dataStale?: boolean;
+  sourceEventId?: string;
   status: EnrichedMatchStatus;
   statusLabel: string;
   phase: MatchPhase;
@@ -313,7 +318,7 @@ export interface EnrichedMatch {
   important: boolean;
   /** Notas sobre calidad/fuente de los datos. */
   notes: string[];
-  /** Alineaciones confirmadas por SofaScore, si están disponibles. */
+  /** Alineaciones publicadas por la fuente, si están disponibles. */
   lineups?: MatchLineup;
   /** Resumen del partido generado a partir de los datos disponibles. */
   summary?: MatchSummary;

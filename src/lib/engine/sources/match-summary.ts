@@ -23,8 +23,12 @@ function formatMinute(minute: number | null): string {
 function sentenceForResult(match: EnrichedMatch): string {
   const home = match.home;
   const away = match.away;
-  const homeScore = home.score ?? 0;
-  const awayScore = away.score ?? 0;
+  if (match.status === 'pending') return `El partido entre ${home.name} y ${away.name} aún no ha comenzado.`;
+  if (match.status === 'postponed') return `El partido entre ${home.name} y ${away.name} ha sido aplazado.`;
+  if (match.status === 'canceled') return `El partido entre ${home.name} y ${away.name} ha sido cancelado.`;
+  if (home.score == null || away.score == null) return `Marcador no disponible para ${home.name} — ${away.name}.`;
+  const homeScore = home.score;
+  const awayScore = away.score;
 
   if (match.status === 'finished') {
     if (homeScore > awayScore) return `${home.name} venció a ${away.name} por ${homeScore}-${awayScore}.`;
@@ -41,10 +45,7 @@ function sentenceForResult(match: EnrichedMatch): string {
     return `${home.name} y ${away.name} empatan ${homeScore}-${awayScore}${minuteText}${phaseText}.`;
   }
 
-  if (match.status === 'pending') return `El partido entre ${home.name} y ${away.name} aún no ha comenzado.`;
-  if (match.status === 'postponed') return `El partido entre ${home.name} y ${away.name} ha sido aplazado.`;
-  if (match.status === 'canceled') return `El partido entre ${home.name} y ${away.name} ha sido cancelado.`;
-  return `${home.name} recibe a ${away.name}.`;
+  return `Marcador registrado: ${home.name} ${homeScore}-${awayScore} ${away.name}. Estado del partido sin confirmar.`;
 }
 
 function sentenceForGoals(events: MatchEvent[]): string {
