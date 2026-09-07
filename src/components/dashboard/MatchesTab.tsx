@@ -1,19 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import fantasyAPI from '../../lib/fantasy/api';
 import type { FantasyLeague, EnrichedMatch, MatchEvent, EnrichedMatchStatus, MatchLineupSide, MatchLineupPlayer } from '../../types/fantasy';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Skeleton } from '../ui/skeleton';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { ArrowRightLeft, Circle, AlertCircle, Trophy, Radio, Clock, CalendarDays, Goal, FileText, Users, ChevronRight, ChevronLeft, MapPin } from 'lucide-react';
-import KpiCard from '../shared/KpiCard';
+import { ArrowRightLeft, Circle, AlertCircle, Trophy, Radio, Clock, CalendarDays, Goal, FileText, Users, ChevronRight, ChevronLeft, ChevronDown, RefreshCw, MapPin } from 'lucide-react';
+import EmptyState from '../shared/EmptyState';
 import SectionHeader from '../shared/SectionHeader';
 import ErrorState from '../shared/ErrorState';
 import { cn } from '../../lib/utils';
@@ -31,8 +31,9 @@ function MatchesSkeleton() {
           <Skeleton key={i} className="h-28 rounded-lg" />
         ))}
       </div>
-      <Skeleton className="h-64 rounded-lg" />
-      <Skeleton className="h-64 rounded-lg" />
+      <div className="grid gap-4 xl:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => <Card key={i} className="space-y-5 p-4"><Skeleton className="h-5 w-32" /><div className="flex items-center justify-around"><Skeleton className="size-14" /><Skeleton className="h-10 w-24" /><Skeleton className="size-14" /></div><Skeleton className="h-5 w-full" /><Skeleton className="h-8 w-full" /></Card>)}
+      </div>
     </div>
   );
 }
@@ -139,13 +140,13 @@ function EventIcon({ event }: { event: MatchEvent }) {
 
 function MatchEventRow({ event }: { event: MatchEvent }) {
   return (
-    <div className="flex items-center gap-2 py-1 text-xs">
-      <span className="w-6 shrink-0 text-right tabular-nums text-content-tertiary">
+    <div className="flex flex-wrap items-center gap-2 py-1 text-sm">
+      <span className="w-10 shrink-0 text-right numeral text-content-tertiary">
         {event.minute !== null ? `${event.minute}'` : ''}
       </span>
       <EventIcon event={event} />
       <span className="font-medium text-content">{event.label}</span>
-      {event.detail && <span className="truncate text-content-tertiary">{event.detail}</span>}
+      {event.detail && <span className="text-content-tertiary">{event.detail}</span>}
     </div>
   );
 }
@@ -157,9 +158,9 @@ function extractGoalAuthor(detail?: string): string {
 
 function GoalRow({ event, isHome }: { event: MatchEvent; isHome: boolean | null }) {
   return (
-    <div className={cn('flex items-center gap-1.5 text-xs', isHome === false ? 'flex-row-reverse' : '')}>
-      <span className="font-medium text-content">{extractGoalAuthor(event.detail)}</span>
-      <span className="text-content-tertiary">{event.minute}'</span>
+    <div className={cn('flex items-start gap-1.5 text-xs text-content-secondary', isHome === false && 'justify-end text-right')}>
+      <Goal className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+      <span>{extractGoalAuthor(event.detail)} <span className="numeral whitespace-nowrap text-content-tertiary">{event.minute !== null ? `${event.minute}′` : ''}</span>{event.label.toLowerCase().includes('propia') && ' (p. p.)'}</span>
     </div>
   );
 }
@@ -258,21 +259,15 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="flex max-h-[90vh] max-w-2xl flex-col overflow-hidden p-0">
-        <div className="border-b border-white/[0.09] p-5">
-            <DialogHeader className="gap-3">
+      <DialogContent className="flex h-[90dvh] max-h-[800px] w-[calc(100%-2rem)] max-w-2xl gap-0 [&>button]:size-11 flex-col overflow-hidden p-0">
+        <div className="border-b border-border p-5">
+            <DialogHeader className="gap-4 pr-0 pt-8">
               <DialogTitle className="sr-only">
                 {match.home.name} vs {match.away.name}
               </DialogTitle>
-              <div className="flex items-center justify-center gap-2 text-xs text-content-tertiary">
-                <Badge variant={statusVariant(match.status)} className="text-[10px]">
-                  {match.status === 'live' && liveMinute !== null ? `${liveMinute}'` : match.statusLabel}
-                </Badge>
-                {match.phase !== 'desconocido' && match.phase !== 'pendiente' && (
-                  <Badge variant="outline-muted" className="text-[10px]">
-                    {phaseLabel(match.phase)}
-                  </Badge>
-                )}
+              <DialogDescription className="sr-only">Marcador, eventos y alineaciones del partido.</DialogDescription>
+              <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-content-tertiary">
+                <MatchStatus match={match} minute={liveMinute} />
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   {match.kickoffFormatted}
@@ -286,16 +281,7 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                   <Badge variant="outline-muted" className="text-[10px]">Local</Badge>
                 </div>
 
-                <div className="flex shrink-0 flex-col items-center gap-1">
-                  <div className="flex items-center gap-2 text-4xl font-bold tabular-nums text-content sm:text-5xl">
-                    <span>{match.home.score ?? '-'}</span>
-                    <span className="text-content-tertiary">:</span>
-                    <span>{match.away.score ?? '-'}</span>
-                  </div>
-                  <div className="text-xs text-content-tertiary">
-                    {match.status === 'live' && liveMinute !== null ? `Minuto ${liveMinute}` : match.statusLabel}
-                  </div>
-                </div>
+                <MatchScore match={match} />
 
                 <div className="flex min-w-0 flex-1 flex-col items-center gap-2">
                   <TeamShield name={match.away.name} logoUrl={match.away.logoUrl} className="h-14 w-14 sm:h-16 sm:w-16" />
@@ -307,26 +293,26 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
           </div>
 
           <Tabs defaultValue="summary" className="flex min-h-0 flex-1 flex-col">
-            <TabsList className="mx-5 mt-4 w-fit">
-              <TabsTrigger value="summary" className="gap-1.5 text-xs">
+            <TabsList className="mx-5 mt-4 h-auto w-fit">
+              <TabsTrigger value="summary" className="min-h-11 gap-1.5 text-sm">
                 <FileText className="h-3.5 w-3.5" />
                 Resumen
               </TabsTrigger>
-              <TabsTrigger value="lineups" className="gap-1.5 text-xs">
+              <TabsTrigger value="lineups" className="min-h-11 gap-1.5 text-sm">
                 <Users className="h-3.5 w-3.5" />
                 Alineaciones
               </TabsTrigger>
             </TabsList>
 
-            <ScrollArea className="h-[400px] px-5 pb-5 sm:h-[460px]">
-              <TabsContent value="summary" className="mt-4 space-y-4">
+            <ScrollArea className="min-h-0 flex-1 px-5">
+              <TabsContent value="summary" className="my-4 space-y-4">
                 {match.summary && (
-                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                  <div className="rounded-lg border border-border bg-surface-raised/40 p-4">
                     <div className="mb-2 flex items-center gap-2 text-xs font-medium text-content-tertiary">
                       <FileText className="h-3.5 w-3.5" />
                       Resumen del partido{match.dataSource === 'espn' ? ' · ESPN' : match.dataSource === 'sofascore' ? ' · SofaScore' : ''}
                       {match.summary.source === 'generated' && (
-                        <span className="ml-auto text-[10px] opacity-70">generado automáticamente</span>
+                        <span className="ml-auto text-[10px] opacity-80">generado automáticamente</span>
                       )}
                     </div>
                     <p className="text-sm leading-relaxed text-content">{match.summary.text}</p>
@@ -334,7 +320,7 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                 )}
 
                 {match.squadPlayers.length > 0 && (
-                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                  <div className="rounded-lg border border-border bg-surface-raised/40 p-4">
                     <div className="mb-2 text-xs font-medium text-content-tertiary">Jugadores de tu plantilla</div>
                     <div className="flex flex-wrap gap-1.5">
                       {match.squadPlayers.map((p) => (
@@ -346,15 +332,15 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                   </div>
                 )}
 
-                <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                <div className="rounded-lg border border-border bg-surface-raised/40 p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-medium text-content-tertiary">
                     <Goal className="h-3.5 w-3.5" />
                     Eventos
                   </div>
                   {match.events.length > 0 ? (
-                    <div className="grid gap-1 sm:grid-cols-2">
+                    <div className="divide-y divide-border">
                       {match.events.map((event, idx) => (
-                        <MatchEventRow key={idx} event={event} />
+                        <div key={idx} className="py-2"><span className="text-xs text-content-tertiary">{event.isHome === true ? match.home.name : event.isHome === false ? match.away.name : "Partido"}</span><MatchEventRow event={event} /></div>
                       ))}
                     </div>
                   ) : (
@@ -374,18 +360,18 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
                 )}
               </TabsContent>
 
-              <TabsContent value="lineups" className="mt-4">
+              <TabsContent value="lineups" className="my-4">
                 {hasLineups ? (
                   <div className="grid gap-6 sm:grid-cols-2">
-                    <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                    <div className="rounded-lg border border-border bg-surface-raised/40 p-4">
                       <LineupSide side={match.lineups!.home} isHome />
                     </div>
-                    <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-4">
+                    <div className="rounded-lg border border-border bg-surface-raised/40 p-4">
                       <LineupSide side={match.lineups!.away} isHome={false} />
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-white/[0.09] bg-surface-raised/40 p-8 text-center">
+                  <div className="rounded-lg border border-border bg-surface-raised/40 p-8 text-center">
                     <Users className="mx-auto h-8 w-8 text-content-tertiary" />
                     <p className="mt-2 text-sm font-medium text-content">Alineaciones no disponibles</p>
                     <p className="text-xs text-content-tertiary">
@@ -401,162 +387,97 @@ function MatchDetailDialog({ match, open, onClose }: { match: EnrichedMatch; ope
   );
 }
 
+function MatchStatus({ match, minute }: { match: EnrichedMatch; minute: number | null }) {
+  return (
+    <Badge variant={statusVariant(match.status)} className="gap-1.5">
+      {match.status === 'live' && <Radio className="size-3.5" aria-hidden="true" />}
+      {match.statusLabel}{match.status === 'live' && minute !== null ? ` · ${minute}′` : ''}
+      {match.status === 'live' && phaseLabel(match.phase) ? ` · ${phaseLabel(match.phase)}` : ''}
+    </Badge>
+  );
+}
+
+function MatchScore({ match }: { match: EnrichedMatch }) {
+  const scheduled = match.status === 'pending';
+  const time = match.startTimestamp > 0
+    ? new Date(match.startTimestamp * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' })
+    : 'Por confirmar';
+  return (
+    <div className="flex flex-col items-center justify-center gap-2">
+      <span className={cn('numeral whitespace-nowrap font-semibold text-content', scheduled ? 'text-xl sm:text-2xl' : 'text-3xl sm:text-4xl')}>
+        {scheduled ? time : `${match.home.score ?? '–'} : ${match.away.score ?? '–'}`}
+      </span>
+      <span className="text-xs text-content-tertiary">{scheduled ? 'Hora peninsular' : match.status === 'finished' ? 'Resultado final' : 'Marcador'}</span>
+    </div>
+  );
+}
+
 function MatchCard({ match, onOpen }: { match: EnrichedMatch; onOpen: () => void }) {
   const liveMinute = useLiveMinute(match.minute, match.status, match.startTimestamp, match.dataStale);
-  // Todos los partidos abren detalle: incluso los pendientes tienen ficha
-  // (hora, alineaciones probables cuando existen, jugadores de la plantilla).
-  const isClickable = true;
-  const goals = match.events.filter((e) => e.type === 'goal' && e.minute !== null);
-
+  const goals = match.events.filter((event) => event.type === 'goal');
   return (
-    <Card
-      className={cn(
-        'overflow-hidden transition-colors',
-        match.important && 'border-foreground/10 bg-surface-raised/30',
-        isClickable && 'hover:bg-surface-raised/50 cursor-pointer',
-      )}
-    >
-      <CardContent className="p-0">
-        <button
-          onClick={isClickable ? onOpen : undefined}
-          disabled={!isClickable}
-          className={cn(
-            'flex w-full flex-col items-center gap-3 p-4 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:text-left [.density-dense_&]:p-3',
-            !isClickable && 'cursor-default',
-          )}
-        >
-          {/* Estado + fase + hora */}
-          <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-content-tertiary sm:justify-start">
-            <Badge variant={statusVariant(match.status)} className="text-[10px]">
-              {match.status === 'live' && liveMinute !== null ? `${liveMinute}'` : match.statusLabel}
-            </Badge>
-            {match.phase !== 'desconocido' && match.phase !== 'pendiente' && (
-              <Badge variant="outline-muted" className="text-[10px]">
-                {phaseLabel(match.phase)}
-              </Badge>
-            )}
-            <span className="flex items-center gap-1">
-              {match.status === 'live' ? (
-                /* El ÚNICO latido infinito del producto junto a los
-                   indicadores de carga, y el único que se ha ganado el sitio:
-                   dice «esto está ocurriendo ahora mismo», que es un estado
-                   real y cambiante, no un adorno. Se detiene solo cuando el
-                   partido termina.
-
-                   No lleva `motion-essential`: con movimiento reducido el
-                   latido se apaga sin pérdida, porque el estado ya está escrito
-                   al lado en palabras y el minuto sigue avanzando. */
-                <Radio className="h-3 w-3 animate-breathe text-positive-text" aria-hidden="true" />
-              ) : match.status === 'finished' ? (
-                <Clock className="h-3 w-3" />
-              ) : (
-                <CalendarDays className="h-3 w-3" />
-              )}
-              {match.kickoffFormatted}
-            </span>
+    <Card variant="interactive" className="h-full overflow-hidden">
+      <button onClick={onOpen} aria-label={`Ver partido: ${match.home.name} contra ${match.away.name}`} className="group flex h-full w-full flex-col text-left">
+        <div className="flex w-full flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 [.density-dense_&]:py-2">
+          <MatchStatus match={match} minute={liveMinute} />
+          <span className="flex items-center gap-1.5 text-xs text-content-tertiary"><CalendarDays className="size-3.5" />{match.kickoffFormatted}</span>
+        </div>
+        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-x-3 gap-y-4 p-4 sm:p-5 [.density-dense_&]:p-3">
+          <div className="flex min-w-0 flex-col items-center gap-2 text-center">
+            <TeamShield name={match.home.name} logoUrl={match.home.logoUrl} className="size-12 sm:size-14" />
+            <span className="min-h-10 text-sm font-semibold leading-5 text-content">{match.home.name}</span>
           </div>
-
-          {/* Marcador central */}
-          <div className="flex flex-1 items-center justify-center gap-3 sm:gap-5">
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:items-end">
-              <TeamShield name={match.home.name} logoUrl={match.home.logoUrl} className="h-12 w-12 sm:h-14 sm:w-14" />
-              <span className="truncate text-sm font-semibold text-content">{match.home.name}</span>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-center gap-0.5">
-              <div className="flex items-center gap-1.5 text-3xl font-bold tabular-nums text-content sm:text-4xl">
-                <span className="min-w-[1.5ch] text-center">{match.home.score ?? '-'}</span>
-                <span className="text-content-tertiary">:</span>
-                <span className="min-w-[1.5ch] text-center">{match.away.score ?? '-'}</span>
-              </div>
-              {isClickable && (
-                <span className="flex items-center gap-1 text-[10px] text-content-tertiary">
-                  Ver detalle <ChevronRight className="h-3 w-3" />
-                </span>
-              )}
-            </div>
-
-            <div className="flex min-w-0 flex-1 flex-col items-center gap-2 sm:items-start">
-              <TeamShield name={match.away.name} logoUrl={match.away.logoUrl} className="h-12 w-12 sm:h-14 sm:w-14" />
-              <span className="truncate text-sm font-semibold text-content">{match.away.name}</span>
-            </div>
+          <div className="pt-3"><MatchScore match={match} /></div>
+          <div className="flex min-w-0 flex-col items-center gap-2 text-center">
+            <TeamShield name={match.away.name} logoUrl={match.away.logoUrl} className="size-12 sm:size-14" />
+            <span className="min-h-10 text-sm font-semibold leading-5 text-content">{match.away.name}</span>
           </div>
-
-          {/* Jugadores implicados + goles */}
-          <div className="flex w-full flex-col items-center gap-2 sm:w-auto sm:items-end">
-            {goals.length > 0 && (
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-                {goals.slice(0, 3).map((event, idx) => (
-                  <GoalRow key={idx} event={event} isHome={event.isHome} />
-                ))}
-                {goals.length > 3 && (
-                  <span className="text-[10px] text-content-tertiary">+{goals.length - 3}</span>
-                )}
-              </div>
-            )}
-
-            {match.important && (
-              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:justify-end">
-                {match.squadPlayers.slice(0, 3).map((p) => (
-                  <Badge
-                    key={p.playerId}
-                    variant="default"
-                    className="max-w-[120px] truncate text-[10px] [.density-dense_&]:text-[9px]"
-                    title={`${p.nickname} · ${p.teamName}`}
-                  >
-                    {p.nickname}
-                  </Badge>
-                ))}
-                {match.squadPlayers.length > 3 && (
-                  <Badge variant="secondary" className="text-[10px]">
-                    +{match.squadPlayers.length - 3}
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-        </button>
-      </CardContent>
+          {goals.length > 0 && <div className="col-span-3 grid grid-cols-2 gap-4 border-t border-border pt-3">
+            {[true, false].map((home) => <div key={String(home)} className="space-y-1.5">
+              {goals.filter((event) => event.isHome === home).map((event, idx) => <GoalRow key={idx} event={event} isHome={home} />)}
+            </div>)}
+            {goals.filter((event) => event.isHome === null).map((event, idx) => <GoalRow key={`unknown-${idx}`} event={event} isHome={null} />)}
+          </div>}
+        </div>
+        <div className="mt-auto flex w-full flex-wrap items-center justify-between gap-3 border-t border-border bg-surface-sunken px-4 py-3">
+          <span className="flex min-w-0 flex-1 items-start gap-2 text-xs text-content-secondary">
+            {match.important ? <><Users className="mt-0.5 size-3.5 shrink-0" /><span><span className="font-medium text-content">Tu plantilla · </span>{match.squadPlayers.map((p) => p.nickname).join(', ')}</span></> : <><FileText className="size-3.5 shrink-0" />Resumen y alineaciones</>}
+          </span>
+          <span className="flex items-center gap-1 text-xs font-medium text-content">Ver partido<ChevronRight className="size-4" /></span>
+          {match.dataStale && <span className="flex w-full items-center gap-1.5 text-xs text-caution-text"><AlertCircle className="size-3.5" />Datos pendientes de actualizar</span>}
+        </div>
+      </button>
     </Card>
   );
 }
 
-function MatchSection({
-  title,
-  matches,
-  expanded,
-  onToggle,
-  onOpenMatch,
-}: {
-  title: string;
-  matches: EnrichedMatch[];
-  expanded: boolean;
-  onToggle: () => void;
-  onOpenMatch: (match: EnrichedMatch) => void;
+function MatchSection({ title, matches, expanded, onToggle, onOpenMatch }: {
+  title: string; matches: EnrichedMatch[]; expanded: boolean;
+  onToggle: () => void; onOpenMatch: (match: EnrichedMatch) => void;
 }) {
+  const id = useId();
   if (matches.length === 0) return null;
-
+  const groups = [
+    { title: 'En juego', matches: matches.filter((m) => m.status === 'live' || m.status === 'halftime') },
+    { title: 'Próximos partidos', matches: matches.filter((m) => m.status === 'pending') },
+    { title: 'Resultados', matches: matches.filter((m) => m.status === 'finished') },
+    { title: 'Otros estados', matches: matches.filter((m) => ['postponed', 'canceled', 'unknown'].includes(m.status)) },
+  ].filter((group) => group.matches.length > 0);
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <button onClick={onToggle} className="flex w-full items-center justify-between text-left">
-          <div>
-            <CardTitle className="text-base">{title}</CardTitle>
-            <CardDescription>{matches.length} partido{matches.length !== 1 ? 's' : ''}</CardDescription>
-          </div>
-          <Button variant="ghost" size="sm">
-            {expanded ? 'Ocultar' : 'Ver'}
-          </Button>
-        </button>
-      </CardHeader>
-      {expanded && (
-        <CardContent className="space-y-3 pt-0">
-          {matches.map((match) => (
-            <MatchCard key={match.id} match={match} onOpen={() => onOpenMatch(match)} />
-          ))}
-        </CardContent>
-      )}
-    </Card>
+    <section className="space-y-4" aria-labelledby={`${id}-title`}>
+      <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
+        <div className="flex items-center gap-3"><h2 id={`${id}-title`} className="font-display text-xl font-semibold tracking-tight">{title}</h2><Badge variant="secondary" className="numeral">{matches.length}</Badge></div>
+        <Button variant="ghost" size="touch" onClick={onToggle} aria-expanded={expanded} aria-controls={id}>
+          {expanded ? 'Ocultar' : 'Mostrar'}<ChevronDown className={cn('ml-2 size-4', expanded && 'rotate-180')} />
+        </Button>
+      </div>
+      <div id={id} hidden={!expanded} className="space-y-6">
+        {groups.map((group) => <div key={group.title} className="space-y-3">
+          <h3 className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-content-tertiary">{group.title}<span className="numeral">· {group.matches.length}</span></h3>
+          <div className="grid gap-4 xl:grid-cols-2">{group.matches.map((match) => <MatchCard key={match.id} match={match} onOpen={() => onOpenMatch(match)} />)}</div>
+        </div>)}
+      </div>
+    </section>
   );
 }
 
@@ -580,7 +501,7 @@ function WeekSelector({
     <div className="flex items-center gap-2">
       <Button
         variant="outline"
-        size="icon-sm"
+        size="icon-touch"
         aria-label="Jornada anterior"
         disabled={!canGoBack}
         onClick={() => canGoBack && onChange(weeks[index - 1])}
@@ -589,7 +510,7 @@ function WeekSelector({
       </Button>
 
       <Select value={String(week)} onValueChange={(value) => onChange(Number(value))}>
-        <SelectTrigger className="w-40">
+        <SelectTrigger className="h-11 w-40 numeral">
           <SelectValue placeholder="Jornada" />
         </SelectTrigger>
         <SelectContent>
@@ -604,7 +525,7 @@ function WeekSelector({
 
       <Button
         variant="outline"
-        size="icon-sm"
+        size="icon-touch"
         aria-label="Jornada siguiente"
         disabled={!canGoForward}
         onClick={() => canGoForward && onChange(weeks[index + 1])}
@@ -625,8 +546,8 @@ export default function MatchesTab({ league }: MatchesTabProps) {
     queryFn: () => fantasyAPI.getMatches(league.id, league.team.id, selectedWeek),
     placeholderData: (previous) => previous,
     refetchInterval: (query) => {
-      const liveCount = query.state.data?.matches.filter((m) => m.status === 'live').length ?? 0;
-      return liveCount > 0 ? 60_000 : false;
+      const liveCount = query.state.data?.matches.filter((m) => (m.status === 'live' || m.status === 'halftime')).length ?? 0;
+      return liveCount > 0 ? 60_000 : 300_000;
     },
   });
 
@@ -648,7 +569,7 @@ export default function MatchesTab({ league }: MatchesTabProps) {
   const { important, normal, week, notes, currentWeek, availableWeeks } = data;
   const isPastWeek = week < currentWeek;
   const isSwitchingWeek = isFetching && selectedWeek !== undefined && selectedWeek !== week;
-  const liveCount = data.matches.filter((m) => m.status === 'live').length;
+  const liveCount = data.matches.filter((m) => (m.status === 'live' || m.status === 'halftime')).length;
   const finishedCount = data.matches.filter((m) => m.status === 'finished').length;
   const importantCount = important.length;
 
@@ -658,23 +579,23 @@ export default function MatchesTab({ league }: MatchesTabProps) {
         as="h1"
         eyebrow={`Partidos · jornada ${week}${isPastWeek ? ' (finalizada)' : ''}`}
         title="Dónde están jugando los tuyos"
-        description="Los partidos de la jornada, ordenados por cuántos jugadores de tu plantilla saltan al campo en cada uno."
+        description="Marcadores, próximos encuentros y el seguimiento de tu plantilla, en un solo lugar."
         action={
-          <WeekSelector
+          <div className="flex flex-wrap items-center gap-2"><WeekSelector
             week={week}
             currentWeek={currentWeek}
             availableWeeks={availableWeeks}
-            onChange={(value) => setSelectedWeek(value)}
-          />
+            onChange={(value) => { setDetailMatch(null); setSelectedWeek(value); }}
+          /><Button variant="outline" size="icon-touch" aria-label="Actualizar partidos" disabled={isFetching} onClick={() => refetch()}><RefreshCw className="size-4" /></Button></div>
         }
       />
 
       {isSwitchingWeek && (
-        <div className="text-xs text-content-tertiary">Cargando jornada {selectedWeek}…</div>
+        <div role="status" className="text-xs text-content-tertiary">Cargando jornada {selectedWeek}…</div>
       )}
 
       {isPastWeek && (
-        <Card className="border-white/[0.09] bg-surface-raised/30">
+        <Card className="border-border bg-surface-raised">
           <CardContent className="flex items-start gap-2 pt-4 text-sm text-content-tertiary">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             Estás viendo una jornada pasada. Los jugadores marcados como «tuyos» son los de tu
@@ -684,7 +605,7 @@ export default function MatchesTab({ league }: MatchesTabProps) {
       )}
 
       {notes.length > 0 && (
-        <Card className="border-caution/25 bg-caution-quiet">
+        <Card className="border-caution/40 bg-caution-quiet">
           <CardContent className="pt-4">
             {notes.map((note) => (
               <p key={note} className="flex items-start gap-2 text-sm text-caution-text">
@@ -696,20 +617,22 @@ export default function MatchesTab({ league }: MatchesTabProps) {
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={<Radio className="h-5 w-5" />} label="En vivo" value={liveCount} sub="partidos" />
-        <KpiCard icon={<Trophy className="h-5 w-5" />} label="Finalizados" value={finishedCount} sub="partidos" />
-        <KpiCard icon={<CalendarDays className="h-5 w-5" />} label="Importantes" value={importantCount} sub="con jugadores tuyos" />
-        <KpiCard
-          icon={<Clock className="h-5 w-5" />}
-          label="Pendientes"
-          value={data.matches.length - liveCount - finishedCount}
-          sub="partidos"
-        />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: 'En juego', count: liveCount, icon: Radio },
+          { label: 'Pendientes', count: data.matches.filter((m) => m.status === 'pending').length, icon: Clock },
+          { label: 'Finalizados', count: finishedCount, icon: Trophy },
+          { label: 'Con tus jugadores', count: importantCount, icon: Users },
+        ].map(({ label, count, icon: Icon }) => <Card key={label} variant="sunken" className="flex items-center gap-3 p-4 [.density-dense_&]:p-3">
+          <Icon className="size-5 shrink-0 text-content-tertiary" />
+          <div><div className="numeral text-2xl font-semibold">{count}</div><div className="text-xs text-content-tertiary">{label}</div></div>
+        </Card>)}
       </div>
 
+      {data.matches.length === 0 && <EmptyState icon={<CalendarDays />} title="No hay partidos en esta jornada" description="El calendario todavía no está disponible. Puedes elegir otra jornada o volver a consultarlo." action={<Button variant="outline" size="touch" onClick={() => refetch()}>Volver a cargar</Button>} />}
+
       <MatchSection
-        title="Partidos importantes"
+        title="Tu plantilla en juego"
         matches={important}
         expanded={showImportant}
         onToggle={() => setShowImportant((s) => !s)}
@@ -717,7 +640,7 @@ export default function MatchesTab({ league }: MatchesTabProps) {
       />
 
       <MatchSection
-        title="Resto de la jornada"
+        title={important.length ? "Resto de la jornada" : "Todos los partidos"}
         matches={normal}
         expanded={showNormal}
         onToggle={() => setShowNormal((s) => !s)}
@@ -726,7 +649,7 @@ export default function MatchesTab({ league }: MatchesTabProps) {
 
       {detailMatch && (
         <MatchDetailDialog
-          match={detailMatch}
+          match={data.matches.find((match) => match.id === detailMatch.id) ?? detailMatch}
           open={!!detailMatch}
           onClose={() => setDetailMatch(null)}
         />

@@ -1,17 +1,19 @@
 {
-  "computedAt": "2026-08-31T19:27:10.168Z",
+  "computedAt": "2026-09-07T14:11:41.790Z",
   "leagueId": "017832595",
-  "week": 3,
-  "samples": 29,
-  "maeLegacy": 2.71,
-  "maeV1": 2.68,
+  "week": 4,
+  "samples": 69,
+  "maeLegacy": 2.88,
+  "maeV1": 2.88,
   "weeks": [
-    3
+    3,
+    4,
+    6
   ],
   "note": "Baseline = media simple; v1 = media con decaimiento. Sin factores de fixture en ninguna de las dos.",
   "trackRecord": {
-    "settled": 195,
-    "maeXp": 2.91,
-    "maeLegacy": 2.9
+    "settled": 256,
+    "maeXp": 2.75,
+    "maeLegacy": 2.68
   }
 }

@@ -1,6 +1,94 @@
 {
-  "status": "insufficient-data",
-  "samples": 29,
-  "note": "Hacen falta al menos 30 muestras jugador-jornada liquidadas (hay 29). La calibración se activará sola al acumular jornadas.",
-  "computedAt": "2026-08-31T19:27:10.171Z"
+  "status": "ok",
+  "samples": 69,
+  "best": {
+    "shrinkageK": 5,
+    "fixtureDampening": 1.25,
+    "mae": 2.739
+  },
+  "baselineMae": 2.739,
+  "grid": [
+    {
+      "shrinkageK": 3,
+      "fixtureDampening": 0.5,
+      "mae": 2.773
+    },
+    {
+      "shrinkageK": 3,
+      "fixtureDampening": 0.75,
+      "mae": 2.765
+    },
+    {
+      "shrinkageK": 3,
+      "fixtureDampening": 1,
+      "mae": 2.757
+    },
+    {
+      "shrinkageK": 3,
+      "fixtureDampening": 1.25,
+      "mae": 2.749
+    },
+    {
+      "shrinkageK": 5,
+      "fixtureDampening": 0.5,
+      "mae": 2.756
+    },
+    {
+      "shrinkageK": 5,
+      "fixtureDampening": 0.75,
+      "mae": 2.75
+    },
+    {
+      "shrinkageK": 5,
+      "fixtureDampening": 1,
+      "mae": 2.744
+    },
+    {
+      "shrinkageK": 5,
+      "fixtureDampening": 1.25,
+      "mae": 2.739
+    },
+    {
+      "shrinkageK": 8,
+      "fixtureDampening": 0.5,
+      "mae": 2.753
+    },
+    {
+      "shrinkageK": 8,
+      "fixtureDampening": 0.75,
+      "mae": 2.748
+    },
+    {
+      "shrinkageK": 8,
+      "fixtureDampening": 1,
+      "mae": 2.744
+    },
+    {
+      "shrinkageK": 8,
+      "fixtureDampening": 1.25,
+      "mae": 2.739
+    },
+    {
+      "shrinkageK": 12,
+      "fixtureDampening": 0.5,
+      "mae": 2.751
+    },
+    {
+      "shrinkageK": 12,
+      "fixtureDampening": 0.75,
+      "mae": 2.747
+    },
+    {
+      "shrinkageK": 12,
+      "fixtureDampening": 1,
+      "mae": 2.743
+    },
+    {
+      "shrinkageK": 12,
+      "fixtureDampening": 1.25,
+      "mae": 2.739
+    }
+  ],
+  "note": "Los parámetros en producción ya son los mejores de la rejilla; sin cambios.",
+  "computedAt": "2026-09-07T14:11:41.820Z"
 }
