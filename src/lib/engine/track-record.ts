@@ -22,7 +22,7 @@ import { readJsonl, writeFileAtomic, writeJsonlAtomic } from './jsonl';
  */
 
 /** Versión del modelo: v1.2 añade shrinkage jerárquico, xP−λσ, capitán co-optimizado y noticias por categorías. */
-export const MODEL_VERSION = 'components-v1.2';
+export const MODEL_VERSION = 'components-v1.3';
 
 const TRACK_RECORD_DIR = writablePath('track-record');
 

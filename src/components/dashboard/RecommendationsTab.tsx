@@ -1,5 +1,7 @@
 'use client';
 
+import StrategyDiagnostics from '../shared/StrategyDiagnostics';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -241,6 +243,8 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
 
       {/* Capitán de la jornada: la decisión con más apalancamiento (x2 puntos) */}
       {captain && <CaptainCard captain={captain} onSelectPlayer={setSelectedDetailPlayer} />}
+
+      {data?.strategy && <StrategyDiagnostics report={data.strategy} />}
 
       {/* Oportunidades Destacadas (Highlights) */}
       <Card>

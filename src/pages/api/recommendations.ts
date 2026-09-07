@@ -1,3 +1,5 @@
+import { buildStrategyReport } from '../../lib/engine/strategy';
+import { fetchApiFootballAbsences } from '../../lib/engine/sources/api-football';
 import type { APIRoute } from 'astro';
 import { generateRecommendations, computeBestMoves } from '../../lib/recommendations/engine';
 import { getToken, fetchOfficialAPI, fetchCurrentLineup, CMP } from '../../lib/fantasy/api-proxy';
@@ -239,6 +241,23 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       },
       confirmedLineups,
     };
+    const supplemental = await fetchApiFootballAbsences(statsUniverse, officialTeams, calendar);
+    const strategy = buildStrategyReport({
+      players: statsUniverse,
+      ownPlayerIds,
+      calendar,
+      context: estimatorContext,
+      additionalAbsences: supplemental.absences,
+      sources: [
+        { name: 'LaLiga Fantasy', status: 'available', detail: `${Object.values(statsMap).filter((stats) => stats.length > 0).length}/${new Set(statsUniverse.map((p) => p.id)).size} jugadores con histórico. Plantilla y mercado oficiales.` },
+        { name: 'ClubElo', status: !teamElos ? 'unavailable' : teamElos.origin === 'stale' ? 'stale' : 'available', detail: `${teamElos?.eloByTeamId.size ?? 0} equipos con Elo.` },
+        { name: 'Jornada Perfecta', status: !probableData ? 'unavailable' : probableData.origin === 'stale' ? 'stale' : 'available', detail: `${probableLineups.size} onces probables; ${probableData?.injuries.length ?? 0} avisos de bajas y dudas.` },
+        { name: 'Sofascore', status: confirmedLineups.size ? 'available' : 'unavailable', detail: `${confirmedLineups.size} onces confirmados cruzados. Sin once puede significar que aún no se ha publicado o que la consulta falló.` },
+        { name: 'FútbolFantasy', status: !valueTrends ? 'unavailable' : valueTrends.origin === 'stale' ? 'stale' : 'available', detail: `${valueTrends?.matched ?? 0} tendencias de valor cruzadas.` },
+        { name: 'Noticias', status: externalResult.coverage.feedsOk.length ? 'available' : 'unavailable', detail: `${externalResult.coverage.feedsOk.length} feeds disponibles; ${externalResult.coverage.feedsFailed.length} fallidos.` },
+        supplemental.source,
+      ],
+    });
     analysis.clauseRisks = analyzeClauseRisks(analysis, estimatorContext);
 
     // Pronóstico de la jornada por equipo: la dificultad del emparejamiento y
@@ -433,7 +452,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       console.warn('[track-record] persist failed:', persistError instanceof Error ? persistError.message : persistError);
     }
 
-    return new Response(JSON.stringify({ recommendations, bestMoves, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, fixtures: [...fixtureOutlooks.values()], league, money, week, marketCount: market.length }), {
+    return new Response(JSON.stringify({ recommendations, bestMoves, strategy, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, fixtures: [...fixtureOutlooks.values()], league, money, week, marketCount: market.length }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

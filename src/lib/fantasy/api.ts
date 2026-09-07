@@ -1,3 +1,4 @@
+import type { StrategyReport } from '../../types/strategy';
 import type {
   FantasyLeague,
   TeamData,
@@ -158,6 +159,7 @@ export const fantasyAPI = {
   getRecommendations: (leagueId: string, teamId: number) =>
     fetchJSON<{
       recommendations: Recommendation[];
+      strategy?: StrategyReport;
       bestMoves?: Recommendation[];
       optimalLineup?: { formation: string; starters: { player: PlayerMaster; expectedPoints: number }[]; captain?: { player: PlayerMaster; expectedPoints: number }; totalExpected: number };
       captain?: CaptainRecommendation | null;

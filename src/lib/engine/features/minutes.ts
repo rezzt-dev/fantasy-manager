@@ -116,7 +116,7 @@ export function estimateMinutes(input: {
     };
   }
 
-  const minsIfStarter = historicalMinutes !== null && historicalMinutes >= 45 ? historicalMinutes : DEFAULT_MINS_IF_STARTER;
+  const minsIfStarter = historicalMinutes !== null && historicalMinutes >= 45 ? Math.min(90, historicalMinutes) : DEFAULT_MINS_IF_STARTER;
 
   // 2. Alineación confirmada (Sofascore): override a 1/0 cerca del partido.
   const confirmed = teamId !== undefined ? confirmedLineups?.get(teamId) : undefined;
@@ -127,7 +127,7 @@ export function estimateMinutes(input: {
       const pStarter = inStarters >= 0 ? 1 : 0;
       return {
         pStarter,
-        expectedMinutes: Math.round(pStarter * minsIfStarter + (1 - pStarter) * DEFAULT_MINS_IF_BENCH),
+        expectedMinutes: pStarter * minsIfStarter + (1 - pStarter) * DEFAULT_MINS_IF_BENCH,
         source: 'confirmed-lineup',
         note: inStarters >= 0 ? 'Titular confirmado (Sofascore).' : 'Suplente confirmado (Sofascore).',
       };
@@ -144,14 +144,18 @@ export function estimateMinutes(input: {
 
     let pStarter: number;
     if (starter) {
-      const declared = starter.probability > 0 && starter.probability < 100 ? starter.probability / 100 : 1;
+      const declared = Number.isFinite(starter.probability) ? Math.min(100, Math.max(0, starter.probability)) / 100 : 1;
       pStarter = P_STARTER_IN_PROBABLE_XI * declared;
     } else {
-      pStarter = P_STARTER_ON_BENCH;
+      const alternativeIndex = findPlayerIndex(player, lineup.alternatives);
+      const alternative = alternativeIndex >= 0 ? lineup.alternatives[alternativeIndex] : undefined;
+      pStarter = alternative && Number.isFinite(alternative.probability)
+        ? P_STARTER_IN_PROBABLE_XI * Math.min(100, Math.max(0, alternative.probability)) / 100
+        : P_STARTER_ON_BENCH;
     }
     if (injury?.status === 'doubt' || injury?.status === 'other') pStarter *= DOUBT_FACTOR;
 
-    const expectedMinutes = Math.round(pStarter * minsIfStarter + (1 - pStarter) * DEFAULT_MINS_IF_BENCH);
+    const expectedMinutes = pStarter * minsIfStarter + (1 - pStarter) * DEFAULT_MINS_IF_BENCH;
 
     return {
       pStarter,
@@ -164,14 +168,14 @@ export function estimateMinutes(input: {
   // 3. Solo histórico.
   if (historicalMinutes !== null) {
     let pStarter = Math.min(1, historicalMinutes / 90);
-    let expectedMinutes = historicalMinutes;
+    let expectedMinutes = Math.min(90, Math.max(0, historicalMinutes));
     if (injury?.status === 'doubt' || injury?.status === 'other') {
       pStarter *= DOUBT_FACTOR;
       expectedMinutes *= DOUBT_FACTOR;
     }
     return {
       pStarter,
-      expectedMinutes: Math.round(expectedMinutes),
+      expectedMinutes,
       source: 'historical',
       note: injury ? `Duda según Jornada Perfecta (${injury.note ?? 'sin detalle'}).` : undefined,
     };

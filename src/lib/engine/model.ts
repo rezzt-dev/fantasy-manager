@@ -130,6 +130,7 @@ export function predictPlayerPoints(
   let base: number | null = null;
   let source: PredictionSource = 'position-average';
   let expectedMinutes: number | null = null;
+  let historicalMinutes: number | null = null;
   let level: 'high' | 'medium' | 'low' = 'low';
 
   const stats = context?.playerStats?.[player.id];
@@ -143,6 +144,7 @@ export function predictPlayerPoints(
     weeksUsed = form.weeksUsed;
     pointsStdDev = form.pointsStdDev;
     expectedMinutes = form.expectedMinutes;
+    historicalMinutes = form.expectedMinutes;
     observedShares = form.pointsPer90ByStat ? sharesFromPointsPer90(form.pointsPer90ByStat) : null;
     if (form.pointsPer90 !== null && form.expectedMinutes !== null) {
       base = form.pointsPer90;
@@ -205,7 +207,9 @@ export function predictPlayerPoints(
     if (minutesEst.source !== 'historical' && minutesEst.note) notes.push(minutesEst.note);
   }
   if (expectedMinutes !== null) {
-    base *= Math.min(1, expectedMinutes / 90);
+    // Las medias de temporada ya son por partido, no por 90 minutos.
+    const referenceMinutes = source === 'components' ? 90 : (historicalMinutes || 75);
+    base *= expectedMinutes / referenceMinutes;
   }
 
   // Shrinkage jerárquico (§4.5): con pocas jornadas observadas, la estimación
@@ -219,7 +223,10 @@ export function predictPlayerPoints(
       teamTiers: context.teamTiers,
       positionAverages: context.positionAverages,
     });
-    const shrunk = partialPool(base, weeksUsed, prior, shrinkageK);
+    // El prior por partido debe responder a la misma disponibilidad: una
+    // baja con xMins=0 no puede recuperar puntos mediante partial pooling.
+    const availablePrior = expectedMinutes === null ? prior : prior * expectedMinutes / (historicalMinutes || 75);
+    const shrunk = partialPool(base, weeksUsed, availablePrior, shrinkageK);
     if (Math.abs(shrunk - base) > 0.01) {
       notes.push(`Shrinkage hacia ${note} (n=${weeksUsed}, k=${shrinkageK}).`);
     }

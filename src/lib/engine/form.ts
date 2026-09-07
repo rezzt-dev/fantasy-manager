@@ -57,7 +57,7 @@ function decayedMean(values: { value: number; weight: number }[]): number | null
  */
 export function recentForm(playerStats: PlayerWeekStat[], referenceWeek?: number): PlayerForm {
   const sorted = [...playerStats]
-    .filter((s) => Number.isFinite(s.weekNumber))
+    .filter((s) => Number.isFinite(s.weekNumber) && (referenceWeek === undefined || s.weekNumber < referenceWeek))
     .sort((a, b) => b.weekNumber - a.weekNumber)
     .slice(0, FORM_WINDOW);
 
