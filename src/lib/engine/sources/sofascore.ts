@@ -149,12 +149,23 @@ export async function fetchTournamentEvents(
   page = 0,
   ttlMs: number = EVENTS_TTL_MS,
 ): Promise<SofaEvent[]> {
+  return (await fetchTournamentEventsPage(tournamentId, seasonId, direction, page, ttlMs))?.events ?? [];
+}
+
+/** Conserva paginación y distingue una página vacía de una fuente caída. */
+export async function fetchTournamentEventsPage(
+  tournamentId: number,
+  seasonId: number,
+  direction: 'next' | 'last',
+  page = 0,
+  ttlMs: number = EVENTS_TTL_MS,
+): Promise<SofaEventsPage | null> {
   const data = (await fetchJson(
     `sofa-events-${direction}-${seasonId}-${page}`,
     `/unique-tournament/${tournamentId}/season/${seasonId}/events/${direction}/${page}`,
     ttlMs,
   )) as SofaEventsPage | null;
-  return data?.events ?? [];
+  return data && Array.isArray(data.events) ? data : null;
 }
 
 /**
@@ -325,7 +336,7 @@ export function teamLogoUrl(teamId: number): string {
   return `${BASE_URL}/team/${teamId}/image`;
 }
 
-interface SofaEventsPage {
+export interface SofaEventsPage {
   events?: SofaEvent[];
   hasNextPage?: boolean;
 }

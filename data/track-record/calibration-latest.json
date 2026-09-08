@@ -1,94 +1,94 @@
 {
   "status": "ok",
-  "samples": 62,
+  "samples": 88,
   "best": {
-    "shrinkageK": 12,
+    "shrinkageK": 5,
     "fixtureDampening": 0.5,
-    "mae": 3.072
+    "mae": 2.944
   },
-  "baselineMae": 3.094,
+  "baselineMae": 2.961,
   "grid": [
     {
       "shrinkageK": 3,
       "fixtureDampening": 0.5,
-      "mae": 3.13
+      "mae": 2.964
     },
     {
       "shrinkageK": 3,
       "fixtureDampening": 0.75,
-      "mae": 3.126
+      "mae": 2.964
     },
     {
       "shrinkageK": 3,
       "fixtureDampening": 1,
-      "mae": 3.123
+      "mae": 2.964
     },
     {
       "shrinkageK": 3,
       "fixtureDampening": 1.25,
-      "mae": 3.119
+      "mae": 2.964
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 0.5,
-      "mae": 3.097
+      "mae": 2.944
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 0.75,
-      "mae": 3.096
+      "mae": 2.944
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 1,
-      "mae": 3.095
+      "mae": 2.944
     },
     {
       "shrinkageK": 5,
       "fixtureDampening": 1.25,
-      "mae": 3.094
+      "mae": 2.944
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 0.5,
-      "mae": 3.082
+      "mae": 2.949
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 0.75,
-      "mae": 3.082
+      "mae": 2.949
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 1,
-      "mae": 3.082
+      "mae": 2.949
     },
     {
       "shrinkageK": 8,
       "fixtureDampening": 1.25,
-      "mae": 3.082
+      "mae": 2.949
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 0.5,
-      "mae": 3.072
+      "mae": 2.961
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 0.75,
-      "mae": 3.073
+      "mae": 2.961
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 1,
-      "mae": 3.073
+      "mae": 2.961
     },
     {
       "shrinkageK": 12,
       "fixtureDampening": 1.25,
-      "mae": 3.073
+      "mae": 2.961
     }
   ],
-  "note": "Parámetros actualizados (MAE 3.094 → 3.072).",
-  "computedAt": "2026-09-07T16:31:06.478Z"
+  "note": "Parámetros actualizados (MAE 2.961 → 2.944).",
+  "computedAt": "2026-09-08T20:05:21.676Z"
 }

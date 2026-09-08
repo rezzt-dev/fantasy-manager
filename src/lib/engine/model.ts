@@ -10,7 +10,7 @@ import {
   sharesFromPointsPer90,
   type ComponentShares,
 } from './features/fixture-components';
-import { europeanLoadFor, europeanPlayerAdjustment } from './features/european-load';
+import { europeanLoadFor, europeanPlayerAdjustment, resolveEuropeanDampening } from './features/european-load';
 import { estimateMinutes } from './features/minutes';
 import { partialPool, priorForPlayer } from './features/shrinkage';
 import { getEngineParams, type EngineParams } from './params';
@@ -233,7 +233,8 @@ export function predictPlayerPoints(
   const ownMatch = homeMatch ?? awayMatch;
   const matchKickoff = ownMatch ? new Date(ownMatch.matchDate || ownMatch.date).getTime() : NaN;
   const europeanFixtures = context?.europeanFixtures;
-  const hasEuropeanData = Boolean(europeanFixtures && europeanFixtures.length > 0 && Number.isFinite(matchKickoff));
+  const europeanDampening = resolveEuropeanDampening(context?.paramOverrides?.europeanDampening);
+  const hasEuropeanData = europeanDampening > 0 && Boolean(europeanFixtures && europeanFixtures.length > 0 && Number.isFinite(matchKickoff));
   const ownEuropeanLoad =
     hasEuropeanData && teamId !== undefined
       ? europeanLoadFor({
@@ -251,7 +252,7 @@ export function predictPlayerPoints(
     const adjustment = europeanPlayerAdjustment({
       outlook: ownEuropeanLoad,
       minutes: minutesEst,
-      dampening: context?.paramOverrides?.europeanDampening,
+      dampening: europeanDampening,
     });
     european = adjustment.impact;
     fatigueMultiplier = adjustment.fatigueMultiplier;
@@ -314,9 +315,9 @@ export function predictPlayerPoints(
           tier: context?.teamTiers?.get(opponentId),
         })
       : null;
-  const eloOwn = eloOwnBaseline !== undefined ? eloOwnBaseline - (ownEuropeanLoad?.eloPenalty ?? 0) : undefined;
+  const eloOwn = eloOwnBaseline !== undefined ? eloOwnBaseline - (ownEuropeanLoad?.eloPenalty ?? 0) * europeanDampening : undefined;
   const eloOpponent =
-    eloOpponentBaseline !== undefined ? eloOpponentBaseline - (opponentEuropeanLoad?.eloPenalty ?? 0) : undefined;
+    eloOpponentBaseline !== undefined ? eloOpponentBaseline - (opponentEuropeanLoad?.eloPenalty ?? 0) * europeanDampening : undefined;
   let fixture: FixtureOutlook | null = null;
 
   if (eloOwn !== undefined && eloOpponent !== undefined && eloLeagueMean !== null && teamId !== undefined && opponentId !== undefined) {
@@ -349,7 +350,7 @@ export function predictPlayerPoints(
     if (opponentEuropeanLoad && opponentEuropeanLoad.eloPenalty > 0) {
       notes.push(
         `El rival llega con carga de ${opponentEuropeanLoad.competitionShortName} ` +
-          `(−${opponentEuropeanLoad.eloPenalty} Elo en este partido): el emparejamiento mejora.`,
+          `(−${Math.round(opponentEuropeanLoad.eloPenalty * europeanDampening)} Elo en este partido): el emparejamiento mejora.`,
       );
     }
   } else {

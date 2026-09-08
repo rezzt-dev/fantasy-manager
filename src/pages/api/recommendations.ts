@@ -85,7 +85,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     }
 
     // Parámetros calibrados del motor (data/engine-params.json, Fase 3).
-    await loadEngineParams();
+    const engineParams = await loadEngineParams();
 
     // La jornada actual la necesitamos para pedir la alineación completa por
     // semana; si falla, fetchCurrentLineup vuelve al endpoint genérico.
@@ -405,6 +405,8 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
             isHome: homeMatch ? true : awayMatch ? false : undefined,
             fixtureDifficulty: prediction.fixture?.difficulty,
             fixtureMultiplier: prediction.fixture?.multiplier,
+            european: prediction.european,
+            europeanDampening: engineParams.europeanDampening,
           },
           actualPoints: null,
           settledAt: null,

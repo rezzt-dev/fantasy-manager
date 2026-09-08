@@ -437,6 +437,12 @@ export interface EuropeanRotationEffect {
   note: string | null;
 }
 
+/** Un único valor validado para los tres canales; valores corruptos usan el prior. */
+export function resolveEuropeanDampening(value?: number): number {
+  const candidate = value ?? getEngineParams().europeanDampening;
+  return Number.isFinite(candidate) ? clamp(candidate, 0, 2) : 1;
+}
+
 /**
  * Redistribución de la titularidad por rotación europea.
  *
@@ -455,7 +461,7 @@ export function applyEuropeanRotation(input: {
   const { pStarter, outlook, minutesSource } = input;
   const weight =
     EUROPEAN_WEIGHT_BY_MINUTES_SOURCE[minutesSource] *
-    (input.dampening ?? getEngineParams().europeanDampening);
+    resolveEuropeanDampening(input.dampening);
 
   if (weight <= 0 || outlook.expectedRotatedSlots <= 0) {
     return { pStarter, delta: 0, weight: 0, note: null };
@@ -491,9 +497,10 @@ export function buildEuropeanOutlooks(input: {
   fixtures: EuropeanFixture[];
   /** teamId -> tier 1-5 desde Elo (profundidad de plantilla). */
   teamTiers?: Map<number, number>;
+  dampening?: number;
 }): Map<number, EuropeanOutlook> {
   const outlooks = new Map<number, EuropeanOutlook>();
-  if (input.fixtures.length === 0) return outlooks;
+  if (input.fixtures.length === 0 || resolveEuropeanDampening(input.dampening) === 0) return outlooks;
 
   for (const match of input.calendar) {
     const kickoff = new Date(match.matchDate || match.date).getTime();
@@ -568,8 +575,11 @@ export function europeanPlayerAdjustment(input: {
   dampening?: number;
 }): EuropeanPlayerAdjustment {
   const { outlook, minutes } = input;
-  const fatigueMultiplier = outlook.fatigueMultiplier;
-  const sigmaMultiplier = outlook.sigmaMultiplier;
+  const dampening = resolveEuropeanDampening(input.dampening);
+  const fatigueMultiplier = 1 + (outlook.fatigueMultiplier - 1) * dampening;
+  // Una confirmada elimina la incertidumbre de rotación, no el cansancio físico.
+  const rotationWeight = minutes ? EUROPEAN_WEIGHT_BY_MINUTES_SOURCE[minutes.source] : 1;
+  const sigmaMultiplier = 1 + (outlook.sigmaMultiplier - 1) * dampening * rotationWeight;
 
   if (!minutes) {
     // Sin submodelo de minutos no hay rotación que redistribuir: solo queda la
@@ -586,7 +596,7 @@ export function europeanPlayerAdjustment(input: {
         xpMultiplier: round2(fatigueMultiplier),
         weight: 0,
         beneficiary: false,
-        advice: adviceFor(outlook, 0, fatigueMultiplier),
+        advice: dampening > 0 ? adviceFor(outlook, 0, fatigueMultiplier) : null,
       },
       note: null,
     };
@@ -596,10 +606,10 @@ export function europeanPlayerAdjustment(input: {
     pStarter: minutes.pStarter,
     outlook,
     minutesSource: minutes.source,
-    dampening: input.dampening,
+    dampening,
   });
 
-  const minutesIfStarter = minutes.minutesIfStarter * outlook.starterMinutesMultiplier;
+  const minutesIfStarter = minutes.minutesIfStarter * (1 + (outlook.starterMinutesMultiplier - 1) * dampening);
   const expectedMinutes = rotation.pStarter * minutesIfStarter + (1 - rotation.pStarter) * minutes.minutesIfBench;
   const minutesRatio = minutes.expectedMinutes > 0 ? expectedMinutes / minutes.expectedMinutes : 1;
   const xpMultiplier = minutesRatio * fatigueMultiplier;
@@ -616,7 +626,7 @@ export function europeanPlayerAdjustment(input: {
       xpMultiplier: round2(xpMultiplier),
       weight: round2(rotation.weight),
       beneficiary: rotation.delta > 0.02,
-      advice: adviceFor(outlook, rotation.delta, xpMultiplier),
+      advice: dampening > 0 && rotationWeight > 0 ? adviceFor(outlook, rotation.delta, xpMultiplier) : null,
     },
     note: rotation.note,
   };

@@ -1,4 +1,4 @@
-import { currentSeasonId, fetchTournamentEvents, type SofaEvent, type SofaRoundInfo } from './sofascore';
+import { currentSeasonId, fetchTournamentEventsPage, type SofaEvent, type SofaEventsPage, type SofaRoundInfo } from './sofascore';
 import { buildTeamMatcher, type OfficialTeam } from '../team-names';
 import type { EuropeanCompetition, EuropeanFixture, EuropeanStage } from './types';
 
@@ -60,9 +60,29 @@ export const COMPETITION_SHORT_NAMES: Record<EuropeanCompetition, string> = {
  */
 const TTL_MS = 6 * 60 * 60 * 1000;
 
-/** Páginas a pedir por competición y sentido. Cada una son 30 eventos. */
-const NEXT_PAGES = 2;
-const LAST_PAGES = 1;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const MAX_PAGES = 12;
+
+/** Ocho semanas para planificación; dos previas para recuperación. */
+export async function collectEuropeanEvents(
+  readPage: (page: number) => Promise<SofaEventsPage | null>,
+  direction: 'next' | 'last',
+  now: number,
+): Promise<SofaEvent[]> {
+  const events: SofaEvent[] = [];
+  const boundary = now + (direction === 'next' ? 56 : -14) * DAY_MS;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const data = await readPage(page);
+    if (!data?.events?.length) break;
+    events.push(...data.events);
+    const reachedBoundary = data.events.some((event) => {
+      const kickoff = event.startTimestamp * 1000;
+      return Number.isFinite(kickoff) && (direction === 'next' ? kickoff >= boundary : kickoff <= boundary);
+    });
+    if (data.hasNextPage === false || reachedBoundary) break;
+  }
+  return events;
+}
 
 export interface EuropeanFixturesResult {
   fixtures: EuropeanFixture[];
@@ -95,11 +115,13 @@ function played(event: SofaEvent): boolean {
   return type === 'finished' || type === 'inprogress' || type === 'halftime';
 }
 
-function toFixtures(
+export function toEuropeanFixtures(
   event: SofaEvent,
   competition: EuropeanCompetition,
   matchTeam: (name: string) => number | null,
 ): EuropeanFixture[] {
+  // No convertir fechas obsoletas de partidos suspendidos en cansancio real.
+  if (event.status?.type && !['notstarted', 'inprogress', 'halftime', 'finished'].includes(event.status.type)) return [];
   const kickoff = Number(event.startTimestamp) * 1000;
   if (!Number.isFinite(kickoff) || kickoff <= 0) return [];
 
@@ -137,31 +159,37 @@ export async function fetchEuropeanFixtures(officialTeams: OfficialTeam[]): Prom
   };
   if (officialTeams.length === 0) return empty;
 
+  const now = Date.now();
   const matchTeam = buildTeamMatcher(officialTeams);
   const fixtures: EuropeanFixture[] = [];
   const competitions: EuropeanCompetition[] = [];
 
-  for (const spec of EUROPEAN_COMPETITIONS) {
+  const results = await Promise.all(EUROPEAN_COMPETITIONS.map(async (spec) => {
+    const competitionFixtures: EuropeanFixture[] = [];
     try {
       const seasonId = await currentSeasonId(spec.tournamentId);
-      if (seasonId === null) continue;
+      if (seasonId === null) return { fixtures: competitionFixtures, available: false };
 
-      const pages = await Promise.all([
-        ...Array.from({ length: NEXT_PAGES }, (_, page) =>
-          fetchTournamentEvents(spec.tournamentId, seasonId, 'next', page, TTL_MS),
+      const pages = await Promise.all((['next', 'last'] as const).map((direction) =>
+        collectEuropeanEvents(
+          (page) => fetchTournamentEventsPage(spec.tournamentId, seasonId, direction, page, TTL_MS),
+          direction,
+          now,
         ),
-        ...Array.from({ length: LAST_PAGES }, (_, page) =>
-          fetchTournamentEvents(spec.tournamentId, seasonId, 'last', page, TTL_MS),
-        ),
-      ]);
+      ));
 
       const events = pages.flat();
-      if (events.length > 0) competitions.push(spec.competition);
-      for (const event of events) fixtures.push(...toFixtures(event, spec.competition, matchTeam));
+      for (const event of events) competitionFixtures.push(...toEuropeanFixtures(event, spec.competition, matchTeam));
+      return { fixtures: competitionFixtures, available: events.length > 0 };
     } catch (error) {
       console.warn(`[uefa] ${spec.name} no disponible:`, error instanceof Error ? error.message : error);
     }
-  }
+    return { fixtures: competitionFixtures, available: false };
+  }));
+  results.forEach((result, index) => {
+    fixtures.push(...result.fixtures);
+    if (result.available) competitions.push(EUROPEAN_COMPETITIONS[index].competition);
+  });
 
   // Un partido puede llegar por dos páginas distintas (los rangos se solapan).
   const deduped = [...new Map(fixtures.map((f) => [`${f.eventId}:${f.teamId}`, f])).values()].sort(

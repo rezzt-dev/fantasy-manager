@@ -1,3 +1,4 @@
+import type { PlayerEuropeanImpact } from '../../types/fantasy';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDir, writablePath } from '../runtime-paths';
@@ -21,8 +22,8 @@ import { readJsonl, writeFileAtomic, writeJsonlAtomic } from './jsonl';
  * persistido para esa jornada no se sobrescribe (honestidad walk-forward).
  */
 
-/** Versión del modelo: v1.2 añade shrinkage jerárquico, xP−λσ, capitán co-optimizado y noticias por categorías. */
-export const MODEL_VERSION = 'components-v1.3';
+/** v1.4: amortiguación de todos los canales europeos y σ según la fuente del once. */
+export const MODEL_VERSION = 'components-v1.4';
 
 const TRACK_RECORD_DIR = writablePath('track-record');
 
@@ -62,6 +63,9 @@ export interface PredictionRecord {
     fixtureDifficulty?: number;
     /** Multiplicador de emparejamiento aplicado a este jugador. */
     fixtureMultiplier?: number;
+    /** Snapshot prospectivo, sin recalcular con información posterior. */
+    european?: PlayerEuropeanImpact | null;
+    europeanDampening?: number;
   };
   actualPoints: number | null;
   settledAt: string | null;

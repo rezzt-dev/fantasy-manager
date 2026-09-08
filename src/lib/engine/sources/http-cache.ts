@@ -1,3 +1,4 @@
+import { kvGet, kvSet } from '../../kv-cache';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { ensureDataDir, readablePath, writablePath } from '../../runtime-paths';
@@ -27,7 +28,16 @@ interface DiskEntry {
   text: string;
 }
 
-const memCache = new Map<string, { expiresAt: number; entry: DiskEntry }>();
+const memCache = new Map<string, DiskEntry>();
+const inFlight = new Map<string, Promise<CachedFetch | null>>();
+
+function validEntry(value: unknown, url: string): value is DiskEntry {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as Partial<DiskEntry>;
+  return entry.url === url && typeof entry.text === 'string' &&
+    typeof entry.fetchedAt === 'number' && Number.isFinite(entry.fetchedAt) &&
+    entry.fetchedAt > 0 && entry.fetchedAt <= Date.now();
+}
 
 function cacheFile(key: string): string {
   return path.join(SOURCES_CACHE_DIR, `${key}.txt`);
@@ -64,17 +74,37 @@ export async function fetchTextWithCache(
   ttlMs: number,
   fetcher?: (url: string) => Promise<string>,
 ): Promise<CachedFetch | null> {
-  const now = Date.now();
+  const requestKey = JSON.stringify([key, url, ttlMs]);
+  const pending = inFlight.get(requestKey);
+  if (pending) return pending;
+  const request = fetchCached(key, url, ttlMs, fetcher);
+  inFlight.set(requestKey, request);
+  try {
+    return await request;
+  } finally {
+    inFlight.delete(requestKey);
+  }
+}
 
-  const mem = memCache.get(key);
-  if (mem && mem.expiresAt > now) {
-    return { text: mem.entry.text, origin: 'cache', fetchedAt: mem.entry.fetchedAt };
+async function fetchCached(
+  key: string,
+  url: string,
+  ttlMs: number,
+  fetcher?: (url: string) => Promise<string>,
+): Promise<CachedFetch | null> {
+  const now = Date.now();
+  const memoryKey = JSON.stringify([key, url]);
+  const mem = memCache.get(memoryKey);
+  if (mem && now - mem.fetchedAt < ttlMs) {
+    return { text: mem.text, origin: 'cache', fetchedAt: mem.fetchedAt };
   }
 
-  const disk = await readDisk(key);
-  if (disk && now - disk.fetchedAt < ttlMs) {
-    memCache.set(key, { expiresAt: disk.fetchedAt + ttlMs, entry: disk });
-    return { text: disk.text, origin: 'cache', fetchedAt: disk.fetchedAt };
+  const [disk, shared] = await Promise.all([readDisk(key), kvGet<unknown>(`sources:${key}`)]);
+  const cached = [mem, disk, shared].filter((entry): entry is DiskEntry => validEntry(entry, url))
+    .sort((a, b) => b.fetchedAt - a.fetchedAt)[0];
+  if (cached && now - cached.fetchedAt < ttlMs) {
+    memCache.set(memoryKey, cached);
+    return { text: cached.text, origin: 'cache', fetchedAt: cached.fetchedAt };
   }
 
   try {
@@ -82,24 +112,25 @@ export async function fetchTextWithCache(
     if (fetcher) {
       text = await fetcher(url);
     } else {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
       const res = await fetch(url, {
         headers: { 'User-Agent': USER_AGENT, Accept: 'text/html, text/csv, application/json' },
-        signal: controller.signal,
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
-      clearTimeout(timeout);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       text = await res.text();
     }
-    const entry: DiskEntry = { fetchedAt: now, url, text };
-    memCache.set(key, { expiresAt: now + ttlMs, entry });
-    await writeDisk(key, entry);
-    return { text, origin: 'network', fetchedAt: now };
+    const entry: DiskEntry = { fetchedAt: Date.now(), url, text };
+    memCache.set(memoryKey, entry);
+    // Retener más que el TTL de frescura permite el fallback stale compartido.
+    await Promise.all([
+      writeDisk(key, entry),
+      kvSet(`sources:${key}`, entry, Math.ceil(Math.max(ttlMs * 4, 7 * 24 * 60 * 60 * 1000) / 1000)),
+    ]);
+    return { text, origin: 'network', fetchedAt: entry.fetchedAt };
   } catch (error) {
     console.warn(`[sources] fetch failed for ${key}:`, error instanceof Error ? error.message : error);
-    if (disk) {
-      return { text: disk.text, origin: 'stale', fetchedAt: disk.fetchedAt };
+    if (cached) {
+      return { text: cached.text, origin: 'stale', fetchedAt: cached.fetchedAt };
     }
     return null;
   }

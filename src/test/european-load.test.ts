@@ -463,7 +463,49 @@ test('Pronóstico europeo de la jornada completa', async (t) => {
     assert.equal(outlooks.has(RIVAL), false);
   });
 
+  await t.test('el amortiguador a cero también apaga los avisos de la jornada', () => {
+    assert.equal(buildEuropeanOutlooks({ calendar, fixtures: [ucl()], dampening: 0 }).size, 0);
+  });
+
   await t.test('sin partidos europeos el mapa está vacío', () => {
     assert.equal(buildEuropeanOutlooks({ calendar, fixtures: [] }).size, 0);
+  });
+});
+
+test('Amortiguador europeo: todos los canales y confirmadas', async (t) => {
+  const outlook = computeEuropeanLoad({ teamId: REAL_MADRID, kickoff: LALIGA_KICKOFF, fixtures: [ucl()] })!;
+  await t.test('cero conserva minutos, rendimiento y dispersión', () => {
+    const estimate = minutes();
+    const result = europeanPlayerAdjustment({ outlook, minutes: estimate, dampening: 0 });
+    assert.equal(result.pStarter, estimate.pStarter);
+    assert.equal(result.expectedMinutes, estimate.expectedMinutes);
+    assert.equal(result.fatigueMultiplier, 1);
+    assert.equal(result.sigmaMultiplier, 1);
+    assert.equal(result.impact.xpMultiplier, 1);
+    assert.equal(result.impact.advice, null);
+    const unknown = europeanPlayerAdjustment({ outlook, minutes: null, dampening: 0 });
+    assert.equal(unknown.fatigueMultiplier, 1);
+    assert.equal(unknown.sigmaMultiplier, 1);
+  });
+  await t.test('medio amortiguador aplica media fatiga y media incertidumbre', () => {
+    const full = europeanPlayerAdjustment({ outlook, minutes: minutes(), dampening: 1 });
+    const half = europeanPlayerAdjustment({ outlook, minutes: minutes(), dampening: 0.5 });
+    assert.ok(Math.abs(half.fatigueMultiplier - (1 + full.fatigueMultiplier) / 2) < 1e-12);
+    assert.ok(Math.abs(half.sigmaMultiplier - (1 + full.sigmaMultiplier) / 2) < 1e-12);
+  });
+  await t.test('once confirmado elimina la incertidumbre y el aviso de reservar un titular', () => {
+    const result = europeanPlayerAdjustment({ outlook, minutes: minutes({ source: 'confirmed-lineup', pStarter: 1 }) });
+    assert.equal(result.pStarter, 1);
+    assert.equal(result.sigmaMultiplier, 1);
+    assert.equal(result.impact.advice, null);
+    assert.ok(result.fatigueMultiplier < 1);
+  });
+  await t.test('apagar Europa equivale a quitar el calendario incluso con carga del rival', () => {
+    const calendar = [{ id: 'm', matchDate: new Date(LALIGA_KICKOFF).toISOString(), date: '', time: '', localId: 1, visitorId: 2, matchState: 0, localScore: null, visitorScore: null, featured: false }] satisfies Match[];
+    const player = { id: 'p', name: 'Jugador', positionId: 3, teamId: 1, averagePoints: 6, playerStatus: 'ok' } as PlayerMaster;
+    const context = { teamElos: new Map([[1, 1950], [2, 1700]]), paramOverrides: { europeanDampening: 0 } };
+    const baseline = predictPlayerPoints(player, calendar, context);
+    const disabled = predictPlayerPoints(player, calendar, { ...context, europeanFixtures: [ucl(), ucl({ teamId: RIVAL, eventId: 2 })] });
+    assert.deepStrictEqual(disabled, baseline);
   });
 });

@@ -183,7 +183,9 @@ Un equipo que juega la Champions el martes no afronta la jornada del sábado
 como los demás: prioriza Europa. El motor lo modela y avisa **antes** de gastar.
 
 - `sources/uefa.ts`: Champions (7), Europa League (679) y Conference (17015)
-  vía Sofascore, TTL 6 h. El id de temporada se resuelve contra la fuente, nunca
+  vía Sofascore, TTL 6 h, paginación acotada a ocho semanas futuras y dos
+  previas; excluye aplazados/cancelados y consulta competiciones en paralelo.
+  El id de temporada se resuelve contra la fuente, nunca
   se codifica. Cruce de equipos con `team-names.ts`; un nombre que no cruza se
   descarta (casi siempre es un equipo de otro país). Sin red, lista vacía y el
   motor se comporta **exactamente** como antes de la funcionalidad.
@@ -211,8 +213,12 @@ como los demás: prioriza Europa. El motor lo modela y avisa **antes** de gastar
 - En `fitScore` de clausulazos la carga europea **no** vuelve a descontar
   puntos (ya están dentro de `xiGain`): penaliza el **momento de gastar**, y
   solo cuando la urgencia es baja, porque entonces esperar es gratis.
+- El snapshot `PredictionRecord.context.european` conserva el impacto europeo
+  prospectivo junto a `europeanDampening` (modelo `components-v1.4`).
+- `http-cache.ts` comparte respuestas mediante `kv-cache.ts`, conserva el
+  fallback stale y agrupa descargas concurrentes.
 - `europeanDampening` (data/engine-params.json, por defecto 1) escala el efecto
-  entero; a 0 el motor vuelve a ignorar la Champions. Aún **no** está en la
+  entero (rotación, fatiga, cambio temprano, σ y Elo de ambos equipos); a 0 el motor vuelve a ignorar la Champions. Aún **no** está en la
   rejilla de `engine/calibrate.ts`.
 - El planificador multi-jornada no necesita fontanería: el contexto lleva
   `europeanFixtures` en crudo y el modelo deriva la carga del calendario de cada

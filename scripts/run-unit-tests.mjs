@@ -11,7 +11,7 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,6 +38,7 @@ function run(command, args) {
 const esbuild = path.join(projectRoot, 'node_modules', '.bin', 'esbuild');
 const outdir = await mkdtemp(path.join(tmpdir(), 'fantasy-manager-tests-'));
 try {
+  await symlink(path.join(projectRoot, 'node_modules'), path.join(outdir, 'node_modules'), 'junction');
   const bundled = await run(esbuild, [
     ...entries,
     '--bundle',
