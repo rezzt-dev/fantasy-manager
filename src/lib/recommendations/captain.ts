@@ -24,6 +24,8 @@ const EV_WEIGHT = 0.7;
 
 /** Por debajo de esta probabilidad de ser titular, el brazalete es una apuesta. */
 const ROTATION_RISK_PSTARTER = 0.6;
+/** Riesgo de rotación europea a partir del cual el brazalete lleva aviso. */
+const EUROPEAN_CAPTAIN_RISK = 40;
 
 /** A partir de esta dificultad de emparejamiento (0-100) se avisa al usuario. */
 const HARD_FIXTURE_DIFFICULTY = 62;
@@ -204,6 +206,14 @@ function buildCandidate(player: PlayerMaster, input: CandidateInput): CaptainCan
   }
   if (prediction.dataQuality.level === 'low') {
     risks.push('Pocos datos para estimar su puntuación con confianza.');
+  }
+  // El brazalete es la apuesta más cara de la jornada y la rotación europea es
+  // el escenario que más veces la arruina: o juega 90' o no juega.
+  const european = prediction.european;
+  if (european && !european.beneficiary && european.outlook.rotationRisk >= EUROPEAN_CAPTAIN_RISK) {
+    risks.push(
+      `${european.outlook.summary} Un brazalete a un jugador al que pueden reservar es la apuesta más cara de fallar.`,
+    );
   }
 
   return {

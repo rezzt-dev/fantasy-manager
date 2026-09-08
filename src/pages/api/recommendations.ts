@@ -26,10 +26,12 @@ import { fetchTeamElos } from '../../lib/engine/sources/clubelo';
 import { fetchLeagueActivity } from '../../lib/fantasy/activity';
 import { fetchProbableLineups } from '../../lib/engine/sources/jornadaperfecta';
 import { fetchConfirmedLineups } from '../../lib/engine/sources/sofascore';
+import { fetchEuropeanFixtures } from '../../lib/engine/sources/uefa';
 import { fetchValueTrends } from '../../lib/engine/sources/futbolfantasy';
 import { buildShrinkagePriors, buildTeamTiers } from '../../lib/engine/features/shrinkage';
 import { buildFixtureSharesFromStats } from '../../lib/engine/features/fixture-components';
 import { buildFixtureOutlooks } from '../../lib/engine/features/fixture';
+import { buildEuropeanOutlooks } from '../../lib/engine/features/european-load';
 import { buildTeamMatcher } from '../../lib/engine/team-names';
 import type { ProbableLineup } from '../../lib/engine/sources/types';
 import {
@@ -52,7 +54,7 @@ import { loadEngineParams } from '../../lib/engine/params';
 import { calibrateEngine, persistCalibration } from '../../lib/engine/calibrate';
 import { fetchCalendarCached } from '../../lib/fantasy/calendar-cache';
 import { enrichMarketPlayers } from '../../lib/fantasy/market-enrich';
-import type { FantasyLeague, FixtureOutlook, TeamData, TeamLineup, TeamMoney, MarketPlayer, StandingEntry, Match, PlayerMaster, WeekInfo } from '../../types/fantasy';
+import type { EuropeanOutlook, FantasyLeague, FixtureOutlook, TeamData, TeamLineup, TeamMoney, MarketPlayer, StandingEntry, Match, PlayerMaster, WeekInfo } from '../../types/fantasy';
 
 /** Plantilla + mejores candidatos de mercado y clausulables (acotado para no multiplicar peticiones). */
 const MARKET_STATS_UNIVERSE = 20;
@@ -137,6 +139,18 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     const valueTrends = officialTeams.length > 0 ? await fetchValueTrends(allPlayers, officialTeams) : null;
     if (valueTrends) {
       console.log(`[recommendations] tendencias FF: ${valueTrends.matched} cruzadas, ${valueTrends.unmatched} sin cruzar (${valueTrends.origin})`);
+    }
+
+    // Calendario europeo (Champions, Europa League y Conference). Es lo que
+    // permite anticipar a quién va a reservar cada equipo: el compromiso
+    // europeo se conoce con semanas de antelación, así que la coordinación se
+    // puede hacer ANTES de gastar el dinero, no después.
+    const europeanData = officialTeams.length > 0 ? await fetchEuropeanFixtures(officialTeams) : null;
+    if (europeanData && europeanData.fixtures.length > 0) {
+      console.log(
+        `[recommendations] carga europea: ${europeanData.fixtures.length} partidos de ` +
+          `${europeanData.teamsInvolved.size} equipos de LaLiga (${europeanData.competitions.join(', ')})`,
+      );
     }
 
     // Alineaciones confirmadas (Sofascore): solo existen ~1 h antes de cada
@@ -240,6 +254,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
         feedsTotal: externalResult.coverage.feedsOk.length + externalResult.coverage.feedsFailed.length,
       },
       confirmedLineups,
+      europeanFixtures: europeanData?.fixtures,
     };
     const supplemental = await fetchApiFootballAbsences(statsUniverse, officialTeams, calendar);
     const strategy = buildStrategyReport({
@@ -254,6 +269,13 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
         { name: 'Jornada Perfecta', status: !probableData ? 'unavailable' : probableData.origin === 'stale' ? 'stale' : 'available', detail: `${probableLineups.size} onces probables; ${probableData?.injuries.length ?? 0} avisos de bajas y dudas.` },
         { name: 'Sofascore', status: confirmedLineups.size ? 'available' : 'unavailable', detail: `${confirmedLineups.size} onces confirmados cruzados. Sin once puede significar que aún no se ha publicado o que la consulta falló.` },
         { name: 'FútbolFantasy', status: !valueTrends ? 'unavailable' : valueTrends.origin === 'stale' ? 'stale' : 'available', detail: `${valueTrends?.matched ?? 0} tendencias de valor cruzadas.` },
+        {
+          name: 'Competiciones europeas',
+          status: europeanData && europeanData.fixtures.length > 0 ? 'available' : 'unavailable',
+          detail: europeanData && europeanData.fixtures.length > 0
+            ? `${europeanData.fixtures.length} partidos de ${europeanData.teamsInvolved.size} equipos de LaLiga en ${europeanData.competitions.length} competición(es).`
+            : 'Sin calendario europeo: el motor no ajusta rotación ni fatiga por Champions.',
+        },
         { name: 'Noticias', status: externalResult.coverage.feedsOk.length ? 'available' : 'unavailable', detail: `${externalResult.coverage.feedsOk.length} feeds disponibles; ${externalResult.coverage.feedsFailed.length} fallidos.` },
         supplemental.source,
       ],
@@ -268,6 +290,18 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       eloByTeamId: teamElos?.eloByTeamId ?? new Map(),
       sharesByPosition: fixtureShares,
     });
+    // Carga europea por equipo de la jornada: se calcula una vez y se adjunta
+    // a cada recomendación para que la interfaz pueda avisar sin recalcular.
+    const europeanOutlooks = buildEuropeanOutlooks({
+      calendar,
+      fixtures: europeanData?.fixtures ?? [],
+      teamTiers,
+    });
+    const europeanOfPlayer = (player: PlayerMaster): EuropeanOutlook | null => {
+      const playerTeamId = resolveTeamId(player);
+      return playerTeamId === undefined ? null : europeanOutlooks.get(playerTeamId) ?? null;
+    };
+
     const fixtureOfPlayer = (player: PlayerMaster): FixtureOutlook | null => {
       const playerTeamId = resolveTeamId(player);
       if (playerTeamId === undefined) return null;
@@ -333,7 +367,11 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     }
 
     const recommendations = generateRecommendations({ analysis, estimatorContext, valueTrends: valueTrends?.trendsByPlayerId }).map(
-      (recommendation) => ({ ...recommendation, fixture: fixtureOfPlayer(recommendation.player) }),
+      (recommendation) => ({
+        ...recommendation,
+        fixture: fixtureOfPlayer(recommendation.player),
+        european: europeanOfPlayer(recommendation.player),
+      }),
     );
     const bestMoves = computeBestMoves(recommendations);
 
@@ -452,7 +490,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       console.warn('[track-record] persist failed:', persistError instanceof Error ? persistError.message : persistError);
     }
 
-    return new Response(JSON.stringify({ recommendations, bestMoves, strategy, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, fixtures: [...fixtureOutlooks.values()], league, money, week, marketCount: market.length }), {
+    return new Response(JSON.stringify({ recommendations, bestMoves, strategy, optimalLineup: analysis.optimalLineup, captain: analysis.captain ?? null, captainEnabled, tacticalScheme, multiWeekPlan: multiWeekPlan ?? null, fixtures: [...fixtureOutlooks.values()], european: [...europeanOutlooks.values()], league, money, week, marketCount: market.length }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

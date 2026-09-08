@@ -19,8 +19,9 @@ import PlayerAvatar from './PlayerAvatar';
 import PlayerStatusBadge from './PlayerStatusBadge';
 import SignalChips from './SignalChips';
 import FixturePanel from './FixturePanel';
+import EuropeanPanel from './EuropeanPanel';
 import Currency from './Currency';
-import type { PlayerMaster, ExternalSignal, FixtureOutlook, Recommendation, FantasyLeague, MarketPlayer, TeamPlayer } from '../../types/fantasy';
+import type { PlayerMaster, EuropeanOutlook, ExternalSignal, FixtureOutlook, PlayerEuropeanImpact, Recommendation, FantasyLeague, MarketPlayer, TeamPlayer } from '../../types/fantasy';
 import type { StarterInfo } from '../../types/analysis';
 import { positionShortName, positionBgClass } from '../../lib/format';
 import {
@@ -53,6 +54,10 @@ interface PlayerDetailDialogProps {
   expectedPoints?: number | null;
   /** Emparejamiento de la jornada del equipo real del jugador. */
   fixture?: FixtureOutlook | null;
+  /** Compromiso europeo del equipo real: rotación y fatiga de la jornada. */
+  european?: EuropeanOutlook | null;
+  /** Efecto concreto de esa carga sobre este jugador, si se ha calculado. */
+  europeanImpact?: PlayerEuropeanImpact | null;
   recommendation?: Recommendation;
   marketPlayer?: MarketPlayer;
   teamPlayer?: TeamPlayer;
@@ -70,6 +75,8 @@ export default function PlayerDetailDialog({
   signals,
   expectedPoints,
   fixture,
+  european,
+  europeanImpact,
   recommendation,
   marketPlayer,
   teamPlayer,
@@ -447,6 +454,8 @@ export default function PlayerDetailDialog({
           )}
 
           <FixturePanel fixture={fixture} />
+
+          <EuropeanPanel european={european} impact={europeanImpact} />
 
           {(typeof buyoutClause === 'number' || isShielded) && (
             <div className="flex items-center gap-3 rounded-lg border border-white/[0.09] bg-surface-raised/50 p-4">

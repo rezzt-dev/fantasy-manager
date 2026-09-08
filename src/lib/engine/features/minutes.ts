@@ -19,10 +19,26 @@ export interface MinutesEstimate {
   expectedMinutes: number;
   source: 'injury-report' | 'confirmed-lineup' | 'probable-lineup' | 'historical';
   note?: string;
+  /**
+   * Minutos condicionales con los que se ha compuesto la esperanza:
+   * `expectedMinutes = pStarter·minutesIfStarter + (1−pStarter)·minutesIfBench`.
+   *
+   * Se exponen para que quien mueva la probabilidad de titularidad después
+   * (la rotación por competición europea) pueda recomponer los minutos con la
+   * misma aritmética en vez de aproximarla con una regla de tres.
+   */
+  minutesIfStarter: number;
+  minutesIfBench: number;
 }
 
-const P_STARTER_IN_PROBABLE_XI = 0.85;
-const P_STARTER_ON_BENCH = 0.15;
+/**
+ * Probabilidad de titularidad que se asigna a quien está en el once probable y
+ * a quien no. Se exportan porque definen el "equipo canónico" (11 jugadores a
+ * la primera y 9 a la segunda) sobre el que `european-load.ts` calibra la
+ * redistribución de minutos por rotación europea.
+ */
+export const P_STARTER_IN_PROBABLE_XI = 0.85;
+export const P_STARTER_ON_BENCH = 0.15;
 const DOUBT_FACTOR = 0.45;
 /** E[mins] condicionales por defecto cuando no hay histórico. */
 const DEFAULT_MINS_IF_STARTER = 75;
@@ -113,6 +129,8 @@ export function estimateMinutes(input: {
       expectedMinutes: 0,
       source: 'injury-report',
       note: `Baja según Jornada Perfecta (${injury.status}${injury.note ? `: ${injury.note}` : ''}).`,
+      minutesIfStarter: 0,
+      minutesIfBench: 0,
     };
   }
 
@@ -130,6 +148,8 @@ export function estimateMinutes(input: {
         expectedMinutes: pStarter * minsIfStarter + (1 - pStarter) * DEFAULT_MINS_IF_BENCH,
         source: 'confirmed-lineup',
         note: inStarters >= 0 ? 'Titular confirmado (Sofascore).' : 'Suplente confirmado (Sofascore).',
+        minutesIfStarter: minsIfStarter,
+        minutesIfBench: DEFAULT_MINS_IF_BENCH,
       };
     }
     // No encontrado en la confirmada: puede ser no convocado o fallo de cruce;
@@ -162,6 +182,8 @@ export function estimateMinutes(input: {
       expectedMinutes,
       source: 'probable-lineup',
       note: starter ? 'En el once probable (Jornada Perfecta).' : 'Fuera del once probable (Jornada Perfecta).',
+      minutesIfStarter: minsIfStarter,
+      minutesIfBench: DEFAULT_MINS_IF_BENCH,
     };
   }
 
@@ -178,6 +200,10 @@ export function estimateMinutes(input: {
       expectedMinutes,
       source: 'historical',
       note: injury ? `Duda según Jornada Perfecta (${injury.note ?? 'sin detalle'}).` : undefined,
+      // El histórico compone los minutos como pStarter·90: es el mismo
+      // reparto con el suplente a 0, así que la identidad se mantiene.
+      minutesIfStarter: 90,
+      minutesIfBench: 0,
     };
   }
 

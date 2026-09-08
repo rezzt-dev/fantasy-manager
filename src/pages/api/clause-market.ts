@@ -16,6 +16,7 @@ import { fetchPlayerStats } from '../../lib/engine/player-stats';
 import { fetchTeamElos } from '../../lib/engine/sources/clubelo';
 import { fetchProbableLineups } from '../../lib/engine/sources/jornadaperfecta';
 import { fetchConfirmedLineups } from '../../lib/engine/sources/sofascore';
+import { fetchEuropeanFixtures } from '../../lib/engine/sources/uefa';
 import { fetchValueTrends } from '../../lib/engine/sources/futbolfantasy';
 import { buildTeamMatcher } from '../../lib/engine/team-names';
 import { getClauseProtection } from '../../lib/clause-availability';
@@ -178,6 +179,10 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
 
     const valueTrends = officialTeams.length > 0 ? await fetchValueTrends(allPlayers, officialTeams) : null;
 
+    // Calendario europeo: un clausulazo es dinero irreversible, así que el
+    // aviso de rotación por Champions tiene que llegar ANTES de pagarlo.
+    const europeanData = officialTeams.length > 0 ? await fetchEuropeanFixtures(officialTeams) : null;
+
     const teamTiers = buildTeamTiers(teamElos?.eloByTeamId ?? new Map());
     const estimatorContext: EstimatorContext = {
       teamStrength: buildTeamStrength(allPlayers),
@@ -200,6 +205,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
         feedsTotal: externalResult.coverage.feedsOk.length + externalResult.coverage.feedsFailed.length,
       },
       confirmedLineups,
+      europeanFixtures: europeanData?.fixtures,
     };
 
     const formations = await fetchAvailableFormations(token, league.config?.premiumFeatures?.formations === true);

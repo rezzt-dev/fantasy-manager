@@ -21,6 +21,7 @@ import SectionHeader from '../shared/SectionHeader';
 import KpiCard from '../shared/KpiCard';
 import SignalChips from '../shared/SignalChips';
 import FixtureChip from '../shared/FixtureChip';
+import EuropeanChip from '../shared/EuropeanChip';
 import EmptyState from '../shared/EmptyState';
 import PlayerDetailDialog from '../shared/PlayerDetailDialog';
 import CaptainCard from '../shared/CaptainCard';
@@ -73,6 +74,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
   const recommendations = data?.recommendations || [];
   const captain = data?.captain ?? undefined;
   const fixtures = data?.fixtures;
+  const european = data?.european;
   const money = data?.money;
   const ownMoney = money?.teamMoney ?? 0;
   const teamPlayers = teamDataQuery?.players || [];
@@ -106,6 +108,15 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
     if (!outlook) return null;
     const positionMultiplier = outlook.multiplierByPosition?.[Number(player.positionId)];
     return positionMultiplier === undefined ? outlook : { ...outlook, multiplier: positionMultiplier };
+  };
+
+  // Carga europea por equipo real: el mismo dato que ya trae cada
+  // recomendación, indexado para el diálogo de detalle de cualquier jugador.
+  const europeanByTeamId = useMemo(() => new Map((european ?? []).map((e) => [e.teamId, e])), [european]);
+  const europeanFor = (player: PlayerMaster | null) => {
+    if (!player) return null;
+    const teamId = Number(player.teamId) || Number(player.team?.id);
+    return Number.isFinite(teamId) && teamId > 0 ? europeanByTeamId.get(teamId) ?? null : null;
   };
 
   // Order all opportunities by impactScore for highlights
@@ -282,6 +293,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                     </div>
                     <div className="font-bold text-sm text-content mt-1 truncate">{rec.player.nickname}</div>
                     {rec.fixture && <FixtureChip fixture={rec.fixture} showEffect className="mt-1.5" />}
+                    {rec.european && <EuropeanChip european={rec.european} className="mt-1.5" />}
                     <p className="text-xs text-content-tertiary mt-1 line-clamp-2 leading-relaxed">{rec.reason}</p>
 
                     {/* Action buttons inside highlight card */}
@@ -355,6 +367,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                       <div className="font-bold text-sm text-content truncate">{rec.player.nickname}</div>
                       <div className="text-xs text-content-tertiary">Valor: <Currency value={rec.player.marketValue} /> · xP: {(rec.impactScore || 0).toFixed(1)}</div>
                       {rec.fixture && <FixtureChip fixture={rec.fixture} showEffect className="mt-1.5" />}
+                      {rec.european && <EuropeanChip european={rec.european} className="mt-1.5" />}
                     </div>
                     {rec.priority === 'high' && (
                       <Badge variant="destructive" className="text-[10px] bg-negative-quiet text-negative-text border-negative/25 font-bold">ALTA</Badge>
@@ -410,6 +423,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
                       <div className="font-bold text-sm text-content truncate">{rec.player.nickname}</div>
                       <div className="text-xs text-content-tertiary">Valor: <Currency value={rec.player.marketValue} /> · xP: {(rec.impactScore || 0).toFixed(1)}</div>
                       {rec.fixture && <FixtureChip fixture={rec.fixture} showEffect className="mt-1.5" />}
+                      {rec.european && <EuropeanChip european={rec.european} className="mt-1.5" />}
                     </div>
                     {rec.type === 'buyout' ? (
                       <Badge className="text-[10px] bg-caution-quiet text-caution-text border-caution/25 font-bold">RIVAL</Badge>
@@ -540,6 +554,7 @@ export default function RecommendationsTab({ league }: RecommendationsTabProps) 
         open={!!selectedDetailPlayer}
         onOpenChange={(open) => !open && setSelectedDetailPlayer(null)}
         fixture={fixtureFor(selectedDetailPlayer)}
+        european={europeanFor(selectedDetailPlayer)}
         league={league}
         onActionSuccess={refetch}
       />

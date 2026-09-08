@@ -12,6 +12,7 @@ import type {
   Recommendation,
   MatchesResponse,
   TeamCatalogEntry,
+  EuropeanOutlook,
   FixtureOutlook,
 } from '../../types/fantasy';
 import type {
@@ -168,6 +169,8 @@ export const fantasyAPI = {
       multiWeekPlan?: MultiWeekPlan | null;
       /** Emparejamiento de la jornada por equipo real (§4.3). */
       fixtures?: FixtureOutlook[];
+      /** Carga europea por equipo real: rotación y fatiga de la jornada. */
+      european?: EuropeanOutlook[];
       league: FantasyLeague;
       money: TeamMoney;
       week: WeekInfo;

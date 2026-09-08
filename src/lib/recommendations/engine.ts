@@ -20,6 +20,8 @@ const HARD_NEGATIVE_CATEGORIES = new Set(['injury', 'illness', 'suspension']);
 const SELL_NEWS_CONFIDENCE = 0.6;
 /** Por debajo de este score de titularidad consideramos al jugador suplente habitual. */
 const SUBSTITUTE_SCORE = 0.35;
+/** A partir de aquí la carga europea del equipo condiciona una compra. */
+const EUROPEAN_WARNING_RISK = 45;
 /** Corte significativo de ΔxP para entrar en los mejores movimientos (puntos). */
 const MIN_IMPACT_XP = 1;
 /** Incremento mínimo sobre la puja actual para que la propuesta sea competitiva. */
@@ -216,6 +218,7 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
         ...m,
         expectedPoints: prediction.xp,
         pStarter: prediction.pStarter,
+        european: prediction.european,
         valueRatio: m.salePrice / Math.max(m.playerMaster.marketValue, 1),
         needScore: needByPosition.get(m.playerMaster.positionId) || 0,
         starterScore: starterScoreFromLastSeason(m.playerMaster.lastSeasonPoints),
@@ -242,6 +245,12 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
     const isBargain = marketPlayer.valueRatio < 0.9;
     const coversNeed = marketPlayer.needScore > 0.3;
     const pStarter = marketPlayer.pStarter;
+    // Coordinación con Europa: el aviso se da sobre el dinero que se va a
+    // pujar, no sobre los puntos (que ya están descontados en expectedPoints).
+    const european = marketPlayer.european;
+    const europeanRisk = european !== null && european.outlook.rotationRisk >= EUROPEAN_WARNING_RISK;
+    const europeanDrag = europeanRisk && !european!.beneficiary;
+    const europeanBonus = europeanRisk && european!.beneficiary;
     const isBenchThisWeek = pStarter !== null && pStarter < SUBSTITUTE_SCORE;
     const starterNote = isBenchThisWeek
       ? ` Atención: probabilidad de titularidad ${Math.round(pStarter * 100)}% esta jornada.`
@@ -249,11 +258,12 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
         ? ` Titularidad: ${Math.round(pStarter * 100)}%.`
         : '';
 
-    // No promocionar a "high" una compra de un suplente de la jornada.
+    // No promocionar a "high" una compra de un suplente de la jornada ni de
+    // alguien a quien su equipo va a reservar para la Champions.
     const priority: 'high' | 'medium' | 'low' =
-      trend.direction === 'falling' || isBenchThisWeek
+      trend.direction === 'falling' || isBenchThisWeek || europeanDrag
         ? 'low'
-        : isBargain || coversNeed || external.signal === 'buy' || trend.direction === 'rising'
+        : isBargain || coversNeed || external.signal === 'buy' || trend.direction === 'rising' || europeanBonus
           ? 'high'
           : 'medium';
 
@@ -263,17 +273,22 @@ export function generateRecommendations(input: RecommendationInput): Recommendat
       priority,
       player,
       reason: buildBuyReason(marketPlayer, coversNeed),
-      details: `Puntos esperados: ${marketPlayer.expectedPoints.toFixed(1)}.${starterNote} Valor de mercado: ${formatCurrency(player.marketValue)}. Pujas: ${marketPlayer.numberOfBids}.${trend.note ? ` ${trend.note}` : ''}`,
-      suggestedAction: isBenchThisWeek
-        ? 'Es suplente en el once probable; solo puja si crees que jugará o a largo plazo.'
-        : trend.direction === 'falling'
-          ? 'Espera a que frene la bajada antes de pujar.'
-          : 'Puja por él si encaja en tu esquema táctico.',
+      details: `Puntos esperados: ${marketPlayer.expectedPoints.toFixed(1)}.${starterNote} Valor de mercado: ${formatCurrency(player.marketValue)}. Pujas: ${marketPlayer.numberOfBids}.${trend.note ? ` ${trend.note}` : ''}${european?.advice ? ` ${european.advice}` : ''}`,
+      suggestedAction: europeanDrag
+        ? `Su equipo llega condicionado por ${european!.outlook.competitionShortName}: no pagues precio de titular por una jornada en la que puede descansar.`
+        : isBenchThisWeek
+          ? 'Es suplente en el once probable; solo puja si crees que jugará o a largo plazo.'
+          : trend.direction === 'falling'
+            ? 'Espera a que frene la bajada antes de pujar.'
+            : europeanBonus
+              ? 'La rotación de su equipo por Europa le abre el once: es una puja barata para esta jornada.'
+              : 'Puja por él si encaja en tu esquema táctico.',
       estimatedValue: marketPlayer.salePrice,
       suggestedBidPrice: computeSuggestedBidPrice(marketPlayer.salePrice, player.marketValue, marketPlayer.numberOfBids, budget.available),
       externalSignals: signals,
       // ΔxP de ficharlo: puntos que añade sobre el nivel medio de tu plantilla.
       impactScore: round1(Math.max(0, marketPlayer.expectedPoints - referenceFor(player.positionId))),
+      european: european?.outlook ?? null,
     });
   }
 

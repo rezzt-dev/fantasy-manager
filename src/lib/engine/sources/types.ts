@@ -4,6 +4,13 @@
  * adaptador.
  */
 
+import type { EuropeanCompetition, EuropeanStage } from '../../../types/fantasy';
+
+// Las uniones de competición y fase viven en `types/fantasy.ts` porque
+// también las consume la interfaz; aquí se reexportan para que un adaptador
+// solo tenga que importar de su propio contrato.
+export type { EuropeanCompetition, EuropeanStage };
+
 /** ClubElo: rating de un equipo. */
 export interface TeamElo {
   /** Nombre del equipo tal como lo publica la fuente. */
@@ -70,4 +77,28 @@ export interface ValueTrend {
   /** Variación de valor en % a 1 y 7 días. */
   pct1d: number;
   pct7d: number;
+}
+
+/**
+ * Un partido europeo de un equipo de LaLiga (UEFA vía Sofascore). Es el
+ * contrato mínimo que necesita el modelo de carga europea: quién juega,
+ * cuándo, en qué competición y con cuánto en juego.
+ */
+export interface EuropeanFixture {
+  /** teamId oficial de LaLiga Fantasy (ya cruzado). */
+  teamId: number;
+  competition: EuropeanCompetition;
+  stage: EuropeanStage;
+  /** Nombre del rival tal como lo publica la fuente. */
+  opponentName: string;
+  isHome: boolean;
+  /** Hora de inicio en milisegundos epoch. */
+  kickoff: number;
+  /** Número de ronda de la fase de liga (1-8); undefined en eliminatorias. */
+  round?: number;
+  /** Nombre legible de la ronda cuando la fuente lo publica ("Octavos"). */
+  roundName?: string;
+  played: boolean;
+  /** Id del evento en la fuente (trazabilidad y enlace). */
+  eventId: number;
 }

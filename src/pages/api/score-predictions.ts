@@ -4,6 +4,7 @@ import { fetchTeamsMaster } from '../../lib/fantasy/teams';
 import { fetchTeamElos } from '../../lib/engine/sources/clubelo';
 import { fetchProbableLineups } from '../../lib/engine/sources/jornadaperfecta';
 import { fetchConfirmedLineups } from '../../lib/engine/sources/sofascore';
+import { fetchEuropeanFixtures } from '../../lib/engine/sources/uefa';
 import { buildTeamMatcher } from '../../lib/engine/team-names';
 import { buildTeamStrength, buildPositionAverages } from '../../lib/recommendations/points-estimator';
 import { buildShrinkagePriors, buildTeamTiers } from '../../lib/engine/features/shrinkage';
@@ -112,6 +113,10 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
     const captainEnabled = league.config?.premiumFeatures?.captain === true;
     const coachEnabled = league.config?.premiumFeatures?.coach === true;
 
+    // Carga europea: la predicción por equipo de liga tiene que reflejar que
+    // media LaLiga llega rotada en semana de Champions.
+    const europeanData = officialTeams.length > 0 ? await fetchEuropeanFixtures(officialTeams) : null;
+
     const teamTiers = buildTeamTiers(teamElos?.eloByTeamId ?? new Map());
 
     const estimatorContext: EstimatorContext = {
@@ -124,6 +129,7 @@ export const GET: APIRoute = async ({ url, cookies, session }) => {
       shrinkagePriors: buildShrinkagePriors(allPlayers, teamTiers),
       teamTiers,
       confirmedLineups,
+      europeanFixtures: europeanData?.fixtures,
     };
 
     // Cargar plantillas de todos los equipos de la clasificación.

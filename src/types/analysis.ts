@@ -1,4 +1,5 @@
 import type {
+  EuropeanOutlook,
   FantasyLeague,
   TeamData,
   TeamLineup,
@@ -14,6 +15,14 @@ import type {
 import type { LeagueActivityEvent } from '../lib/fantasy/activity';
 
 export type { FixtureDifficultyLabel, FixtureOutlook } from './fantasy';
+export type {
+  EuropeanCompetition,
+  EuropeanFixtureRef,
+  EuropeanLoadLabel,
+  EuropeanOutlook,
+  EuropeanStage,
+  PlayerEuropeanImpact,
+} from './fantasy';
 
 export type NewsCategory =
   | 'injury'
@@ -340,6 +349,12 @@ export interface ClauseTarget {
   dataQuality: 'high' | 'medium' | 'low';
   /** Emparejamiento de la jornada de su equipo real. */
   fixture?: FixtureOutlook | null;
+  /**
+   * Carga europea de su equipo esta jornada. Sus puntos ya están descontados
+   * en `expectedPoints` y `xiGain`; esto es lo que explica **por qué** y lo
+   * que sostiene el aviso de `warnings` antes de pagar la cláusula.
+   */
+  european?: EuropeanOutlook | null;
   /** ΔxP frente al nivel medio de tu plantilla en esa posición. */
   deltaXp: number;
   /** ΔxP real del once titular si lo fichas (con la mejor formación posible). */

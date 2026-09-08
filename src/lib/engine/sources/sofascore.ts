@@ -93,7 +93,21 @@ export interface SofaEvent {
   homeScore?: SofaScore;
   awayScore?: SofaScore;
   time?: SofaTime;
-  roundInfo?: { round?: number };
+  roundInfo?: SofaRoundInfo;
+}
+
+/**
+ * Ronda del evento. En la fase de liga solo llega `round`; en las
+ * eliminatorias Sofascore añade el nombre y `cupRoundType` (16 = octavos,
+ * 8 = cuartos...), que es lo que permite distinguir una fase de otra sin
+ * mantener un calendario propio de la UEFA.
+ */
+export interface SofaRoundInfo {
+  round?: number;
+  name?: string;
+  slug?: string;
+  cupRoundType?: number;
+  prefix?: string;
 }
 
 async function fetchJson(key: string, path: string, ttlMs: number): Promise<unknown | null> {
@@ -107,15 +121,40 @@ async function fetchJson(key: string, path: string, ttlMs: number): Promise<unkn
   }
 }
 
-/** Id de la temporada actual de LaLiga (26/27) en Sofascore. */
-export async function currentSeasonId(): Promise<number | null> {
-  const data = (await fetchJson('sofa-seasons', `/unique-tournament/${LALIGA_TOURNAMENT_ID}/seasons`, SEASONS_TTL_MS)) as
+/**
+ * Id de la temporada en curso de cualquier torneo de Sofascore. Las
+ * competiciones europeas cambian de id cada temporada, así que nunca se
+ * codifica a mano: se resuelve aquí y se cachea 24 h.
+ */
+export async function currentSeasonId(tournamentId: number = LALIGA_TOURNAMENT_ID): Promise<number | null> {
+  const data = (await fetchJson(`sofa-seasons-${tournamentId}`, `/unique-tournament/${tournamentId}/seasons`, SEASONS_TTL_MS)) as
     | { seasons?: SofaSeason[] }
     | null;
   const seasons = data?.seasons;
   if (!seasons || seasons.length === 0) return null;
   // La primera es la temporada en curso (orden descendente).
   return seasons[0].id;
+}
+
+/**
+ * Una página de eventos de un torneo. `next/0` son los siguientes por jugar y
+ * `last/0` los últimos jugados (el índice de página crece hacia atrás en el
+ * tiempo en ambos sentidos). Devuelve [] ante cualquier fallo: ninguna vista
+ * puede romperse porque Sofascore no responda.
+ */
+export async function fetchTournamentEvents(
+  tournamentId: number,
+  seasonId: number,
+  direction: 'next' | 'last',
+  page = 0,
+  ttlMs: number = EVENTS_TTL_MS,
+): Promise<SofaEvent[]> {
+  const data = (await fetchJson(
+    `sofa-events-${direction}-${seasonId}-${page}`,
+    `/unique-tournament/${tournamentId}/season/${seasonId}/events/${direction}/${page}`,
+    ttlMs,
+  )) as SofaEventsPage | null;
+  return data?.events ?? [];
 }
 
 /**

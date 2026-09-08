@@ -119,6 +119,17 @@ export function difficultyLabel(difficulty: number): FixtureDifficultyLabel {
 export interface FixtureInput {
   eloOwn: number;
   eloOpponent: number;
+  /**
+   * Elo del propio equipo **sin ajustes de coyuntura** (carga europea). Define
+   * el partido de referencia y por defecto es `eloOwn`.
+   *
+   * La distinción importa: la referencia representa las condiciones en las que
+   * el jugador acumuló sus medias por 90', es decir su equipo en estado
+   * normal. Si se bajara también el Elo de la referencia, el modelo compararía
+   * "equipo cansado contra rival" con "equipo cansado contra rival medio" y el
+   * efecto de la rotación se cancelaría casi entero.
+   */
+  eloOwnBaseline?: number;
   /** Elo del equipo medio de la liga: define el partido de referencia. */
   eloLeagueMean: number;
   isHome: boolean;
@@ -143,7 +154,7 @@ export function fixtureAdjustment(input: FixtureInput): FixtureAdjustment {
   const dampening = input.dampening ?? params.fixtureDampening;
 
   const outcome = matchOutcomeFromElo(input.eloOwn, input.eloOpponent, input.isHome ? 'home' : 'away', eloDivisor);
-  const reference = referenceOutcomeFromElo(input.eloOwn, input.eloLeagueMean, eloDivisor);
+  const reference = referenceOutcomeFromElo(input.eloOwnBaseline ?? input.eloOwn, input.eloLeagueMean, eloDivisor);
 
   const byComponent = {} as Record<FixtureComponent, number>;
   let net = 0;

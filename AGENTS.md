@@ -61,7 +61,8 @@ tabulares); sin ella las columnas bailan al ordenar una tabla.
 - `src/components/shared/`: `KpiCard`, `TrendBadge`, `PlayerCard`,
   `PlayerRow`, `PlayerAvatar`, `PlayerDetailDialog`, `AlertPanel`,
   `FilterBar`, `DataTable`, `EmptyState`, `ErrorState`, `LoadingSection`,
-  `SectionHeader`, `FixtureChip`, `FixturePanel`.
+  `SectionHeader`, `FixtureChip`, `FixturePanel`, `EuropeanChip`,
+  `EuropeanPanel`.
 - `src/components/layout/`: `AppLayout` (enlace de salto + panel + cabecera +
   barra inferior), `Sidebar` (raíl de 248 px / 72 px plegado), `Header`,
   `MobileNav` (4 destinos + «Más»), `CommandPalette`.
@@ -175,6 +176,54 @@ extensión del proyecto, así que `scripts/run-unit-tests.mjs` empaqueta cada
 - xG externo (Understat/FBref) DIFERIDO: ambos bloquean el scraping
   (Cloudflare / HTML sin datos). Los componentes v2 con xG quedan pendientes
   de una fuente accesible; la estructura del modelo ya lo admite.
+
+## Coordinación con las competiciones europeas (§4.4.6)
+
+Un equipo que juega la Champions el martes no afronta la jornada del sábado
+como los demás: prioriza Europa. El motor lo modela y avisa **antes** de gastar.
+
+- `sources/uefa.ts`: Champions (7), Europa League (679) y Conference (17015)
+  vía Sofascore, TTL 6 h. El id de temporada se resuelve contra la fuente, nunca
+  se codifica. Cruce de equipos con `team-names.ts`; un nombre que no cruza se
+  descarta (casi siempre es un equipo de otro país). Sin red, lista vacía y el
+  motor se comporta **exactamente** como antes de la funcionalidad.
+- `features/european-load.ts`: separa tres canales que un multiplicador único
+  confundiría — **rotación** (¿juega?) sobre `pStarter`, **fatiga** (¿cómo rinde
+  si juega?) sobre los puntos por minuto, y **calidad del once** sobre el Elo
+  del equipo en ese partido. El tercero no es un factor nuevo: entra por el
+  modelo de goles que ya existe, y por eso funciona en los dos sentidos (si el
+  RIVAL viene de Europa, tu emparejamiento mejora).
+- El partido de referencia de `fixtureAdjustment` usa `eloOwnBaseline`, el Elo
+  **sin** penalizar. Si se penalizaran los dos lados el efecto se cancelaría.
+- La rotación **redistribuye** minutos, no los destruye:
+  `Δp = k·[p(1−p)/Σp(1−p) − p²/Σp²]`, con las dos masas derivadas del equipo
+  canónico de `minutes.ts` (11 a 0.85 + 9 a 0.15). La suma de los Δp es cero;
+  hay un test que lo comprueba. `Δp = 0` en `p = 0` (quien no cuenta no se
+  convierte en titular) y `Δp < 0` en `p = 1` (ni un fijo está a salvo).
+- El lado que **suma** solo se aplica con un once publicado: sin él no se sabe
+  quién entra, y el error se deja del lado prudente.
+- Anti-doble-contabilidad (`EUROPEAN_WEIGHT_BY_MINUTES_SOURCE`): alineación
+  confirmada y baja → 0; once probable → 0.5; histórico → 1. La realidad gana
+  siempre al modelo de rotación.
+- La σ se infla con la presión de rotación, así que `riskAdjustedXp = xP − λσ`
+  vuelve conservadores al capitán y a los clausulazos **solos** en semana
+  europea. `PlayerPrediction.pointsStdDev` es ya esa σ prospectiva.
+- En `fitScore` de clausulazos la carga europea **no** vuelve a descontar
+  puntos (ya están dentro de `xiGain`): penaliza el **momento de gastar**, y
+  solo cuando la urgencia es baja, porque entonces esperar es gratis.
+- `europeanDampening` (data/engine-params.json, por defecto 1) escala el efecto
+  entero; a 0 el motor vuelve a ignorar la Champions. Aún **no** está en la
+  rejilla de `engine/calibrate.ts`.
+- El planificador multi-jornada no necesita fontanería: el contexto lleva
+  `europeanFixtures` en crudo y el modelo deriva la carga del calendario de cada
+  jornada, así que cada semana futura recibe la suya.
+- Interfaz: `shared/EuropeanChip` (chip compacto) y `shared/EuropeanPanel`
+  (ficha en `PlayerDetailDialog`). El aviso al usuario va en euros, no en
+  puntos: la cláusula se paga una vez y la mala semana se pasa.
+- Diseño completo y cuaderno de mejoras pendientes:
+  `agent-docs/coordinacion-champions.md`.
+- Verificación: `pnpm test:unit european-load` + `pnpm exec tsc --noEmit` +
+  `pnpm build` + `/api/recommendations` con datos reales.
 
 ## Decisión avanzada (Fase 2)
 

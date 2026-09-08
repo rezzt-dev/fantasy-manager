@@ -26,6 +26,12 @@ export interface EngineParams {
    * decide el backtesting walk-forward.
    */
   fixtureDampening: number;
+  /**
+   * Amortiguador de la coordinación con Europa (0-1+). 1 aplica entero el
+   * efecto de rotación y fatiga por competición europea; 0 lo anula y el
+   * motor vuelve a ignorar la Champions. Calibrable con el track record.
+   */
+  europeanDampening: number;
   /** λ de la penalización por riesgo xP − λσ (§5.2). */
   riskLambda: number;
   /** Fricción en puntos por movimiento del planificador multi-jornada (§5.3). */
@@ -41,6 +47,7 @@ export const DEFAULT_ENGINE_PARAMS: EngineParams = {
   shrinkageK: 8,
   fixtureEloDivisor: 220,
   fixtureDampening: 1,
+  europeanDampening: 1,
   riskLambda: 0.3,
   moveFrictionXp: 1.5,
   maxMovesPerWeek: 3,

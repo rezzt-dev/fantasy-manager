@@ -214,6 +214,97 @@ export interface FixtureOutlook {
   source: 'elo' | 'baseline';
 }
 
+// ---------------------------------------------------------------------------
+// Coordinación con las competiciones europeas
+// ---------------------------------------------------------------------------
+
+/** Competiciones europeas de clubes, por prioridad deportiva descendente. */
+export type EuropeanCompetition = 'ucl' | 'uel' | 'uecl';
+
+/** Fase de la competición: decide cuánto se juega el equipo en ese partido. */
+export type EuropeanStage = 'qualifying' | 'league-phase' | 'knockout';
+
+export type EuropeanLoadLabel =
+  | 'Sin carga europea'
+  | 'Carga ligera'
+  | 'Rotación posible'
+  | 'Rotación probable'
+  | 'Rotación muy probable';
+
+/** Un partido europeo concreto, ya situado respecto a la jornada de LaLiga. */
+export interface EuropeanFixtureRef {
+  competition: EuropeanCompetition;
+  competitionName: string;
+  competitionShortName: string;
+  stage: EuropeanStage;
+  /** Ronda legible: "Jornada 3", "Octavos", "Previa". */
+  stageLabel: string;
+  opponentName: string;
+  isHome: boolean;
+  /** Hora de inicio en ISO. */
+  kickoff: string;
+  /** Días entre este partido y el de LaLiga (siempre positivo). */
+  restDays: number;
+  /** 0-1: cuánto se juega el equipo en él. */
+  stakes: number;
+  eventId: number;
+}
+
+/**
+ * Carga europea de un equipo alrededor de su partido de LaLiga. Es la salida
+ * de `engine/features/european-load.ts` y viaja hasta la interfaz.
+ */
+export interface EuropeanOutlook {
+  teamId: number;
+  /** Competición del compromiso europeo más cercano. */
+  competition: EuropeanCompetition;
+  competitionName: string;
+  competitionShortName: string;
+  /** Partido europeo inmediatamente anterior a la jornada (fatiga). */
+  before: EuropeanFixtureRef | null;
+  /** Partido europeo inmediatamente posterior (reserva de titulares). */
+  after: EuropeanFixtureRef | null;
+  restDaysBefore: number | null;
+  restDaysAfter: number | null;
+  /** Partidos europeos del equipo dentro de la ventana analizada. */
+  matchesInWindow: number;
+  /** 0-1: importancia del compromiso europeo más exigente de la ventana. */
+  stakes: number;
+  /** 0-1: presión de rotación sobre el once de LaLiga. */
+  rotationPressure: number;
+  /** Plazas del once que se espera que cambien. */
+  expectedRotatedSlots: number;
+  /** 0-100, la misma presión en la escala que lee el usuario. */
+  rotationRisk: number;
+  /** Multiplicador de rendimiento por minuto de quien juega fundido. */
+  fatigueMultiplier: number;
+  /** Multiplicador de los minutos del titular que sí juega (cambio temprano). */
+  starterMinutesMultiplier: number;
+  /** Inflado de la desviación típica de puntos (entra en xP − λσ). */
+  sigmaMultiplier: number;
+  /** Puntos Elo que se le restan al equipo en ese partido de LaLiga. */
+  eloPenalty: number;
+  label: EuropeanLoadLabel;
+  /** Frase de una línea lista para la interfaz. */
+  summary: string;
+}
+
+/** Efecto de la carga europea sobre un jugador concreto. */
+export interface PlayerEuropeanImpact {
+  outlook: EuropeanOutlook;
+  /** P(titular) antes y después del ajuste por rotación. */
+  pStarterBefore: number | null;
+  pStarterAfter: number | null;
+  /** Multiplicador neto sobre sus puntos esperados (rotación + fatiga). */
+  xpMultiplier: number;
+  /** Peso efectivo aplicado (0 si ya se conoce la alineación). */
+  weight: number;
+  /** true si la rotación le beneficia: es el suplente que entra. */
+  beneficiary: boolean;
+  /** Aviso listo para mostrar; null si el efecto es despreciable. */
+  advice: string | null;
+}
+
 export interface Match {
   id: string;
   matchDate: string;
@@ -407,6 +498,8 @@ export interface Recommendation {
   source?: 'squad' | 'market' | 'rival';
   /** Emparejamiento de la jornada del equipo real del jugador (§4.3). */
   fixture?: FixtureOutlook | null;
+  /** Carga europea del equipo del jugador en esta jornada (rotación y fatiga). */
+  european?: EuropeanOutlook | null;
 }
 
 export interface LeagueData {

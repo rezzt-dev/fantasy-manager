@@ -1,4 +1,12 @@
-import type { FixtureOutlook, MarketPlayer, Match, PlayerMaster, TeamPlayer } from '../../types/fantasy';
+import type {
+  EuropeanOutlook,
+  FixtureOutlook,
+  MarketPlayer,
+  Match,
+  PlayerEuropeanImpact,
+  PlayerMaster,
+  TeamPlayer,
+} from '../../types/fantasy';
 import type {
   BudgetBreakdown,
   ClauseCombo,
@@ -44,6 +52,10 @@ const COMBO_POOL = 8;
 const MAX_COMBOS = 4;
 /** Por debajo de esta probabilidad de titularidad tratamos al jugador como suplente. */
 const SUBSTITUTE_SCORE = 0.35;
+/** Puntos de `fitScore` que como mucho descuenta el mal momento europeo. */
+const EUROPEAN_TIMING_PENALTY = 10;
+/** A partir de aquí la rotación europea merece un aviso explícito de gasto. */
+const EUROPEAN_WARNING_RISK = 45;
 
 export interface ClauseMarketInput {
   squad: TeamPlayer[];
@@ -76,6 +88,7 @@ interface Scored {
   expectedMinutes: number | null;
   dataQuality: 'high' | 'medium' | 'low';
   fixture: FixtureOutlook | null;
+  european: PlayerEuropeanImpact | null;
   source: string;
   eligible: boolean;
 }
@@ -118,6 +131,7 @@ function scorePlayer(player: PlayerMaster, input: ClauseMarketInput): Scored {
     expectedMinutes: prediction.expectedMinutes,
     dataQuality: prediction.dataQuality.level,
     fixture: prediction.fixture,
+    european: prediction.european,
     source: prediction.source,
     eligible,
   };
@@ -213,6 +227,14 @@ function formatCurrency(value: number): string {
  * un clausulazo: cuánto sube tu once (45), el nivel del jugador respecto a tu
  * plantilla (15), lo barata que es la cláusula (15), la necesidad posicional
  * (10), la titularidad (10) y la solidez del dato (5).
+ *
+ * La carga europea NO vuelve a descontar puntos aquí: sus puntos ya están
+ * descontados dentro de `xiGain`, porque el estimador aplica la rotación y la
+ * fatiga antes. Lo que se penaliza es **el momento de gastar**: si el jugador
+ * llega a esta jornada condicionado por la Champions y además nadie te lo va a
+ * quitar, esperar es gratis y pagar hoy es tirar dinero por una semana mala.
+ * Cuando la urgencia es alta la penalización desaparece sola, que es lo
+ * correcto: ahí el coste de esperar es perder al jugador.
  */
 function computeFitScore(parts: {
   xiGain: number;
@@ -225,6 +247,10 @@ function computeFitScore(parts: {
   badNews: boolean;
   affordable: boolean;
   fallingValue: boolean;
+  /** 0-100 de `EuropeanOutlook`; 0 si el equipo no juega en Europa. */
+  europeanRotationRisk: number;
+  /** 0-100: si nadie más puede pagar la cláusula, esperar no cuesta nada. */
+  urgency: number;
 }): number {
   const xiPart = clamp(parts.xiGain * 9, 0, 45);
   const deltaPart = clamp(parts.deltaXp * 5, 0, 15);
@@ -239,6 +265,11 @@ function computeFitScore(parts: {
   if (parts.badNews) score *= 0.5;
   if (parts.fallingValue) score -= 5;
   if (!parts.affordable) score *= 0.75;
+
+  // Penalización de TIMING por carga europea: máxima con rotación segura y
+  // cero riesgo de que te lo quiten; se anula cuando la urgencia aprieta.
+  const canWait = clamp((60 - parts.urgency) / 60, 0, 1);
+  score -= EUROPEAN_TIMING_PENALTY * clamp(parts.europeanRotationRisk / 100, 0, 1) * canWait;
 
   return Math.round(clamp(score, 0, 100));
 }
@@ -447,6 +478,10 @@ export function buildClauseMarket(input: ClauseMarketInput): ClauseMarketAnalysi
             needScore: needByPosition.get(player.positionId) ?? 0,
             pStarter: scored.pStarter,
             dataQuality: scored.dataQuality,
+            europeanRotationRisk: scored.european?.outlook.rotationRisk ?? 0,
+            // Un objetivo que todavía no se puede clausular no compite con
+            // nadie hoy: el momento de gastar no está en juego.
+            urgency: 0,
             healthy: player.playerStatus === 'ok',
             badNews: upcomingExternal.signal === 'sell' && upcomingExternal.confidence >= BAD_NEWS_CONFIDENCE,
             affordable: clause <= input.budget.available,
@@ -506,6 +541,17 @@ export function buildClauseMarket(input: ClauseMarketInput): ClauseMarketAnalysi
         (r) => r.teamId !== rival.teamId && (spendingPowerByTeam.get(r.teamId) ?? 0) >= clause,
       ).length;
 
+      // La urgencia se calcula antes: decide si esperar a que pase la semana
+      // europea es gratis o te cuesta el jugador, y eso entra en el encaje.
+      const urgency = computeUrgency({
+        rivalsThatCanAfford,
+        totalRivals: Math.max(input.rivals.length - 1, 1),
+        clauseRatio,
+        xp: scored.xp,
+        clauseAttackers,
+      });
+
+      const europeanOutlook = scored.european?.outlook ?? null;
       const fitScore = computeFitScore({
         xiGain,
         deltaXp,
@@ -517,14 +563,8 @@ export function buildClauseMarket(input: ClauseMarketInput): ClauseMarketAnalysi
         badNews,
         affordable,
         fallingValue: direction === 'falling',
-      });
-
-      const urgency = computeUrgency({
-        rivalsThatCanAfford,
-        totalRivals: Math.max(input.rivals.length - 1, 1),
-        clauseRatio,
-        xp: scored.xp,
-        clauseAttackers,
+        europeanRotationRisk: europeanOutlook?.rotationRisk ?? 0,
+        urgency,
       });
 
       const reasons: string[] = [];
@@ -577,6 +617,26 @@ export function buildClauseMarket(input: ClauseMarketInput): ClauseMarketAnalysi
       }
       if (direction === 'falling' && trend) warnings.push(`Su valor baja (${Math.round(trend.pct7d)}% en 7 días).`);
 
+      // Coordinación con Europa: el aviso va en euros, no en puntos, porque la
+      // cláusula se paga una vez y la mala semana se pasa.
+      if (europeanOutlook && europeanOutlook.rotationRisk >= EUROPEAN_WARNING_RISK) {
+        const impact = scored.european!;
+        const effect = Math.round((impact.xpMultiplier - 1) * 100);
+        if (impact.beneficiary) {
+          reasons.push(
+            `Su equipo rota por ${europeanOutlook.competitionShortName} y él es de los que entran ` +
+              `(+${effect}% de puntos esperados): puntos baratos de una semana europea.`,
+          );
+        } else {
+          const waitable = urgency < 45 && affordable;
+          warnings.push(
+            `${europeanOutlook.summary} Pagarías ${formatCurrency(clause)} por una jornada en la que ` +
+              `${effect < 0 ? `rinde un ${Math.abs(effect)}% menos` : 'su once no está garantizado'}` +
+              `${waitable ? '; nadie más puede pagar su cláusula ahora mismo, así que esperar no te cuesta el jugador.' : '.'}`,
+          );
+        }
+      }
+
       const missingBudget = Math.max(0, clause - input.budget.available);
       const funding = missingBudget > 0 ? buildFundingPlan(missingBudget, squadScores, baselineStarters) : undefined;
 
@@ -597,6 +657,7 @@ export function buildClauseMarket(input: ClauseMarketInput): ClauseMarketAnalysi
         starterLabel: starterLabelFrom(scored.pStarter, player),
         dataQuality: scored.dataQuality,
         fixture: scored.fixture,
+        european: europeanOutlook,
         deltaXp: round1(deltaXp),
         xiGain,
         replaces,
