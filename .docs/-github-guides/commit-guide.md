@@ -23,20 +23,20 @@
 |---|---|
 | `update` | trabajo normal hacia adelante: anade o mejora funcionalidad, contenido o documentacion. es el prefijo por defecto |
 | `fix` | corrige un error detectado durante el desarrollo, sin urgencia de publicacion |
-| `hotfix` | corrige algo urgente que afecta al despliegue en produccion o bloquea el trabajo |
+| `hotfix` | corrige algo urgente que afecta a una version ya publicada o bloquea el trabajo |
 | `changes` | cambios estructurales o no funcionales: mover o renombrar ficheros, configuracion, tooling, dependencias |
 | `changelog` | el unico proposito del commit es editar `changelog.md` |
 
-si un commit mezcla un fix y una mejora, se divide en dos. si no es posible, gana el prefijo del cambio principal. los prefijos `chore` y `merge` que aparecen en commits antiguos ya no se usan.
+si un commit mezcla un fix y una mejora, se divide en dos. si no es posible, gana el prefijo del cambio principal.
 
 ### ejemplos
 
 ```
-update | anadir la pestana de clausulazos con objetivos y financiacion
-fix | corregir la informacion de partidos en el despliegue de vercel
-hotfix | evitar el error 500 del login cuando falta la sesion compartida
-changes | mover las rutas de datos a runtime-paths
-changelog | cerrar la seccion de la version 1.0.0
+update | completar la documentacion del proyecto
+fix | corregir una referencia rota en la documentacion
+hotfix | corregir un fallo critico de la version publicada
+changes | reorganizar la documentacion del proyecto
+changelog | cerrar la seccion de la version 1.4.0
 ```
 
 ---
@@ -48,14 +48,13 @@ changelog | cerrar la seccion de la version 1.0.0
 - explica el que y el por que, no el detalle linea a linea.
 - entre 2 y 6 items; si hacen falta mas, el commit es demasiado grande.
 - ficheros, rutas, comandos e identificadores siempre entre backticks.
-- no termina con ninguna linea de atribucion, firma ni trailer de coautoria (ver `agent-rules.md`).
+- no termina con ninguna linea de atribucion, firma ni `co-authored-by` (ver `agent-rules.md`).
 
 ejemplo:
 
-```
-- anadir `european-load.ts`, que separa rotacion, fatiga y calidad del once en semana europea
-- leer el calendario de champions, europa league y conference desde `sources/uefa.ts`
-- mostrar el impacto en euros con `EuropeanChip` y `EuropeanPanel`
+```text
+- adaptar las guias de gestion a las rutas y ramas del proyecto
+- conservar las convenciones tecnicas y retirar instrucciones duplicadas
 ```
 
 ---
@@ -87,7 +86,7 @@ git add <ficheros>
 git commit -m "<titulo>" -m "<descripcion>"
 ```
 
-se anaden los ficheros por nombre, nunca `git add -A` a ciegas; se comprueba antes con `git status` que no entran ficheros ignorados, `.env*` con valores, `.vercel/`, `dist/`, `dist-extension/`, `node_modules/` ni capturas temporales de `e2e/`.
+se anaden los ficheros por nombre, nunca `git add -A` a ciegas; se comprueba antes con `git status` que no entran ficheros ignorados, claves ni artefactos de compilacion.
 
 ---
 
@@ -97,4 +96,4 @@ se anaden los ficheros por nombre, nunca `git add -A` a ciegas; se comprueba ant
 - [ ] el titulo cabe en 72 caracteres y esta en imperativo.
 - [ ] cada item ocupa una sola linea y empieza por `-`.
 - [ ] el changelog esta actualizado en los dos idiomas.
-- [ ] no hay atribucion de ia ni trailer de coautoria.
+- [ ] no hay atribucion de ia ni `co-authored-by`.

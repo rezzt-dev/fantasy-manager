@@ -11,6 +11,8 @@
 - anadir este `changelog.md` bilingue
 
 #### CAMBIADO
+
+- completar las guías de gestión y el contexto específico del proyecto; conservar las reglas técnicas y verificar las rutas
 - reescribir `AGENTS.md` en ingles con la estructura del proyecto, comandos reales, reglas de diseno, motor y despliegue, y el resumen de las reglas de git
 
 ### ENGLISH
@@ -22,4 +24,6 @@
 - add this bilingual `changelog.md`
 
 #### CHANGED
+
+- complete repository management guides and project-specific context; preserve technical rules and verify paths
 - rewrite `AGENTS.md` in english with the project structure, real commands, design, engine and deployment rules, and the git rules digest

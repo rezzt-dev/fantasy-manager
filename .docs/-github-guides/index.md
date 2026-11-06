@@ -3,10 +3,9 @@
 > conjunto de guias para gestionar el repositorio de forma profesional: commits,
 > pull requests, merges, releases, changelog y ramas. estan pensadas para que
 > cualquier agente de ia (o persona) devuelva titulos y descripciones listos
-> para copiar y pegar, sin trabajo extra. no hay otras guias de git en el
-> repositorio: estas son las unicas vigentes. el punto de entrada es
-> `.docs/manager.md`, un nivel por encima de esta carpeta. `.docs/` se versiona
-> en este repositorio.
+> para copiar y pegar, sin trabajo extra. las guias antiguas
+> (`commit-guidelines.md` y `pr-merge-release-guidelines.md`) ya no existen:
+> estas son las unicas vigentes. el punto de entrada es `.docs/manager.md`, un nivel por encima de esta carpeta.
 
 ---
 

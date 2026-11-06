@@ -1,8 +1,8 @@
 # GUIA DEL CHANGELOG
 
-> como se escribe y se cierra `changelog.md` (raiz del repositorio). es la
-> fuente de verdad de commits, pull requests, merges y releases: nada se
-> redacta en paralelo, todo se extrae de aqui.
+> como se escribe y se cierra `changelog.md`. es la fuente de verdad
+> de commits, pull requests, merges y releases: nada se redacta en paralelo,
+> todo se extrae de aqui.
 
 ---
 
@@ -29,7 +29,6 @@
 - la seccion `## SIN PUBLICAR / UNRELEASED` esta siempre arriba y recoge lo que aun no se ha publicado.
 - las versiones cerradas van de la mas reciente a la mas antigua.
 - cada version lleva `### CASTELLANO` y `### ENGLISH` con paridad exacta de items.
-- el changelog empezo el 2026-11-06; el historial anterior esta solo en `git log` y no se reconstruye.
 
 ---
 
@@ -53,7 +52,7 @@ se omite la categoria que no tenga items. no se crean otras.
 - un item por linea, en imperativo ("anadir", "corregir", "mover"), empezando por `-`.
 - ficheros, rutas, comandos e identificadores entre backticks.
 - explica el efecto visible o el motivo, no el detalle de implementacion linea a linea.
-- si un cambio solo afecta a la extension del navegador, el item nombra `extension/` para que no se confunda con la web.
+- conservar los marcadores de variantes existentes; no crear marcadores de otra aplicacion.
 - sin menciones a herramientas de ia ni a quien escribio el item.
 
 ---
@@ -69,8 +68,8 @@ se omite la categoria que no tenga items. no se crean otras.
 ## 5. CERRAR UNA VERSION
 
 1. comprobar que `## SIN PUBLICAR / UNRELEASED` esta completo y con paridad entre idiomas.
-2. renombrarlo a `## [x.y.z] - aaaa-mm-dd` (fecha de cierre) y dejar debajo una seccion `## SIN PUBLICAR / UNRELEASED` vacia.
-3. subir `version` en `package.json` si aun no se ha hecho y, si la version cambia la extension, la `version` de `extension/manifest.json` y `extension/manifest.firefox.json` (commit `changes`).
+2. cerrar la version como `## [x.y.z] - aaaa-mm-dd` y mantener una nueva seccion `## SIN PUBLICAR / UNRELEASED` arriba.
+3. actualizar la version en los manifiestos reales del proyecto si se ha acordado una publicacion; no cambiar versiones para una pr de documentacion.
 4. commit con prefijo `changelog`:
 
 ```
@@ -83,9 +82,10 @@ changelog | cerrar la seccion de changelog para la version <x.y.z>
 
 ## 6. NUMERACION
 
-- esquema `x.y.z` (semver). `package.json` esta hoy en `0.0.1` y nunca se ha subido; la primera version cerrada fija el numero de partida (ver `.docs/repo-audit-and-fix.md`).
-- `x` cambia con rupturas grandes; `y` con funcionalidades nuevas; `z` con correcciones.
-- la extension lleva su propia `version` en sus dos manifests (hoy `1.0.0`); solo sube cuando cambia `extension/` y nunca baja.
+- fuentes de version comprobadas: `package.json`: `0.0.1`.
+- no inventar versiones ni tags para proyectos sin politica de publicacion.
+- conservar el formato historico de las versiones publicadas; acordar cualquier migracion.
+- las variantes y sus marcadores solo se usan cuando existen en este proyecto.
 
 ---
 

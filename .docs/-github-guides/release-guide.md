@@ -1,86 +1,36 @@
 # GUIA DE RELEASES
 
-> como preparar el titulo, la descripcion y el tag de una release de github.
-> se aplica cuando una pr de version ya esta fusionada en `main`. lee antes
-> `agent-rules.md`: la release no lleva ningun rastro de ia. hoy el repositorio
-> no tiene ningun tag ni ninguna release: la primera seguira esta guia.
-
----
-
 ## 1. REQUISITOS PREVIOS
 
-1. `changelog.md` tiene la version cerrada como `## [x.y.z] - aaaa-mm-dd` (ver `changelog-guide.md`).
-2. la pr de version (`changes/version-<x.y.z>` → `main`) esta fusionada con "create a merge commit".
-3. `package.json` tiene `version` `x.y.z`. si la version cambia la extension, `extension/manifest.json` y `extension/manifest.firefox.json` llevan la misma `version` entre si (las dos tiendas exigen subirla en cada envio).
-4. no hay ci: sobre el commit que se va a etiquetar pasan en local `pnpm exec tsc --noEmit`, `pnpm test:unit`, `pnpm build` y `pnpm verify:deploy`.
-5. el despliegue de vercel de ese commit (`https://fantasy-manager-mauve.vercel.app`) responde en `/`, `/login` y `/dashboard`.
+cerrar una version de `changelog.md` solo cuando se haya solicitado publicar. comprobar el commit aprobado, los manifiestos reales y los checks disponibles. una actualizacion de documentacion no publica una version.
 
----
+fuentes de version: `package.json`: `0.0.1`. publicaciones recientes consultadas: no published releases returned.
 
 ## 2. TAG
 
-- siempre `v<x.y.z>`, mismo numero que la cabecera del changelog, sin sufijos extra (ejemplo: `v1.0.0`).
-- se crea sobre el commit de merge en `main`, nunca sobre una rama de trabajo.
-- no se mueve ni se borra un tag ya publicado; si hay un error, se publica una version nueva.
-
-```
-git tag -a v<x.y.z> -m "v<x.y.z>"
-git push origin v<x.y.z>
-```
-
----
+verificar la convencion real y el commit de release antes de proponer un tag. para nuevas versiones semanticas, usar `v<x.y.z>` si encaja con la politica acordada. nunca mover ni borrar un tag publicado. no confundir una version del sitio con una version de la aplicacion promocionada.
 
 ## 3. TITULO
 
-```
-v<x.y.z> — <resumen corto en ingles>
-```
-
-- en ingles, minusculas y sin acentos; resume las 2-3 entradas mas relevantes.
-- ejemplo: `v1.0.0 — clause market, live matches & european load in the engine`.
-
----
+usar `v<x.y.z> - <english summary>` cuando proceda una release semantica. el resumen debe describir cambios incluidos en el commit etiquetado.
 
 ## 4. DESCRIPCION
 
-- **solo en ingles**: la release es la cara publica del proyecto.
-- reutiliza el bloque `### ENGLISH` de la version cerrada, con sus encabezados `####` en mayusculas, pero en version corta: de 3 a 6 items por categoria, agrupando cambios relacionados (misma regla de sintesis que `pr-merge-guide.md`, seccion 2).
-- se omite la categoria sin items; no se reordenan las categorias.
-- cierra con una seccion de despliegue:
+extraer el bloque ingles de la version cerrada en `changelog.md`, con las categorias no vacias y de 3 a 6 items agrupados por categoria. conservar los marcadores de variantes reales. no anadir atribucion automatica.
 
-```
-#### DEPLOYMENT
+## 5. ACTIVOS Y VERIFICACION
 
-- live at `https://fantasy-manager-mauve.vercel.app`
-- browser extension version: `<x.y.z>` (unchanged | updated in the stores)
-```
-
-- sin lineas de atribucion ni enlaces a herramientas de ia.
-
----
-
-## 5. ACTIVOS
-
-- la web no genera binarios: se despliega en vercel y la release no lleva activos.
-- si la version cambia la extension, se pueden adjuntar `dist-extension/chrome.zip` y `dist-extension/firefox.zip` (generados con `agent-docs/publicacion-extension/empaquetar.sh`) y su `SHA256SUMS`; nunca `.env*`, tokens ni capturas con datos de una cuenta.
-- mientras la version sea `0.x.y`, la release se marca como pre-release (`--prerelease`).
-
----
+inspeccionar los activos de las releases anteriores y el sistema de build antes de proponer archivos. publicar solo artefactos construidos desde el commit verificado. cuando se distribuyan binarios, incluir sumas y la verificacion de firma que corresponda; nunca claves, configuracion local ni datos privados. para sitios estaticos, el despliegue es una accion distinta de crear una release de github. si no existe politica de releases, registrar `TODO(owner)` en vez de inventarla.
 
 ## 6. COMANDO
 
-```
-gh release create v<x.y.z> --title "<titulo>" --notes-file <fichero>
-```
-
-si hay zips de la extension, se anaden como argumentos despues del tag (`dist-extension/chrome.zip dist-extension/firefox.zip SHA256SUMS`). se entrega el comando sin ejecutar; publicar una release es visible para todos y exige confirmacion (ver `agent-rules.md`).
-
----
+preparar los argumentos a partir de la version, el commit y los activos comprobados. usar `gh release create <tag> --target <commit> --title <title> --notes-file <file>` solo cuando se haya solicitado publicar. añadir `--prerelease` solo para una version preliminar real. la autorizacion para abrir una pr no autoriza una release.
 
 ## 7. LISTA DE COMPROBACION
 
-- [ ] el tag coincide con la cabecera del changelog y con `version` de `package.json`.
-- [ ] titulo y descripcion estan en ingles.
-- [ ] los items salen del bloque `### ENGLISH` del changelog.
-- [ ] si hay zips de la extension, corresponden a la misma version de los dos manifests y a `SHA256SUMS`.
-- [ ] no hay atribucion de ia ni datos sensibles.
+- [ ] version, changelog, tag y commit corresponden
+- [ ] los checks disponibles se han ejecutado y sus resultados estan registrados
+- [ ] notas en ingles derivadas del changelog
+- [ ] artefactos verificados cuando corresponda
+- [ ] no hay datos sensibles ni atribuciones automaticas
+- [ ] publicar esta autorizado expresamente
