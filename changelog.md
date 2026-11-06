@@ -13,6 +13,7 @@
 #### CAMBIADO
 
 - completar las guías de gestión y el contexto específico del proyecto; conservar las reglas técnicas y verificar las rutas
+- corregir el ejemplo de promociones entre ramas para evitar destinos idénticos al origen
 - reescribir `AGENTS.md` en ingles con la estructura del proyecto, comandos reales, reglas de diseno, motor y despliegue, y el resumen de las reglas de git
 
 ### ENGLISH
@@ -26,4 +27,5 @@
 #### CHANGED
 
 - complete repository management guides and project-specific context; preserve technical rules and verify paths
+- correct the branch promotion example to avoid destinations identical to the source
 - rewrite `AGENTS.md` in english with the project structure, real commands, design, engine and deployment rules, and the git rules digest

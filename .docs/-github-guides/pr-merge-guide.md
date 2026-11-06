@@ -60,7 +60,7 @@ ejemplo:
 release version <x.y.z> - <resumen de la version comprobada>
 ```
 
-el titulo de una pr de version es el mismo en `main` → `main` y en `main` → `main`.
+si una version requiere varias promociones entre ramas distintas, conservar el mismo titulo y resumen; verificar cada destino en `branching-guide.md`.
 
 ---
 
