@@ -1,5 +1,15 @@
 # GUIA DEL CHANGELOG
 
+## ESPAÑOL DE ESPAÑA: USO OBLIGATORIO DE Ñ
+
+- todo texto en castellano debe usar español de españa (`es-ES`) y su ortografia, tambien en titulos y cuerpos de commits, changelogs, pull requests, merges y documentacion
+- escribir siempre `ñ` en las palabras que la llevan y `Ñ` cuando corresponda la mayuscula; nunca sustituirlas por `n` o `N`
+- la `ñ` es una letra distinta de la `n`; las instrucciones «sin acentos» o «sin tildes» solo afectan a las tildes de las vocales y nunca permiten eliminar la eñe
+- ejemplos correctos: `añadir`, `diseño`, `año`, `tamaño`, `contraseña`, `español`, `españa` y `AÑADIDO`; sus formas con `n` son incorrectas cuando se refieren a esas palabras españolas
+- conservar literalmente rutas, urls, nombres de archivo, identificadores tecnicos y texto de otros idiomas; esta regla no autoriza renombrarlos ni aplicar sustituciones indiscriminadas
+- antes de entregar o publicar texto en castellano, revisar que ninguna palabra haya perdido su `ñ` o `Ñ`; esta regla prevalece sobre cualquier normalizacion a ascii o instruccion generica de eliminar acentos
+
+
 > como se escribe y se cierra `changelog.md`. es la fuente de verdad
 > de commits, pull requests, merges y releases: nada se redacta en paralelo,
 > todo se extrae de aqui.
@@ -17,7 +27,7 @@
 
 ### CASTELLANO
 
-#### ANADIDO
+#### AÑADIDO
 - <cambio>
 
 ### ENGLISH
@@ -36,7 +46,7 @@
 
 | castellano | english | que va |
 |---|---|---|
-| `ANADIDO` | `ADDED` | funcionalidades, ficheros o documentos nuevos |
+| `AÑADIDO` | `ADDED` | funcionalidades, ficheros o documentos nuevos |
 | `CAMBIADO` | `CHANGED` | cambios en comportamiento, estructura o documentacion existente |
 | `CORREGIDO` | `FIXED` | errores corregidos |
 | `ELIMINADO` | `REMOVED` | codigo, ficheros o funciones retirados |
@@ -48,8 +58,8 @@ se omite la categoria que no tenga items. no se crean otras.
 
 ## 3. REGLAS DE ESTILO
 
-- minusculas y sin acentos en el contenido; titulos y encabezados en mayusculas.
-- un item por linea, en imperativo ("anadir", "corregir", "mover"), empezando por `-`.
+- minusculas y sin acentos (conservando siempre `ñ` y `Ñ`) en el contenido; titulos y encabezados en mayusculas.
+- un item por linea, en imperativo ("añadir", "corregir", "mover"), empezando por `-`.
 - ficheros, rutas, comandos e identificadores entre backticks.
 - explica el efecto visible o el motivo, no el detalle de implementacion linea a linea.
 - conservar los marcadores de variantes existentes; no crear marcadores de otra aplicacion.
@@ -59,8 +69,8 @@ se omite la categoria que no tenga items. no se crean otras.
 
 ## 4. CUANDO SE ACTUALIZA
 
-1. **en cada commit** con cambios visibles: se anaden los items a `## SIN PUBLICAR / UNRELEASED`, en los dos idiomas, en el mismo commit.
-2. **al preparar una pr o un merge**: se comprueba que el changelog cubre todo el diff; si falta algo, se anade antes de abrirla.
+1. **en cada commit** con cambios visibles: se añaden los items a `## SIN PUBLICAR / UNRELEASED`, en los dos idiomas, en el mismo commit.
+2. **al preparar una pr o un merge**: se comprueba que el changelog cubre todo el diff; si falta algo, se añade antes de abrirla.
 3. **al cerrar una version**: ver seccion 5.
 
 ---

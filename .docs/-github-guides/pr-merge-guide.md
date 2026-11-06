@@ -1,5 +1,15 @@
 # GUIA DE PULL REQUESTS Y MERGES
 
+## ESPAÑOL DE ESPAÑA: USO OBLIGATORIO DE Ñ
+
+- todo texto en castellano debe usar español de españa (`es-ES`) y su ortografia, tambien en titulos y cuerpos de commits, changelogs, pull requests, merges y documentacion
+- escribir siempre `ñ` en las palabras que la llevan y `Ñ` cuando corresponda la mayuscula; nunca sustituirlas por `n` o `N`
+- la `ñ` es una letra distinta de la `n`; las instrucciones «sin acentos» o «sin tildes» solo afectan a las tildes de las vocales y nunca permiten eliminar la eñe
+- ejemplos correctos: `añadir`, `diseño`, `año`, `tamaño`, `contraseña`, `español`, `españa` y `AÑADIDO`; sus formas con `n` son incorrectas cuando se refieren a esas palabras españolas
+- conservar literalmente rutas, urls, nombres de archivo, identificadores tecnicos y texto de otros idiomas; esta regla no autoriza renombrarlos ni aplicar sustituciones indiscriminadas
+- antes de entregar o publicar texto en castellano, revisar que ninguna palabra haya perdido su `ñ` o `Ñ`; esta regla prevalece sobre cualquier normalizacion a ascii o instruccion generica de eliminar acentos
+
+
 > como devolver el titulo y la descripcion de una pull request y de su commit
 > de merge, en version sintetizada, para que solo haya que copiar, pegar y
 > aceptar. se aplica cada vez que se pida el titulo y la descripcion de una pr
@@ -14,8 +24,8 @@ changelog, no el changelog entero. el detalle completo vive en
 `changelog.md`; la pr solo orienta a quien revisa.
 
 - la fuente es siempre `changelog.md` (seccion `## SIN PUBLICAR / UNRELEASED` o version ya cerrada) y el diff real de la rama.
-- minusculas y sin acentos; los encabezados en mayusculas.
-- categorias cerradas y en este orden: `ANADIDO`, `CAMBIADO`, `CORREGIDO`, `ELIMINADO`, `SEGURIDAD` (en ingles `ADDED`, `CHANGED`, `FIXED`, `REMOVED`, `SECURITY`). se omite la que no tenga items.
+- minusculas y sin acentos (conservando siempre `ñ` y `Ñ`); los encabezados en mayusculas.
+- categorias cerradas y en este orden: `AÑADIDO`, `CAMBIADO`, `CORREGIDO`, `ELIMINADO`, `SEGURIDAD` (en ingles `ADDED`, `CHANGED`, `FIXED`, `REMOVED`, `SECURITY`). se omite la que no tenga items.
 - los marcadores `[online]` / `[offline]` del changelog se conservan tal cual.
 - sin lineas de atribucion ni pies de pagina (ver `agent-rules.md`).
 
