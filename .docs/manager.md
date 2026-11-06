@@ -1,5 +1,15 @@
 # MANAGER DE GUIAS DE GITHUB
 
+## ESPAÑOL DE ESPAÑA: USO OBLIGATORIO DE Ñ
+
+- todo texto en castellano debe usar español de españa (`es-ES`) y su ortografia, tambien en titulos y cuerpos de commits, changelogs, pull requests, merges y documentacion
+- escribir siempre `ñ` en las palabras que la llevan y `Ñ` cuando corresponda la mayuscula; nunca sustituirlas por `n` o `N`
+- la `ñ` es una letra distinta de la `n`; las instrucciones «sin acentos» o «sin tildes» solo afectan a las tildes de las vocales y nunca permiten eliminar la eñe
+- ejemplos correctos: `añadir`, `diseño`, `año`, `tamaño`, `contraseña`, `español`, `españa` y `AÑADIDO`; sus formas con `n` son incorrectas cuando se refieren a esas palabras españolas
+- conservar literalmente rutas, urls, nombres de archivo, identificadores tecnicos y texto de otros idiomas; esta regla no autoriza renombrarlos ni aplicar sustituciones indiscriminadas
+- antes de entregar o publicar texto en castellano, revisar que ninguna palabra haya perdido su `ñ` o `Ñ`; esta regla prevalece sobre cualquier normalizacion a ascii o instruccion generica de eliminar acentos
+
+
 > punto de entrada para cualquier agente de ia. cuando el usuario pida algo
 > relacionado con git o github (commits, pull requests, merges, releases,
 > changelog, ramas), este fichero dice como interpretar la peticion, que guias
@@ -32,7 +42,7 @@ las frases son ejemplos; vale cualquier peticion equivalente en castellano o ing
 |---|---|---|---|---|
 | texto de commit | "sacame el titulo y la descripcion del commit", "que pongo en el commit" | `commit-guide`, `changelog-guide` | `git status`, `git diff`, `git diff --cached`, `git log -5 --oneline` | titulo, descripcion, fragmento de changelog |
 | crear commit | "haz el commit", "commitea esto" | `commit-guide`, `changelog-guide` | los mismos | texto + commit ejecutado |
-| actualizar changelog | "actualiza el changelog", "anade esto al changelog" | `changelog-guide` | `git diff`, lectura de `changelog.md` | fragmento aplicado en `## SIN PUBLICAR / UNRELEASED` |
+| actualizar changelog | "actualiza el changelog", "añade esto al changelog" | `changelog-guide` | `git diff`, lectura de `changelog.md` | fragmento aplicado en `## SIN PUBLICAR / UNRELEASED` |
 | texto de pr | "titulo y descripcion de la pr", "merge request de x a y" | `pr-merge-guide`, `branching-guide` | `git log <base>..<rama>`, `git diff <base>...<rama> --stat` | titulo y descripcion resumida |
 | abrir pr | "haz la pr", "abre la pr" | `pr-merge-guide`, `branching-guide`, `agent-rules` | los de arriba, `gh auth status`, `gh pr list` | texto + pr abierta + enlace |
 | texto de merge | "titulo y descripcion para el merge", "para fusionar" | `pr-merge-guide` | `gh pr view <n>` | titulo y descripcion de la pr, sin cambios |
@@ -108,7 +118,7 @@ ejemplo de entrega: indicar la rama origen y destino, presentar titulo y descrip
 - [ ] el titulo cumple el formato (prefijo, `release version`, `v<x.y.z> —`).
 - [ ] las descripciones respetan los limites de longitud y la paridad entre idiomas.
 - [ ] el changelog esta actualizado y coincide con el texto.
-- [ ] todo esta en minusculas y sin acentos (titulos aparte) y con backticks en identificadores.
+- [ ] todo esta en minusculas y sin acentos (conservando siempre `ñ` y `Ñ`) (titulos aparte) y con backticks en identificadores.
 - [ ] no aparece `co-authored-by`, "generated with" ni el nombre de ninguna herramienta de ia.
 - [ ] solo se ha ejecutado lo que el usuario pidio de forma expresa.
 
@@ -141,4 +151,4 @@ si un paso falla (conflictos, `available local checks` en rojo, pr no fusionable
 - copiar a la release el bloque en castellano; la release es solo en ingles.
 - dejar la rama de trabajo viva despues de fusionarla (si el usuario pidio borrarla).
 - ejecutar `git push --force`, mover tags o reescribir historial sin orden expresa.
-- anadir cualquier linea que delate la intervencion de una ia.
+- añadir cualquier linea que delate la intervencion de una ia.

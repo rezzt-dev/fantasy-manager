@@ -1,5 +1,15 @@
 # GUIA DE COMMITS
 
+## ESPAÑOL DE ESPAÑA: USO OBLIGATORIO DE Ñ
+
+- todo texto en castellano debe usar español de españa (`es-ES`) y su ortografia, tambien en titulos y cuerpos de commits, changelogs, pull requests, merges y documentacion
+- escribir siempre `ñ` en las palabras que la llevan y `Ñ` cuando corresponda la mayuscula; nunca sustituirlas por `n` o `N`
+- la `ñ` es una letra distinta de la `n`; las instrucciones «sin acentos» o «sin tildes» solo afectan a las tildes de las vocales y nunca permiten eliminar la eñe
+- ejemplos correctos: `añadir`, `diseño`, `año`, `tamaño`, `contraseña`, `español`, `españa` y `AÑADIDO`; sus formas con `n` son incorrectas cuando se refieren a esas palabras españolas
+- conservar literalmente rutas, urls, nombres de archivo, identificadores tecnicos y texto de otros idiomas; esta regla no autoriza renombrarlos ni aplicar sustituciones indiscriminadas
+- antes de entregar o publicar texto en castellano, revisar que ninguna palabra haya perdido su `ñ` o `Ñ`; esta regla prevalece sobre cualquier normalizacion a ascii o instruccion generica de eliminar acentos
+
+
 > como redactar el titulo y la descripcion de un commit. se aplica siempre que
 > se pida algo equivalente a "sacame el titulo y la descripcion del commit con
 > los cambios desde el ultimo commit" y cada vez que se vaya a crear un commit.
@@ -14,14 +24,14 @@
 ```
 
 - separador fijo: espacio, barra vertical, espacio.
-- maximo 72 caracteres; sin punto final; todo en minusculas y sin acentos.
+- maximo 72 caracteres; sin punto final; todo en minusculas y sin acentos (conservando siempre `ñ` y `Ñ`).
 - el resumen describe el conjunto del commit, no un fichero concreto.
 
 ### prefijos (cerrados, no se inventan otros)
 
 | prefijo | cuando usarlo |
 |---|---|
-| `update` | trabajo normal hacia adelante: anade o mejora funcionalidad, contenido o documentacion. es el prefijo por defecto |
+| `update` | trabajo normal hacia adelante: añade o mejora funcionalidad, contenido o documentacion. es el prefijo por defecto |
 | `fix` | corrige un error detectado durante el desarrollo, sin urgencia de publicacion |
 | `hotfix` | corrige algo urgente que afecta a una version ya publicada o bloquea el trabajo |
 | `changes` | cambios estructurales o no funcionales: mover o renombrar ficheros, configuracion, tooling, dependencias |
@@ -71,7 +81,7 @@ tres bloques separados, en este orden:
 
 1. titulo del commit.
 2. descripcion del commit.
-3. fragmento de changelog que se anade (bloque `### CASTELLANO` y bloque `### ENGLISH`, solo con los items nuevos).
+3. fragmento de changelog que se añade (bloque `### CASTELLANO` y bloque `### ENGLISH`, solo con los items nuevos).
 
 nunca se juntan el titulo y la descripcion en el mismo bloque.
 
@@ -86,7 +96,7 @@ git add <ficheros>
 git commit -m "<titulo>" -m "<descripcion>"
 ```
 
-se anaden los ficheros por nombre, nunca `git add -A` a ciegas; se comprueba antes con `git status` que no entran ficheros ignorados, claves ni artefactos de compilacion.
+se añaden los ficheros por nombre, nunca `git add -A` a ciegas; se comprueba antes con `git status` que no entran ficheros ignorados, claves ni artefactos de compilacion.
 
 ---
 

@@ -1,5 +1,15 @@
 # GUIA DE RELEASES
 
+## ESPAÑOL DE ESPAÑA: USO OBLIGATORIO DE Ñ
+
+- todo texto en castellano debe usar español de españa (`es-ES`) y su ortografia, tambien en titulos y cuerpos de commits, changelogs, pull requests, merges y documentacion
+- escribir siempre `ñ` en las palabras que la llevan y `Ñ` cuando corresponda la mayuscula; nunca sustituirlas por `n` o `N`
+- la `ñ` es una letra distinta de la `n`; las instrucciones «sin acentos» o «sin tildes» solo afectan a las tildes de las vocales y nunca permiten eliminar la eñe
+- ejemplos correctos: `añadir`, `diseño`, `año`, `tamaño`, `contraseña`, `español`, `españa` y `AÑADIDO`; sus formas con `n` son incorrectas cuando se refieren a esas palabras españolas
+- conservar literalmente rutas, urls, nombres de archivo, identificadores tecnicos y texto de otros idiomas; esta regla no autoriza renombrarlos ni aplicar sustituciones indiscriminadas
+- antes de entregar o publicar texto en castellano, revisar que ninguna palabra haya perdido su `ñ` o `Ñ`; esta regla prevalece sobre cualquier normalizacion a ascii o instruccion generica de eliminar acentos
+
+
 ## 1. REQUISITOS PREVIOS
 
 cerrar una version de `changelog.md` solo cuando se haya solicitado publicar. comprobar el commit aprobado, los manifiestos reales y los checks disponibles. una actualizacion de documentacion no publica una version.
@@ -16,7 +26,7 @@ usar `v<x.y.z> - <english summary>` cuando proceda una release semantica. el res
 
 ## 4. DESCRIPCION
 
-extraer el bloque ingles de la version cerrada en `changelog.md`, con las categorias no vacias y de 3 a 6 items agrupados por categoria. conservar los marcadores de variantes reales. no anadir atribucion automatica.
+extraer el bloque ingles de la version cerrada en `changelog.md`, con las categorias no vacias y de 3 a 6 items agrupados por categoria. conservar los marcadores de variantes reales. no añadir atribucion automatica.
 
 ## 5. ACTIVOS Y VERIFICACION
 
